@@ -42,7 +42,7 @@ const FOLLOW_UP_MAP: Record<string, (ecos: string[], yr?: number) => string[]> =
 }
 
 function getFollowUps(cfg: ChartConfigType): string[] {
-  const yr = cfg.startPeriod ? parseInt(cfg.startPeriod) : undefined
+  const yr = cfg.startPeriod ?? undefined
   const fn = FOLLOW_UP_MAP[cfg.indicator]
   return fn ? fn(cfg.economies, yr) : SUGGESTIONS.slice(0, 5)
 }

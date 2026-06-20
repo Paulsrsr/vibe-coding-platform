@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   if (hasGateway) {
     try {
       const { model } = getModelOptions(Models.AnthropicClaudeSonnet46)
-      const result = streamText({ model, system: SYSTEM, prompt: question, maxTokens: 600 })
+      const result = streamText({ model, system: SYSTEM, prompt: question })
       return result.toTextStreamResponse()
     } catch (err) {
       console.warn('[erdi/ask] streaming failed, falling back:', err)
