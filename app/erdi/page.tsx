@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { ECONOMIES, INDICATORS } from '@/app/api/kidb/route'
 import { DataExplorer } from './_data-explorer'
+import { useIsMobile } from './_use-mobile'
 
 const PacificMapLeaflet = dynamic(() => import('./_pacific-map-leaflet'), { ssr: false })
 
@@ -142,6 +143,31 @@ function useMultiKidb(economies: string[]): MultiData {
   return data
 }
 
+// ── indicator classification thresholds (shown in legend) ─────────────────
+const IND_THRESHOLDS: Partial<Record<IndKey, Array<{ color: string; label: string; range: string }>>> = {
+  GDP_GROWTH:   [{ color: '#8DC63F', label: 'Strong',        range: '≥ 4% growth' },
+                 { color: '#FDB915', label: 'Moderate',      range: '0 – 4%' },
+                 { color: '#E9532B', label: 'Contraction',   range: '< 0%' }],
+  CPI:          [{ color: '#8DC63F', label: 'Stable',        range: '≤ 3%' },
+                 { color: '#FDB915', label: 'Elevated',      range: '3 – 6%' },
+                 { color: '#E9532B', label: 'High',          range: '> 6%' }],
+  DEBT_GDP:     [{ color: '#8DC63F', label: 'Manageable',    range: '< 50% of GDP' },
+                 { color: '#FDB915', label: 'Watch',         range: '50 – 70% of GDP' },
+                 { color: '#E9532B', label: 'High Risk',     range: '≥ 70% of GDP' }],
+  UNEMPLOYMENT: [{ color: '#8DC63F', label: 'Low',           range: '< 4%' },
+                 { color: '#FDB915', label: 'Moderate',      range: '4 – 7%' },
+                 { color: '#E9532B', label: 'High',          range: '≥ 7%' }],
+  CURRENT_ACCT: [{ color: '#8DC63F', label: 'Surplus',       range: '> 0% of GDP' },
+                 { color: '#FDB915', label: 'Deficit',       range: '0 – 5% of GDP' },
+                 { color: '#E9532B', label: 'Wide Deficit',  range: '> 5% of GDP' }],
+  GDP_PC:       [{ color: '#8DC63F', label: 'High',          range: '> USD 5,000' },
+                 { color: '#FDB915', label: 'Middle',        range: 'USD 2,500 – 5,000' },
+                 { color: '#E9532B', label: 'Low',           range: '< USD 2,500' }],
+  M2_GROWTH:    [{ color: '#8DC63F', label: 'Controlled',    range: '< 8%' },
+                 { color: '#FDB915', label: 'Moderate',      range: '8 – 12%' },
+                 { color: '#E9532B', label: 'High',          range: '> 12%' }],
+}
+
 // ── indicator color thresholds ─────────────────────────────────────────────
 function indicatorColor(key: IndKey, val: number | null): { color: string; status: string } {
   if (val === null) return { color: adb.muted, status: 'No data' }
@@ -202,7 +228,7 @@ function SourceBadge({ source }: { source: 'live' | 'mock' | null }) {
       background: source === 'live' ? `${adb.green}22` : `${adb.amber}22`,
       color: source === 'live' ? adb.green : adb.amber,
       border: `1px solid ${source === 'live' ? adb.green : adb.amber}44`,
-    }}>{source === 'live' ? 'KIDB Live' : 'KIDB Schema'}</span>
+    }}>{source === 'live' ? 'ADB Live' : 'ADB Schema'}</span>
   )
 }
 
@@ -267,7 +293,7 @@ const ARTICLES: Article[] = [
         ],
       },
     ],
-    sources: ['Asian Development Outlook 2026', 'KIDB — PPL Dataflow'],
+    sources: ['Asian Development Outlook 2026', 'ADB Data — PPL Dataflow'],
     query: 'GDP growth for Pacific SIDS since 2019',
   },
   {
@@ -512,6 +538,24 @@ const PUBLICATIONS: Publication[] = [
     abstract: 'Mid-year review covering tourism recovery in Fiji, reconstruction progress in Vanuatu post-cyclone, and remittance trends for Samoa and Tonga in H1 2025.',
     url: 'https://www.adb.org/publications/pacific-economic-monitor', pages: 48,
   },
+  {
+    id: 'adb-blogs',
+    type: 'Blog', typeBg: '#007DB7', coverBg: '#00256C',
+    title: 'ADB Blogs',
+    subtitle: 'Ideas, analysis, and perspectives from ADB economists and specialists',
+    date: 'Ongoing', series: 'ADB Blogs',
+    abstract: 'Expert commentary and analysis on development economics, climate change, infrastructure, and poverty reduction across Asia and the Pacific. Updated weekly.',
+    url: 'https://blogs.adb.org/', pages: 0,
+  },
+  {
+    id: 'development-asia',
+    type: 'Blog', typeBg: '#00A5D2', coverBg: '#062030',
+    title: 'Development Asia',
+    subtitle: 'Stories, data, and multimedia on development across Asia and the Pacific',
+    date: 'Ongoing', series: 'Development Asia',
+    abstract: 'ADB\'s flagship digital magazine featuring long-form analysis, data stories, and policy insights on the economic and social challenges facing Asia-Pacific developing countries.',
+    url: 'https://development.asia/', pages: 0,
+  },
 ]
 
 type DotEntry   = { cx: number; cy: number; lat: number; lng: number; color: string; label: string; name: string; value: string; detail: string; status: string; flag?: string; code?: string }
@@ -694,6 +738,7 @@ function PacificMap({ dots }: { dots: DotEntry[] }) {
 // ── publications view ──────────────────────────────────────────────────────
 function PublicationsView() {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
   const [canLeft,  setCanLeft]  = useState(false)
   const [canRight, setCanRight] = useState(true)
 
@@ -769,7 +814,7 @@ function PublicationsView() {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              flexShrink: 0, width: 252,
+              flexShrink: 0, width: isMobile ? 220 : 252,
               background: 'var(--th-card)',
               border: '1px solid var(--th-border)',
               borderRadius: 6, overflow: 'hidden',
@@ -874,6 +919,13 @@ export default function ERDIPage() {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
   const [isDark, setIsDark] = useState(true)
   const [expandedReasons, setExpandedReasons] = useState<Set<string>>(new Set())
+  const [selectedCountry, setSelectedCountry] = useState<string>('PNG')
+  const [reportTemplate, setReportTemplate] = useState<'brief' | 'monitor' | 'situation'>('brief')
+  const [reportYearFrom, setReportYearFrom] = useState(2019)
+  const [reportYearTo, setReportYearTo] = useState(2024)
+  const [reportOutput, setReportOutput] = useState('')
+  const [reportOpen, setReportOpen] = useState(false)
+  const [briefPickerOpen, setBriefPickerOpen] = useState(false)
   const [briefingFilter, setBriefingFilter] = useState<string>('All')
   const [briefingPage, setBriefingPage] = useState(0)
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom?: number } | undefined>()
@@ -881,7 +933,9 @@ export default function ERDIPage() {
   const [aiAnswer, setAiAnswer] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiQuestion, setAiQuestion] = useState('')
+  const isMobile = useIsMobile()
   const th = isDark ? DARK : LIGHT
+
 
   // Auth guard — redirect to login if not authenticated
   useEffect(() => {
@@ -936,6 +990,109 @@ export default function ERDIPage() {
 
   const allIndData = useMultiKidb(PACIFIC)
 
+  function generateReport(forCountry?: string) {
+    const country = forCountry ?? selectedCountry
+    const ecoName = ECONOMIES[country] ?? country
+    const gdpObs  = allIndData['GDP_GROWTH']?.obs  ?? []
+    const cpiObs  = allIndData['CPI']?.obs          ?? []
+    const debtObs = allIndData['DEBT_GDP']?.obs     ?? []
+    const remObs  = allIndData['REMITTANCES']?.obs  ?? []
+    const g  = latest(gdpObs,  country)
+    const c  = latest(cpiObs,  country)
+    const d  = latest(debtObs, country)
+    const r  = latest(remObs,  country)
+    const gdpReasons  = getPacificReasons('GDP_GROWTH',  country)
+    const cpiReasons  = getPacificReasons('CPI',         country)
+    const debtReasons = getPacificReasons('DEBT_GDP',    country)
+    const remReasons  = getPacificReasons('REMITTANCES', country)
+    const dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+
+    if (reportTemplate === 'brief') {
+      setReportOutput(`ERDI COUNTRY ECONOMIC BRIEF — ${ecoName.toUpperCase()}
+Period: ${reportYearFrom}–${reportYearTo}  |  ADB Pacific Department  |  ${dateStr}
+${'─'.repeat(64)}
+
+HEADLINE INDICATORS
+  Real GDP Growth       ${g?.value?.toFixed(1) ?? '—'}%   (${g?.period ?? '—'})
+  CPI Inflation         ${c?.value?.toFixed(1) ?? '—'}%   (${c?.period ?? '—'})
+  Government Debt/GDP   ${d?.value?.toFixed(1) ?? '—'}%   (${d?.period ?? '—'})
+  Remittances           USD ${r?.value != null ? r.value > 1000 ? `${(r.value/1000).toFixed(1)}bn` : `${r.value.toFixed(0)}mn` : '—'}  (${r?.period ?? '—'})
+
+ASSESSMENT
+Growth is classified as ${indicatorColor('GDP_GROWTH', g?.value ?? null).status.toUpperCase()}.
+${g?.value != null && g.value >= 4 ? `${ecoName} is expanding above the Pacific 4% threshold.` : g?.value != null && g.value >= 0 ? `Growth is positive but below the regional 4% benchmark.` : `The economy is in contraction — urgent attention required.`}
+
+KEY RISK FLAGS
+${d?.value != null && d.value > 70 ? `  ● HIGH   Government debt ${d.value.toFixed(1)}% of GDP — fiscal sustainability concern.` : d?.value != null && d.value > 50 ? `  ● WATCH  Government debt ${d.value.toFixed(1)}% of GDP — monitor trajectory.` : `  ● LOW    Government debt within manageable range.`}
+${c?.value != null && c.value > 6 ? `  ● HIGH   CPI inflation ${c.value.toFixed(1)}% — eroding household purchasing power.` : c?.value != null && c.value > 3 ? `  ● WATCH  CPI inflation ${c.value.toFixed(1)}% — elevated but not critical.` : `  ● LOW    CPI inflation within the 0–3% stable band.`}
+
+SOURCE: ADB Data (KIDB SDMX API) · Generated via ERDI Intelligence Hub`)
+    } else if (reportTemplate === 'monitor') {
+      setReportOutput(`PACIFIC ECONOMIC MONITOR ENTRY — ${ecoName.toUpperCase()}
+${reportYearFrom}–${reportYearTo}  |  ADB Pacific Department  |  ${dateStr}
+${'─'.repeat(64)}
+
+GROWTH
+${ecoName} recorded real GDP growth of ${g?.value?.toFixed(1) ?? '—'}% in ${g?.period ?? 'the latest period'}.
+${gdpReasons[0] ?? ''} ${gdpReasons[1] ?? ''}
+
+PRICES
+Consumer price inflation reached ${c?.value?.toFixed(1) ?? '—'}% in ${c?.period ?? 'the latest period'}.
+${cpiReasons[0] ?? ''} ${cpiReasons[1] ?? ''}
+
+FISCAL POSITION
+Government debt stood at ${d?.value?.toFixed(1) ?? '—'}% of GDP in ${d?.period ?? 'the latest period'}.
+${debtReasons[0] ?? ''} ${debtReasons[1] ?? ''}
+
+EXTERNAL SECTOR — REMITTANCES
+Inflows reached USD ${r?.value != null ? r.value > 1000 ? `${(r.value/1000).toFixed(1)}bn` : `${r.value.toFixed(0)}mn` : '—'} in ${r?.period ?? 'the latest period'}.
+${remReasons[0] ?? ''} ${remReasons[1] ?? ''}
+
+OUTLOOK
+Near-term assessment: ${indicatorColor('GDP_GROWTH', g?.value ?? null).status}. Key risks include commodity
+price volatility, climate-related shocks, and demand shifts in remittance corridors.
+
+SOURCE: ADB Data (KIDB) · Pacific Economic Monitor · ${dateStr}`)
+    } else {
+      setReportOutput(`ADB COUNTRY SITUATION REPORT — ${ecoName.toUpperCase()}
+Period: ${reportYearFrom}–${reportYearTo}  |  INTERNAL USE  |  ${dateStr}
+${'─'.repeat(64)}
+
+1. MACROECONOMIC OVERVIEW
+${ecoName} recorded real GDP growth of ${g?.value?.toFixed(1) ?? '—'}% in ${g?.period ?? 'the latest period'},
+${g?.value != null && g.value >= 4 ? 'above' : 'below'} the Pacific DMC average threshold of ~4.0%.
+
+   KEY GROWTH DRIVERS
+${gdpReasons.map((r, i) => `   [${i+1}] ${r}`).join('\n') || '   No specific driver data available.'}
+
+2. PRICES & MONETARY CONDITIONS
+CPI inflation: ${c?.value?.toFixed(1) ?? '—'}%  (${c?.period ?? '—'})  ·  ${indicatorColor('CPI', c?.value ?? null).status}
+
+   INFLATION DRIVERS
+${cpiReasons.map((r, i) => `   [${i+1}] ${r}`).join('\n') || '   No specific CPI data available.'}
+
+3. FISCAL POSITION & DEBT SUSTAINABILITY
+Government debt/GDP: ${d?.value?.toFixed(1) ?? '—'}%  (${d?.period ?? '—'})  ·  ${indicatorColor('DEBT_GDP', d?.value ?? null).status}
+
+   FISCAL DYNAMICS
+${debtReasons.map((r, i) => `   [${i+1}] ${r}`).join('\n') || '   No specific debt data available.'}
+
+4. EXTERNAL SECTOR
+Remittances: USD ${r?.value != null ? r.value > 1000 ? `${(r.value/1000).toFixed(1)}bn` : `${r.value.toFixed(0)}mn` : '—'}  (${r?.period ?? '—'})
+
+   REMITTANCE DYNAMICS
+${remReasons.map((r, i) => `   [${i+1}] ${r}`).join('\n') || '   No specific remittance data available.'}
+
+5. RISK ASSESSMENT & ADB ENGAGEMENT
+Downside risks: global demand slowdown, commodity price volatility,
+climate shocks, deterioration in remittance source markets.
+ADB active portfolio: under review. For enquiries contact Pacific Department.
+
+SOURCE: ADB Data (KIDB SDMX API) · ERDI Intelligence Hub · ${dateStr}
+This report is for internal ADB use only and does not constitute official ADB forecasts.`)
+    }
+  }
+
   if (!authChecked) return null
 
   return (
@@ -957,69 +1114,99 @@ export default function ERDIPage() {
         background: isDark ? 'linear-gradient(180deg, #0f2845 0%, #0d2137 100%)' : 'linear-gradient(180deg, #ffffff 0%, #f4f9ff 100%)',
         borderBottom: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
         boxShadow: isDark ? '0 2px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,125,183,0.08)',
-        padding: '0 24px', display: 'flex', alignItems: 'center', height: 52,
         position: 'sticky', top: 0, zIndex: 10,
       }}>
-        {/* ADB Logo — top left */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          marginRight: 24, paddingRight: 24,
-          borderRight: '1px solid var(--th-border)', flexShrink: 0,
-        }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/adb-logo.svg" alt="Asian Development Bank" style={{ height: 36, width: 'auto', display: 'block' }} />
+        {/* Main nav row */}
+        <div style={{ padding: `0 ${isMobile ? '16px' : '24px'}`, display: 'flex', alignItems: 'center', height: 52 }}>
+          {/* ADB Logo */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            marginRight: isMobile ? 12 : 24, paddingRight: isMobile ? 12 : 24,
+            borderRight: '1px solid var(--th-border)', flexShrink: 0,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/adb-logo.svg" alt="Asian Development Bank" style={{ height: isMobile ? 28 : 36, width: 'auto', display: 'block' }} />
+          </div>
+
+          {/* Product name */}
+          <div style={{ display: 'flex', flexDirection: 'column', marginRight: isMobile ? 0 : 28, flexShrink: 0 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2, letterSpacing: '0.02em', color: 'var(--th-text)' }}>
+              {isMobile ? 'ERDI Hub' : 'ERDI Intelligence Hub'}
+            </span>
+            {!isMobile && (
+              <span style={{ fontSize: 9.5, color: 'var(--th-muted)', fontWeight: 300, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Economic Research &amp; Development Impact</span>
+            )}
+          </div>
+
+          {/* Nav links — desktop only */}
+          {!isMobile && (
+            <div style={{ display: 'flex', flex: 1, alignItems: 'center' }}>
+              {['Home', 'Data Explorer', 'Publications'].map(item => (
+                <button key={item} onClick={() => setActiveNav(item)} style={{
+                  padding: '0 14px', height: 52, fontSize: 12,
+                  fontWeight: activeNav === item ? 500 : 400,
+                  color: activeNav === item ? 'var(--th-text)' : 'var(--th-muted)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  borderBottom: activeNav === item ? `2px solid ${adb.blue}` : '2px solid transparent',
+                  transition: 'color 0.15s, border-color 0.15s',
+                }}>{item}</button>
+              ))}
+            </div>
+          )}
+
+          {/* Mobile spacer */}
+          {isMobile && <div style={{ flex: 1 }} />}
+
+          {/* Right actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
+            <button
+              onClick={() => setIsDark(d => !d)}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{
+                background: 'none', border: '1px solid var(--th-border)',
+                borderRadius: 4, color: 'var(--th-muted)', cursor: 'pointer',
+                width: 30, height: 30, fontSize: 13,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >{isDark ? '☀' : '☾'}</button>
+            {!isMobile && <button style={{ background: 'none', border: 'none', color: 'var(--th-muted)', cursor: 'pointer', fontSize: 15 }}>🔔</button>}
+            {!isMobile && <div style={{ width: 1, height: 20, background: 'var(--th-border)' }} />}
+            <button
+              onClick={logout}
+              title="Sign out"
+              style={{
+                background: 'none', border: '1px solid var(--th-border)',
+                borderRadius: 4, color: 'var(--th-muted)', cursor: 'pointer',
+                padding: '0 10px', height: 30, fontSize: 11, fontWeight: 500,
+                fontFamily: adb.font, display: 'flex', alignItems: 'center', gap: 5,
+                transition: 'color 0.15s, border-color 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E9532B'; (e.currentTarget as HTMLElement).style.borderColor = '#E9532B55' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--th-muted)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--th-border)' }}
+            >
+              <span style={{ fontSize: 12 }}>↩</span>{!isMobile && ' Sign out'}
+            </button>
+          </div>
         </div>
 
-        {/* Product name */}
-        <div style={{ display: 'flex', flexDirection: 'column', marginRight: 28, flexShrink: 0 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2, letterSpacing: '0.02em', color: 'var(--th-text)' }}>ERDI Intelligence Hub</span>
-          <span style={{ fontSize: 9.5, color: 'var(--th-muted)', fontWeight: 300, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Economic Research &amp; Development Impact</span>
-        </div>
-
-        {/* Nav links */}
-        <div style={{ display: 'flex', flex: 1, alignItems: 'center' }}>
-          {['Home', 'Data Explorer', 'Publications'].map(item => (
-            <button key={item} onClick={() => setActiveNav(item)} style={{
-              padding: '0 14px', height: 52, fontSize: 12,
-              fontWeight: activeNav === item ? 500 : 400,
-              color: activeNav === item ? 'var(--th-text)' : 'var(--th-muted)',
-              background: 'none', border: 'none', cursor: 'pointer',
-              borderBottom: activeNav === item ? `2px solid ${adb.blue}` : '2px solid transparent',
-              transition: 'color 0.15s, border-color 0.15s',
-            }}>{item}</button>
-          ))}
-        </div>
-
-        {/* Right actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button
-            onClick={() => setIsDark(d => !d)}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            style={{
-              background: 'none', border: '1px solid var(--th-border)',
-              borderRadius: 4, color: 'var(--th-muted)', cursor: 'pointer',
-              width: 30, height: 30, fontSize: 13,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >{isDark ? '☀' : '☾'}</button>
-          <button style={{ background: 'none', border: 'none', color: 'var(--th-muted)', cursor: 'pointer', fontSize: 15 }}>🔔</button>
-          <div style={{ width: 1, height: 20, background: 'var(--th-border)' }} />
-          <button
-            onClick={logout}
-            title="Sign out"
-            style={{
-              background: 'none', border: '1px solid var(--th-border)',
-              borderRadius: 4, color: 'var(--th-muted)', cursor: 'pointer',
-              padding: '0 10px', height: 30, fontSize: 11, fontWeight: 500,
-              fontFamily: adb.font, display: 'flex', alignItems: 'center', gap: 5,
-              transition: 'color 0.15s, border-color 0.15s',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E9532B'; (e.currentTarget as HTMLElement).style.borderColor = '#E9532B55' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--th-muted)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--th-border)' }}
-          >
-            <span style={{ fontSize: 12 }}>↩</span> Sign out
-          </button>
-        </div>
+        {/* Mobile nav links row */}
+        {isMobile && (
+          <div style={{
+            display: 'flex', borderTop: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+            overflowX: 'auto', scrollbarWidth: 'none' as React.CSSProperties['scrollbarWidth'],
+          }}>
+            {(['Home', 'Data Explorer', 'Publications'] as const).map(item => (
+              <button key={item} onClick={() => setActiveNav(item)} style={{
+                padding: '0 14px', height: 38, fontSize: 12, flexShrink: 0,
+                fontWeight: activeNav === item ? 500 : 400,
+                color: activeNav === item ? 'var(--th-text)' : 'var(--th-muted)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                borderBottom: activeNav === item ? `2px solid ${adb.blue}` : '2px solid transparent',
+                whiteSpace: 'nowrap', transition: 'color 0.15s, border-color 0.15s',
+              }}>{item}</button>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* ── Main ── */}
@@ -1044,10 +1231,10 @@ export default function ERDIPage() {
           borderRadius: 10, borderLeft: `4px solid ${isDark ? '#007DB7' : '#007DB7'}`,
           boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,125,183,0.1)',
         }}>
-          <h1 style={{ fontSize: 26, fontWeight: 300, margin: 0, lineHeight: 1.2, color: 'var(--th-text)' }}>Good morning, Cara.</h1>
+          <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 300, margin: 0, lineHeight: 1.2, color: 'var(--th-text)' }}>Good morning, Cara.</h1>
           <div style={{ fontSize: 12, color: 'var(--th-muted)', fontWeight: 300, marginTop: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#8DC63F' }} />
-            Senior Economist · ERDI · Pacific Islands Portfolio
+            Associate Economics Officer · Pacific Department
           </div>
         </div>
 
@@ -1078,7 +1265,7 @@ export default function ERDIPage() {
                 type="submit"
                 disabled={aiLoading}
                 style={{
-                  padding: '0 24px', background: homeSearch.trim() ? adb.blue : 'var(--th-border)',
+                  padding: `0 ${isMobile ? '14px' : '24px'}`, background: homeSearch.trim() ? adb.blue : 'var(--th-border)',
                   border: 'none', color: homeSearch.trim() ? adb.white : 'var(--th-muted)',
                   fontSize: 13, fontWeight: 600, cursor: homeSearch.trim() ? 'pointer' : 'default',
                   flexShrink: 0, transition: 'background 0.2s, color 0.2s',
@@ -1091,16 +1278,69 @@ export default function ERDIPage() {
             </div>
           </form>
 
-          {/* Suggested tags */}
-          <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: 'var(--th-muted)' }}>Suggested:</span>
-            {['GDP growth for Pacific SIDS', 'Fiji inflation trends', 'Remittance flows — Tonga & Samoa', 'Debt levels across Pacific islands'].map(s => (
-              <button key={s} onClick={() => { setPendingQuery(s); setActiveNav('Data Explorer') }} style={{
-                fontSize: 11, color: 'var(--th-muted)', padding: '3px 10px', borderRadius: 12,
-                border: '1px solid #1e3f5c', background: 'none', cursor: 'pointer',
-              }}>{s}</button>
-            ))}
+          {/* Suggested tags row + briefing pill — pill anchored outside scroll area */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            {/* Scrollable suggested prompts */}
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', overflowX: 'auto', flex: 1, minWidth: 0, scrollbarWidth: 'none' as React.CSSProperties['scrollbarWidth'] }}>
+              <span style={{ fontSize: 11, color: 'var(--th-muted)', flexShrink: 0 }}>Suggested:</span>
+              {([
+                { label: 'GDP growth · Pacific SIDS',     query: 'GDP growth for Pacific SIDS' },
+                { label: 'Fiji inflation',                 query: 'Fiji inflation trends' },
+                { label: 'Remittances · Tonga & Samoa',   query: 'Remittance flows for Tonga and Samoa' },
+                { label: 'Pacific debt levels',            query: 'Debt levels across Pacific islands' },
+              ]).map(({ label, query }) => (
+                <button key={label} onClick={() => { setPendingQuery(query); setActiveNav('Data Explorer') }} style={{
+                  fontSize: 11, color: 'var(--th-muted)', padding: '3px 10px', borderRadius: 12, flexShrink: 0,
+                  border: '1px solid #1e3f5c', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                }}>{label}</button>
+              ))}
+            </div>
+            {/* Country Briefing Note — outside scroll, always fully visible */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                onClick={() => setBriefPickerOpen(o => !o)}
+                style={{
+                  fontSize: 11, color: adb.green, padding: '4px 12px', borderRadius: 12, whiteSpace: 'nowrap',
+                  border: `1px solid ${adb.green}55`, background: briefPickerOpen ? `${adb.green}1a` : `${adb.green}0f`,
+                  cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5,
+                }}
+              >✦ Country Briefing Note ▾</button>
+
+              {briefPickerOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 300,
+                  background: 'var(--th-card)', border: '1px solid var(--th-border)',
+                  borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+                  padding: '8px', minWidth: 210,
+                }}>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--th-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6, padding: '0 4px' }}>
+                    Select country
+                  </div>
+                  {PACIFIC.map(code => (
+                    <button
+                      key={code}
+                      onClick={() => {
+                        setSelectedCountry(code)
+                        setBriefPickerOpen(false)
+                        setHomeSearch(`Country economic briefing note for ${ECONOMIES[code] ?? code}`)
+                      }}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+                        padding: '7px 10px', background: 'none', border: 'none', borderRadius: 5,
+                        cursor: 'pointer', textAlign: 'left', fontFamily: adb.font,
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--th-chart)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      <img src={flagUrl(code, 40)} alt="" style={{ width: 22, height: 15, objectFit: 'cover', borderRadius: 2, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }} />
+                      <span style={{ fontSize: 12, color: 'var(--th-text)' }}>{ECONOMIES[code] ?? code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+
 
           {/* AI answer card */}
           {(aiLoading || aiAnswer) && (
@@ -1147,7 +1387,7 @@ export default function ERDIPage() {
               {/* Footer actions */}
               {aiAnswer && (
                 <div style={{
-                  display: 'flex', gap: 8, padding: '10px 14px',
+                  display: 'flex', gap: 8, padding: '10px 14px', flexWrap: 'wrap',
                   borderTop: '1px solid var(--th-border)', background: 'var(--th-chart)',
                 }}>
                   <button
@@ -1175,7 +1415,7 @@ export default function ERDIPage() {
         {/* ── Pacific Portfolio Map + Tracked Indicators ── */}
         <section style={{ marginBottom: 28 }}>
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: 14, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1185,7 +1425,7 @@ export default function ERDIPage() {
                 {allIndData[activeInd]?.source && <SourceBadge source={allIndData[activeInd].source} />}
               </div>
               <div style={{ fontSize: 11, color: 'var(--th-muted)', marginTop: 2 }}>
-                KIDB · ADO indicators · Click a country to explore · Hover for details
+                ADB Data · ADO indicators · Click a country to explore · Hover for details
               </div>
             </div>
             {/* + Track Indicator button */}
@@ -1210,11 +1450,11 @@ export default function ERDIPage() {
                     position: 'absolute', right: 0, top: '100%', marginTop: 6, zIndex: 1000,
                     background: 'var(--th-card)', border: '1px solid var(--th-border)',
                     borderRadius: 6, boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
-                    minWidth: 280, maxHeight: 340, overflowY: 'auto',
+                    minWidth: isMobile ? 220 : 280, maxWidth: isMobile ? 'calc(100vw - 32px)' : undefined, maxHeight: 340, overflowY: 'auto',
                   }}
                 >
                   <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--th-border)', fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', color: 'var(--th-muted)', textTransform: 'uppercase' }}>
-                    KIDB · ADO Indicators
+                    ADB Data · ADO Indicators
                   </div>
                   {(Object.entries(INDICATORS) as [IndKey, typeof INDICATORS[IndKey]][]).map(([key, ind]) => {
                     const isTracked = trackedInds.includes(key)
@@ -1312,7 +1552,7 @@ export default function ERDIPage() {
             >+ Add</button>
           </div>
 
-          {/* Map card — no overflow:hidden so expanded Why? panel can overlay the map */}
+          {/* Map card */}
           <div style={{
             background: 'var(--th-card)',
             border: isDark ? '1px solid #1e4060' : '1px solid #b8cfdf',
@@ -1333,12 +1573,12 @@ export default function ERDIPage() {
                   <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--th-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     {INDICATORS[activeInd].label}
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--th-muted)', fontFamily: 'monospace', marginTop: 2 }}>
-                    {INDICATORS[activeInd].flow} · {INDICATORS[activeInd].unit}
+                  <div style={{ fontSize: 9, color: 'var(--th-muted)', marginTop: 2 }}>
+                    {INDICATORS[activeInd].unit}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 9, color: 'var(--th-muted)' }}>Click a card to focus on map</span>
+                  {!isMobile && <span style={{ fontSize: 9, color: 'var(--th-muted)' }}>Click a card to focus on map</span>}
                   <button
                     onClick={() => countryCarouselRef.current?.scrollBy({ left: -510, behavior: 'smooth' })}
                     style={{ width: 26, height: 26, borderRadius: 4, border: '1px solid var(--th-border)', background: 'var(--th-card)', color: 'var(--th-text)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -1350,8 +1590,7 @@ export default function ERDIPage() {
                 </div>
               </div>
 
-              {/* Scrollable card strip — sorted high risk → low risk left to right */}
-              {/* Expanded Why? panel is rendered OUTSIDE this container so overflow-x:auto can't clip it */}
+              {/* Scrollable card strip — sorted high risk → low risk */}
               <div
                 ref={countryCarouselRef}
                 style={{ display: 'flex', gap: 10, overflowX: 'auto', alignItems: 'flex-start', scrollBehavior: 'smooth', paddingBottom: 4, scrollbarWidth: 'none' }}
@@ -1369,7 +1608,6 @@ export default function ERDIPage() {
                   const o = latest(obs, code)
                   const val = o?.value ?? null
                   const { color, status } = indicatorColor(activeInd, val)
-                  const reasons = getPacificReasons(activeInd, code)
                   const reasonKey = `${activeInd}:${code}`
                   const isExpanded = expandedReasons.has(reasonKey)
                   return (
@@ -1385,6 +1623,9 @@ export default function ERDIPage() {
                         onClick={() => {
                           const dot = BASE_DOTS[code]
                           if (dot) setMapFlyTarget({ lat: dot.lat, lng: dot.lng, zoom: 7 })
+                          setSelectedCountry(code)
+                          setReportOutput('')
+                          setExpandedReasons(new Set([`${activeInd}:${code}`]))
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -1403,85 +1644,60 @@ export default function ERDIPage() {
                           <span style={{ fontSize: 9, color: 'var(--th-muted)' }}>{o?.period ?? '—'}</span>
                         </div>
                       </div>
-                      {/* Why? toggle button only — expanded content renders below as overlay */}
-                      {reasons.length > 0 && (
-                        <button
-                          onClick={e => {
-                            e.stopPropagation()
-                            setExpandedReasons(prev => {
-                              const next = new Set(prev)
-                              next.has(reasonKey) ? next.delete(reasonKey) : next.add(reasonKey)
-                              return next
-                            })
-                          }}
-                          style={{
-                            width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '5px 10px', background: `${color}11`,
-                            borderTop: `1px solid ${color}33`,
-                            borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <span style={{ fontSize: 8, fontWeight: 600, color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Why?</span>
-                          <span style={{ fontSize: 10, color, display: 'inline-block', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
-                        </button>
-                      )}
                     </div>
                   )
                 })}
               </div>
 
-              {/* Expanded Why? panel — absolutely positioned, overlays map below */}
-              {(() => {
-                const expandedCode = PACIFIC.find(code => expandedReasons.has(`${activeInd}:${code}`))
-                if (!expandedCode) return null
-                const obs = allIndData[activeInd]?.obs ?? []
-                const val = latest(obs, expandedCode)?.value ?? null
-                const { color } = indicatorColor(activeInd, val)
-                const reasons = getPacificReasons(activeInd, expandedCode)
-                const exploreQuery = `${INDICATORS[activeInd].label} for ${ECONOMIES[expandedCode]} since 2019`
-                return (
-                  <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                    background: 'var(--th-card)', borderTop: `2px solid ${color}`,
-                    borderBottom: `1px solid ${color}44`,
-                    padding: '12px 16px 14px',
-                    boxShadow: '0 6px 24px rgba(0,0,0,0.45)',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {FLAG_ISO[expandedCode] && <img src={flagUrl(expandedCode, 20)} alt="" style={{ width: 20, height: 15, objectFit: 'cover', borderRadius: 2 }} />}
-                        {ECONOMIES[expandedCode]} — Why has this changed?
-                      </span>
-                      <button
-                        onClick={() => setExpandedReasons(prev => { const next = new Set(prev); next.delete(`${activeInd}:${expandedCode}`); return next })}
-                        style={{ fontSize: 16, color: 'var(--th-muted)', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}
-                      >×</button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '6px 24px' }}>
-                      {reasons.map((r, ri) => (
-                        <div key={ri} style={{ display: 'flex', gap: 8 }}>
-                          <span style={{ color, fontSize: 11, flexShrink: 0, marginTop: 1 }}>›</span>
-                          <span style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.6 }}>{r}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); setPendingQuery(exploreQuery); setActiveNav('Data Explorer') }}
-                      style={{
-                        marginTop: 10, fontSize: 10, color: adb.blueLight,
-                        background: `${adb.blue}18`, border: `1px solid ${adb.blue}44`,
-                        borderRadius: 4, padding: '5px 14px', cursor: 'pointer', fontWeight: 500,
-                      }}
-                    >Explore in Data Explorer →</button>
-                  </div>
-                )
-              })()}
-
               <div style={{ marginTop: 8, fontSize: 9, color: 'var(--th-muted)' }}>
-                Source: KIDB SDMX API · adb.org/kidb · ADO 2026
+                Source: ADB Data · adb.org · ADO 2026
               </div>
             </div>
+
+            {/* Expanded Why? panel — in normal flow, pushes map down */}
+            {(() => {
+              const expandedCode = PACIFIC.find(code => expandedReasons.has(`${activeInd}:${code}`))
+              if (!expandedCode) return null
+              const obs = allIndData[activeInd]?.obs ?? []
+              const val = latest(obs, expandedCode)?.value ?? null
+              const { color } = indicatorColor(activeInd, val)
+              const reasons = getPacificReasons(activeInd, expandedCode)
+              const exploreQuery = `${INDICATORS[activeInd].label} for ${ECONOMIES[expandedCode]} since 2019`
+              return (
+                <div style={{
+                  background: 'var(--th-card)', borderTop: `2px solid ${color}`,
+                  borderBottom: `1px solid ${color}33`,
+                  padding: '12px 16px 14px',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {FLAG_ISO[expandedCode] && <img src={flagUrl(expandedCode, 20)} alt="" style={{ width: 20, height: 15, objectFit: 'cover', borderRadius: 2 }} />}
+                      {ECONOMIES[expandedCode]} — Why has this changed?
+                    </span>
+                    <button
+                      onClick={() => setExpandedReasons(new Set())}
+                      style={{ fontSize: 16, color: 'var(--th-muted)', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}
+                    >×</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '6px 24px' }}>
+                    {reasons.map((r, ri) => (
+                      <div key={ri} style={{ display: 'flex', gap: 8 }}>
+                        <span style={{ color, fontSize: 11, flexShrink: 0, marginTop: 1 }}>›</span>
+                        <span style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.6 }}>{r}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={e => { e.stopPropagation(); setPendingQuery(exploreQuery); setActiveNav('Data Explorer') }}
+                    style={{
+                      marginTop: 10, fontSize: 10, color: adb.blueLight,
+                      background: `${adb.blue}18`, border: `1px solid ${adb.blue}44`,
+                      borderRadius: 4, padding: '5px 14px', cursor: 'pointer', fontWeight: 500,
+                    }}
+                  >Explore in Data Explorer →</button>
+                </div>
+              )
+            })()}
 
             {/* Map — full width */}
             <PacificMapLeaflet
@@ -1490,18 +1706,18 @@ export default function ERDIPage() {
               flyTarget={mapFlyTarget}
             />
 
-            {/* Legend */}
+            {/* Legend — shows threshold explanation for the active indicator */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderTop: '1px solid var(--th-border)', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', gap: 10, flex: 1, flexWrap: 'wrap' }}>
-                {[
-                  { dot: adb.red,   label: 'High risk / Alert' },
-                  { dot: adb.amber, label: 'Watch / Moderate' },
-                  { dot: adb.green, label: 'Strong / Stable' },
-                  { dot: adb.teal,  label: 'Inflows / Monitor' },
-                ].map(l => (
-                  <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: l.dot, display: 'inline-block' }} />
-                    <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{l.label}</span>
+              <div style={{ display: 'flex', gap: 12, flex: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                {(IND_THRESHOLDS[activeInd] ?? [
+                  { color: adb.red,   label: 'Alert',    range: '' },
+                  { color: adb.amber, label: 'Moderate', range: '' },
+                  { color: adb.green, label: 'Stable',   range: '' },
+                ]).map(l => (
+                  <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: l.color, flexShrink: 0, display: 'inline-block' }} />
+                    <span style={{ fontSize: 10, color: 'var(--th-text)', fontWeight: 500 }}>{l.label}</span>
+                    {l.range && <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>({l.range})</span>}
                   </div>
                 ))}
               </div>
@@ -1518,10 +1734,12 @@ export default function ERDIPage() {
           </div>
         </section>
 
+
+
         {/* ── Briefing ── */}
         <section style={{ paddingBottom: 40 }}>
           {/* Header row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: 12, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0 }}>
             <div>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ display: 'inline-block', width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #FDB915 0%, #E9532B 100%)' }} />
@@ -1555,12 +1773,13 @@ export default function ERDIPage() {
             const filtered = briefingFilter === 'All'
               ? ARTICLES
               : ARTICLES.filter(a => a.type.toLowerCase() === briefingFilter.toLowerCase())
-            const totalPages = Math.ceil(filtered.length / 3)
+            const perPage = isMobile ? 1 : 3
+            const totalPages = Math.ceil(filtered.length / perPage)
             const page = Math.min(briefingPage, Math.max(0, totalPages - 1))
-            const visible = filtered.slice(page * 3, page * 3 + 3)
+            const visible = filtered.slice(page * perPage, page * perPage + perPage)
             return (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, alignItems: 'stretch' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10, alignItems: 'stretch' }}>
                   {visible.map(article => (
                     <div
                       key={article.id}
@@ -1595,8 +1814,8 @@ export default function ERDIPage() {
                       </div>
                     </div>
                   ))}
-                  {/* Placeholder cards to keep 3-column grid stable */}
-                  {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
+                  {/* Placeholder cards to keep 3-column grid stable — desktop only */}
+                  {!isMobile && visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
                     <div key={`ph-${i}`} style={{ background: 'var(--th-card)', border: '1px dashed var(--th-border)', borderRadius: 6, opacity: 0.25, minHeight: 140 }} />
                   ))}
                 </div>
@@ -1647,7 +1866,7 @@ export default function ERDIPage() {
               position: 'fixed', inset: 0, zIndex: 100,
               background: 'rgba(7,18,30,0.88)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '20px',
+              padding: isMobile ? '10px' : '20px',
             }}
             onClick={() => setSelectedArticle(null)}
           >
@@ -1657,9 +1876,9 @@ export default function ERDIPage() {
                 border: '1px solid var(--th-border)',
                 borderTop: `3px solid ${selectedArticle.typeBg}`,
                 borderRadius: 8,
-                maxWidth: 680, width: '100%', maxHeight: '85vh',
+                maxWidth: 680, width: '100%', maxHeight: '90vh',
                 overflowY: 'auto',
-                padding: '28px 32px',
+                padding: isMobile ? '16px' : '28px 32px',
                 display: 'flex', flexDirection: 'column', gap: 16,
                 fontFamily: adb.font,
               }}
@@ -1740,7 +1959,8 @@ export default function ERDIPage() {
               {/* Explore data CTA */}
               <div style={{
                 background: 'var(--th-chart)', borderRadius: 6, padding: '14px 16px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
+                display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center',
+                gap: 12, flexDirection: isMobile ? 'column' : 'row',
               }}>
                 <div>
                   <div style={{ fontSize: 11, color: adb.muted, marginBottom: 3 }}>Explore the underlying data in ERDI Data Explorer</div>

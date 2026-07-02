@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useIsMobile } from '../_use-mobile'
 
 const FONT = '"Ideal Sans","Helvetica Neue",Arial,sans-serif'
 
 export default function LoginPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPw,   setShowPw]   = useState(false)
@@ -43,13 +45,15 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh', background: '#081929',
-      display: 'flex', alignItems: 'stretch',
+      display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch',
       fontFamily: FONT,
     }}>
       {/* ── Left brand panel ─────────────────────────────────────────────── */}
       <div style={{
-        flex: '0 0 420px', display: 'flex', flexDirection: 'column',
-        justifyContent: 'space-between', padding: '48px 44px',
+        flex: isMobile ? '0 0 auto' : '0 0 420px',
+        display: 'flex', flexDirection: 'column',
+        justifyContent: isMobile ? 'flex-start' : 'space-between',
+        padding: isMobile ? '20px 24px 18px' : '48px 44px',
         background: 'linear-gradient(160deg, #00256C 0%, #003a8c 50%, #00256C 100%)',
         position: 'relative', overflow: 'hidden',
       }}>
@@ -67,41 +71,47 @@ export default function LoginPage() {
         </svg>
 
         {/* Logo */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: isMobile ? 'center' : 'flex-start', flexDirection: isMobile ? 'row' : 'column', gap: isMobile ? 14 : 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/adb-logo.svg" alt="Asian Development Bank"
-            style={{ height: 52, marginBottom: 32 }}/>
-          <div style={{ width: 36, height: 3, background: '#007DB7', marginBottom: 20, borderRadius: 2 }} />
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 300, color: '#fff', lineHeight: 1.3 }}>
-            ERDI<br/>Intelligence Hub
-          </h1>
-          <p style={{ margin: '12px 0 0', fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}>
-            Economic Research &amp; Development Impact
-          </p>
+            style={{ height: isMobile ? 32 : 52, marginBottom: isMobile ? 0 : 32, flexShrink: 0 }}/>
+          {!isMobile && <div style={{ width: 36, height: 3, background: '#007DB7', marginBottom: 20, borderRadius: 2 }} />}
+          <div>
+            <h1 style={{ margin: 0, fontSize: isMobile ? 16 : 26, fontWeight: 300, color: '#fff', lineHeight: 1.3 }}>
+              {isMobile ? 'ERDI Intelligence Hub' : <>ERDI<br/>Intelligence Hub</>}
+            </h1>
+            {!isMobile && (
+              <p style={{ margin: '12px 0 0', fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}>
+                Economic Research &amp; Development Impact
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Stats row */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {[
-            { label: 'Economies tracked',    value: '49' },
-            { label: 'KIDB indicators',      value: '200+' },
-            { label: 'Years of data',        value: '2000–2024' },
-          ].map(s => (
-            <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: 12 }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em' }}>{s.label}</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#68C5EA' }}>{s.value}</span>
-            </div>
-          ))}
-          <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.35)', lineHeight: 1.7 }}>
-            Restricted access. For authorised ADB personnel<br/>and approved partner institutions only.
-          </p>
-        </div>
+        {/* Stats row — hidden on mobile */}
+        {!isMobile && (
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {[
+              { label: 'Economies tracked',    value: '49' },
+              { label: 'ADB indicators',        value: '200+' },
+              { label: 'Years of data',        value: '2000–2024' },
+            ].map(s => (
+              <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: 12 }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em' }}>{s.label}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#68C5EA' }}>{s.value}</span>
+              </div>
+            ))}
+            <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.35)', lineHeight: 1.7 }}>
+              Restricted access. For authorised ADB personnel<br/>and approved partner institutions only.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Right login panel ─────────────────────────────────────────────── */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '40px 24px',
+        padding: isMobile ? '28px 20px 40px' : '40px 24px',
         background: '#0d1e30',
       }}>
         <div style={{ width: '100%', maxWidth: 360 }}>

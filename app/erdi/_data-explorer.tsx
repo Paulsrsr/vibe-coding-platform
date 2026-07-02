@@ -1,10 +1,12 @@
 'use client'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import type { ChartConfigType } from '@/app/api/kidb/explore/route'
 // ECONOMIES imported for type safety but ECO_LABELS defined locally for display
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ECONOMIES } from '@/app/api/kidb/route'
 import { D3LineChart, D3BarChart, ChartLegend, type ChartData, type KidbObs } from './_d3-charts'
+import { useIsMobile } from './_use-mobile'
+import { ScenarioPanel, SCENARIOS, computeProjections } from './_scenario-panel'
 
 const adb = {
   navy: 'var(--th-bg)', navyCard: 'var(--th-card)', navyBorder: 'var(--th-border)',
@@ -198,7 +200,7 @@ function generateInsight(config: ChartConfigType, chartData: ChartData): Insight
 
   // Citations
   const citations = [
-    `ADB Key Indicators Database (KIDB) · Indicator: ${indicator} · Dataflow: ${config.flow} · kidb.adb.org`,
+    `ADB Data · Indicator: ${indicator} · Dataflow: ${config.flow} · adb.org`,
     `ADB Asian Development Outlook ${endPeriod} · adb.org/publications/series/asian-development-outlook`,
   ]
 
@@ -210,6 +212,7 @@ function first_period(s: { pts: { period: string }[] }) { return s.pts[0]?.perio
 // ── Insight panel ─────────────────────────────────────────────────────────────
 function InsightPanel({ config, chartData }: { config: ChartConfigType; chartData: ChartData }) {
   const [expanded, setExpanded] = useState(true)
+  const isMobile = useIsMobile()
   const { lead, paragraphs, bullets, citations } = generateInsight(config, chartData)
 
   return (
@@ -232,7 +235,7 @@ function InsightPanel({ config, chartData }: { config: ChartConfigType; chartDat
             fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
             color: adb.blue, background: `${adb.blue}18`, padding: '2px 8px', borderRadius: 2,
           }}>✦ Analysis</span>
-          <span style={{ fontSize: 11, color: adb.muted }}>Data-driven insights · KIDB</span>
+          <span style={{ fontSize: 11, color: adb.muted }}>Data-driven insights · ADB Data</span>
         </div>
         <span style={{ fontSize: 11, color: adb.muted }}>{expanded ? '▲' : '▼'}</span>
       </button>
@@ -263,7 +266,7 @@ function InsightPanel({ config, chartData }: { config: ChartConfigType; chartDat
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {bullets.map((b, i) => (
                   <div key={i} style={{ display: 'flex', gap: 10, fontSize: 11, alignItems: 'baseline' }}>
-                    <span style={{ color: adb.muted, flexShrink: 0, minWidth: 140 }}>{b.label}</span>
+                    <span style={{ color: adb.muted, flexShrink: 0, minWidth: isMobile ? 90 : 140 }}>{b.label}</span>
                     <span style={{ color: 'var(--th-text)', fontWeight: 500 }}>{b.value}</span>
                   </div>
                 ))}
@@ -298,10 +301,11 @@ function buildChartData(raw: KidbObs[]): ChartData {
 
 // ── Query metadata panel ───────────────────────────────────────────────────
 function QueryMeta({ config }: { config: ChartConfigType }) {
+  const isMobile = useIsMobile()
   const endpoint = `/api/v3/sdmx/data/${config.flow}/A.${config.indicator}.${config.economies.join('+')}?startPeriod=${config.startPeriod}&endPeriod=${config.endPeriod}`
   return (
     <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--th-chart)', borderRadius: 4, borderLeft: `2px solid ${adb.blue}` }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 8 }}>
         {[
           { label: 'Indicator', value: config.indicator },
           { label: 'Dataflow',  value: config.flow },
@@ -315,7 +319,7 @@ function QueryMeta({ config }: { config: ChartConfigType }) {
         ))}
       </div>
       <div style={{ fontSize: 10, color: '#4a6a88', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-        kidb.adb.org{endpoint}
+        adb.org{endpoint}
       </div>
     </div>
   )
@@ -338,6 +342,7 @@ function detectIntent(q: string): 'explain' | 'chart' {
 
 // ── Main DataExplorer ──────────────────────────────────────────────────────
 export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
+  const isMobile = useIsMobile()
   const [query, setQuery]           = useState(initialQuery)
   const [loading, setLoading]       = useState(false)
   const [aiError, setAiError]       = useState<string | null>(null)
@@ -351,6 +356,16 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
   const [explainAnswer, setExplainAnswer] = useState<string>('')
   const [explainLoading, setExplainLoading] = useState(false)
   const [explainCitations, setExplainCitations] = useState<string[]>([])
+  const [scenarioId, setScenarioId]         = useState<string | null>(null)
+  const [scenarioSeverity, setScenarioSeverity] = useState(50)
+
+  const activeScenario = SCENARIOS.find(s => s.id === scenarioId) ?? null
+  const projections = useMemo(
+    () => activeScenario && config && chartData
+      ? computeProjections(chartData, config.indicator, config.economies, activeScenario, scenarioSeverity)
+      : [],
+    [activeScenario, config, chartData, scenarioSeverity],
+  )
 
   function exportAsPng() {
     const container = chartRef.current
@@ -409,7 +424,7 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
     setChartData(null)
     setExplainAnswer('')
     setExplainCitations([])
-
+    setScenarioId(null)
     if (intent === 'explain') {
       setExplainLoading(true)
       try {
@@ -435,7 +450,7 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
           setExplainAnswer(data.answer ?? '')
         }
         setExplainCitations([
-          'ADB Key Indicators Database (KIDB) · kidb.adb.org',
+          'ADB Data · adb.org',
           'ADB Asian Development Outlook · adb.org/publications/series/asian-development-outlook',
           'ADB Pacific Economic Monitor · adb.org/publications/pacific-economic-monitor',
         ])
@@ -525,7 +540,7 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
             type="submit"
             disabled={loading || !query.trim()}
             style={{
-              padding: '0 22px', background: loading ? '#1a3550' : adb.blue,
+              padding: `0 ${isMobile ? '14px' : '22px'}`, background: loading ? '#1a3550' : adb.blue,
               border: 'none', color: adb.white, fontSize: 12, fontWeight: 500,
               cursor: loading ? 'default' : 'pointer', transition: 'background 0.15s', flexShrink: 0,
             }}
@@ -535,7 +550,7 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
         </div>
       </form>
 
-      {/* Suggestions / follow-ups — always visible below search bar */}
+      {/* Suggestions / follow-ups + Country Briefing Note pill */}
       {!loading && !explainLoading && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', color: adb.muted, textTransform: 'uppercase', marginBottom: 8 }}>
@@ -549,7 +564,7 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
                 border: `1px solid ${config ? adb.blueLight + '55' : 'var(--th-border)'}`,
                 background: config ? `${adb.blueLight}0d` : 'none',
                 cursor: 'pointer', transition: 'color 0.15s, border-color 0.15s, background 0.15s',
-                whiteSpace: 'nowrap',
+                whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'left',
               }}
               onMouseEnter={e => { e.currentTarget.style.color = adb.blue; e.currentTarget.style.borderColor = adb.blue }}
               onMouseLeave={e => { e.currentTarget.style.color = config ? adb.blueLight : adb.muted; e.currentTarget.style.borderColor = config ? adb.blueLight + '55' : 'var(--th-border)' }}
@@ -566,7 +581,7 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
           border: '1px solid var(--th-border)', borderRadius: 6,
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         }}>
-          <div style={{ fontSize: 13, color: adb.muted }}>{intentType === 'explain' ? 'Researching your question…' : 'Selecting KIDB indicators…'}</div>
+          <div style={{ fontSize: 13, color: adb.muted }}>{intentType === 'explain' ? 'Researching your question…' : 'Selecting indicators…'}</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{
@@ -663,12 +678,12 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
       {config && chartData && !loading && (
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Chart header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexDirection: isMobile ? 'column' : 'row' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 500 }}>{config.title}</h3>
+              <h3 style={{ margin: 0, fontSize: isMobile ? 14 : 16, fontWeight: 500 }}>{config.title}</h3>
               <div style={{ fontSize: 12, color: adb.muted, marginTop: 3 }}>{config.description}</div>
             </div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
               <span style={{
                 fontSize: 9, padding: '2px 7px', borderRadius: 2, fontWeight: 600,
                 letterSpacing: '0.05em', textTransform: 'uppercase',
@@ -682,7 +697,7 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
                 background: dataSource === 'live' ? `${adb.green}22` : `${adb.amber}22`,
                 color: dataSource === 'live' ? adb.green : adb.amber,
                 border: `1px solid ${dataSource === 'live' ? adb.green : adb.amber}44`,
-              }}>{dataSource === 'live' ? 'KIDB Live' : 'KIDB Schema'}</span>
+              }}>{dataSource === 'live' ? 'ADB Live' : 'ADB Schema'}</span>
               <button
                 onClick={exportAsPng}
                 title="Export chart as PNG"
@@ -705,31 +720,32 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
             </div>
           </div>
 
-          {/* D3 Chart */}
-          <div ref={chartRef} style={{ background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 6, padding: '16px 12px 12px' }}>
-            {config.chartType === 'line'
-              ? <D3LineChart data={chartData} unit={config.unit} />
-              : <D3BarChart  data={chartData} unit={config.unit} />
-            }
-            <ChartLegend economies={chartData.economies} />
+          {/* D3 Chart + Scenario Analysis embedded below it */}
+          <div ref={chartRef} style={{ background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 6, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 12px 12px' }}>
+              {config.chartType === 'line'
+                ? <D3LineChart data={chartData} unit={config.unit} projections={projections} />
+                : <D3BarChart  data={chartData} unit={config.unit} />
+              }
+              <ChartLegend economies={chartData.economies} />
+            </div>
+            <ScenarioPanel
+              config={config}
+              chartData={chartData}
+              activeId={scenarioId}
+              setActiveId={setScenarioId}
+              severity={scenarioSeverity}
+              setSeverity={setScenarioSeverity}
+              projections={projections}
+            />
           </div>
 
           {/* Natural language insight + citations */}
           <InsightPanel config={config} chartData={chartData} />
 
-          {/* KIDB technical meta */}
+          {/* Technical meta */}
           <QueryMeta config={config} />
 
-          {/* More suggestions */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-            <span style={{ fontSize: 11, color: adb.muted }}>Try also:</span>
-            {SUGGESTIONS.filter(s => s !== query).slice(0, 3).map(s => (
-              <button key={s} onClick={() => useSuggestion(s)} style={{
-                fontSize: 11, color: adb.muted, padding: '3px 10px', borderRadius: 12,
-                border: '1px solid var(--th-border)', background: 'none', cursor: 'pointer',
-              }}>{s}</button>
-            ))}
-          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import type { Map as LMap, Marker as LMarker, TileLayer as LTileLayer } from 'leaflet'
+import { useIsMobile } from './_use-mobile'
 
 export type MapDot = {
   lat: number; lng: number; color: string; label: string
@@ -88,6 +89,7 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget }: Props) {
   dotsRef.current    = dots
 
   const pacificBoundsRef = useRef<[number, number][]>([])
+  const isMobile = useIsMobile()
   const [tooltip, setTooltip] = useState<{ dot: MapDot; x: number; y: number } | null>(null)
 
   function resetView() {
@@ -202,48 +204,33 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget }: Props) {
       {tooltip && (
         <div style={{
           position: 'absolute',
-          left: Math.min(tooltip.x + 20, 220),
-          top: Math.max(tooltip.y - 160, 4),
+          left: isMobile ? 4 : Math.min(tooltip.x + 20, 220),
+          top: Math.max(tooltip.y - 120, 4),
           pointerEvents: 'none', zIndex: 1000,
           background: 'var(--th-card)',
-          border: `1px solid ${tooltip.dot.color}55`,
-          borderLeft: `5px solid ${tooltip.dot.color}`,
-          borderRadius: 10, padding: '15px 20px',
-          minWidth: 340, maxWidth: 410,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
+          border: `1px solid var(--th-border)`,
+          borderLeft: `4px solid ${tooltip.dot.color}`,
+          borderRadius: 8, padding: '12px 16px',
+          minWidth: 200, maxWidth: isMobile ? 'calc(100vw - 40px)' : 280,
+          boxShadow: '0 6px 24px rgba(0,0,0,0.45)',
           fontFamily: '"Helvetica Neue",Arial,sans-serif',
         }}>
-          {/* Country name + status */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, marginBottom: 10 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--th-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {tooltipFlagUrl(tooltip.dot.code) && (
-                <div style={{ width: 28, height: 21, flexShrink: 0, borderRadius: 3, backgroundImage: `url('${tooltipFlagUrl(tooltip.dot.code)}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-              )}
-              {tooltip.dot.name}
-            </span>
-            <span style={{
-              fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 4, flexShrink: 0,
-              background: `${tooltip.dot.color}22`, color: tooltip.dot.color,
-              letterSpacing: '0.05em', textTransform: 'uppercase',
-            }}>{tooltip.dot.status}</span>
-          </div>
-
-          {/* Active indicator value */}
-          <div style={{ fontSize: 18, fontWeight: 700, color: tooltip.dot.color, marginBottom: 6, letterSpacing: '-0.02em' }}>
-            {tooltip.dot.value}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--th-muted)', marginBottom: stats ? 12 : 0, lineHeight: 1.55 }}>
-            {tooltip.dot.detail}
+          {/* Country name + flag */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: stats ? 10 : 0 }}>
+            {tooltipFlagUrl(tooltip.dot.code) && (
+              <div style={{ width: 26, height: 19, flexShrink: 0, borderRadius: 2, backgroundImage: `url('${tooltipFlagUrl(tooltip.dot.code)}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+            )}
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--th-text)' }}>{tooltip.dot.name}</span>
           </div>
 
           {/* Country stats */}
           {stats && (
-            <div style={{ borderTop: `1px solid ${tooltip.dot.color}22`, paddingTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 8, columnGap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 7, columnGap: 14 }}>
               {[
-                { label: 'Population',  value: stats.pop },
-                { label: 'Area',        value: stats.area },
-                { label: 'Capital',     value: stats.capital },
-                { label: 'Currency',    value: stats.currency },
+                { label: 'Population', value: stats.pop },
+                { label: 'Area',       value: stats.area },
+                { label: 'Capital',    value: stats.capital },
+                { label: 'Currency',   value: stats.currency },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <div style={{ fontSize: 9, color: 'var(--th-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1 }}>{label}</div>
