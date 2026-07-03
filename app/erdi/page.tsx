@@ -737,90 +737,234 @@ function PacificMap({ dots }: { dots: DotEntry[] }) {
 
 // ── publications view ──────────────────────────────────────────────────────
 function PublicationsView() {
-  const scrollRef = useRef<HTMLDivElement>(null)
   const isMobile = useIsMobile()
-  const [canLeft,  setCanLeft]  = useState(false)
-  const [canRight, setCanRight] = useState(true)
+  const [selected, setSelected] = useState<Publication | null>(null)
+  const [pubChat, setPubChat] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string }>>([])
+  const [pubInput, setPubInput] = useState('')
+  const [pubLoading, setPubLoading] = useState(false)
+  const pubChatEndRef = useRef<HTMLDivElement>(null)
 
-  function scroll(dir: 'left' | 'right') {
-    if (!scrollRef.current) return
-    scrollRef.current.scrollBy({ left: dir === 'left' ? -296 : 296, behavior: 'smooth' })
-  }
+  useEffect(() => {
+    pubChatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [pubChat])
 
-  function onScroll() {
-    if (!scrollRef.current) return
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-    setCanLeft(scrollLeft > 4)
-    setCanRight(scrollLeft < scrollWidth - clientWidth - 4)
+  async function askPub(q: string) {
+    if (!selected || !q.trim()) return
+    const uid = `u-${Date.now()}`
+    const aid = `a-${Date.now()}`
+    setPubLoading(true)
+    setPubInput('')
+    setPubChat(h => [
+      ...h,
+      { id: uid, role: 'user', content: q },
+      { id: aid, role: 'assistant', content: '' },
+    ])
+    try {
+      const prompt = `You are an expert economist assistant. The user is reading "${selected.title}" (${selected.subtitle}, ${selected.date}), a ${selected.type} published by ADB.\n\nPublication abstract: ${selected.abstract}\n\nAnswer the user's question concisely and accurately based on this publication's context and general ADB economics knowledge.\n\nQuestion: ${q}`
+      const res = await fetch('/api/erdi/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: prompt }),
+      })
+      let accumulated = ''
+      if (res.headers.get('content-type')?.includes('text/plain')) {
+        const reader = res.body!.getReader()
+        const decoder = new TextDecoder()
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          accumulated += decoder.decode(value, { stream: true })
+          setPubChat(h => h.map(m => m.id === aid ? { ...m, content: accumulated } : m))
+        }
+      } else {
+        const data = await res.json()
+        accumulated = data.answer ?? ''
+        setPubChat(h => h.map(m => m.id === aid ? { ...m, content: accumulated } : m))
+      }
+    } catch {
+      setPubChat(h => h.map(m => m.id === aid ? { ...m, content: 'Sorry, could not reach the AI service.' } : m))
+    } finally {
+      setPubLoading(false)
+    }
   }
 
   const coverStyle = (pub: Publication): React.CSSProperties => ({
-    background: pub.coverBg,
-    height: 168,
-    borderRadius: '4px 4px 0 0',
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'flex-end',
-    padding: 14,
-    overflow: 'hidden',
+    background: pub.coverBg, height: 140, borderRadius: '4px 4px 0 0',
+    position: 'relative', display: 'flex', flexDirection: 'column',
+    justifyContent: 'flex-end', padding: 12, overflow: 'hidden',
   })
+
+  if (selected) {
+    return (
+      <div style={{ display: 'flex', gap: 0, height: 'calc(100vh - 120px)', minHeight: 500 }}>
+        {/* Left: publication detail */}
+        <div style={{
+          flex: '0 0 340px', display: 'flex', flexDirection: 'column',
+          borderRight: '1px solid var(--th-border)', overflowY: 'auto',
+        }}>
+          {/* Back + header */}
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--th-border)', flexShrink: 0 }}>
+            <button
+              onClick={() => { setSelected(null); setPubChat([]) }}
+              style={{
+                background: 'none', border: 'none', color: adb.blue, fontSize: 12,
+                cursor: 'pointer', padding: 0, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4,
+              }}
+            >← All Publications</button>
+            {/* Cover */}
+            <div style={{ ...coverStyle(selected), borderRadius: 6, marginBottom: 12 }}>
+              <div style={{
+                position: 'absolute', top: 0, right: 0, width: 70, height: 70,
+                background: `${selected.typeBg}1a`, transform: 'translate(18px,-18px) rotate(45deg)',
+              }}/>
+              <div style={{
+                position: 'absolute', top: 10, right: 10, background: '#002569',
+                borderRadius: 3, padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: '0.06em',
+              }}>ADB</div>
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: `${selected.typeBg}cc`, marginBottom: 4 }}>
+                {selected.series}
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.35, color: '#fff' }}>{selected.title}</div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
+                color: selected.typeBg, background: `${selected.typeBg}18`, padding: '2px 7px', borderRadius: 2,
+              }}>{selected.type}</span>
+              <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{selected.date}</span>
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--th-text)', marginBottom: 4 }}>{selected.subtitle}</div>
+            <div style={{ fontSize: 11, color: 'var(--th-muted)', lineHeight: 1.6 }}>{selected.abstract}</div>
+            {selected.pages && (
+              <div style={{ fontSize: 10, color: 'var(--th-muted)', marginTop: 8 }}>{selected.pages} pages</div>
+            )}
+            <a
+              href={selected.url} target="_blank" rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 12,
+                padding: '7px 14px', background: adb.blue, borderRadius: 5,
+                color: '#fff', fontSize: 11, fontWeight: 600, textDecoration: 'none',
+              }}
+            >Open full PDF ↗</a>
+          </div>
+          {/* Suggested questions */}
+          <div style={{ padding: '12px 16px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--th-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+              Ask about this publication
+            </div>
+            {[
+              `What are the key findings of ${selected.title}?`,
+              `What policy recommendations does it make?`,
+              `How does this relate to Pacific economies?`,
+              `What methodology was used?`,
+            ].map(q => (
+              <button key={q} onClick={() => askPub(q)} style={{
+                display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px',
+                marginBottom: 6, background: 'var(--th-chart)', border: '1px solid var(--th-border)',
+                borderRadius: 5, fontSize: 10.5, color: 'var(--th-text)', cursor: 'pointer',
+                lineHeight: 1.4,
+              }}>{q}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: AI chat */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          {/* Chat header */}
+          <div style={{
+            padding: '12px 16px', borderBottom: '1px solid var(--th-border)',
+            display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+          }}>
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '2px 8px',
+              borderRadius: 3, textTransform: 'uppercase', background: `${adb.blue}20`, color: adb.blue,
+            }}>Intelligence Hub</span>
+            <span style={{ fontSize: 12, color: 'var(--th-muted)' }}>Ask anything about this publication</span>
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+            {pubChat.length === 0 && (
+              <div style={{ textAlign: 'center', color: 'var(--th-muted)', fontSize: 12, marginTop: 40 }}>
+                Use the suggested questions on the left, or type your own below.
+              </div>
+            )}
+            {pubChat.map(m => (
+              <div key={m.id} style={{
+                display: 'flex', flexDirection: 'column',
+                alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
+                marginBottom: 12,
+              }}>
+                <div style={{
+                  maxWidth: '85%', padding: '9px 13px', borderRadius: 10,
+                  background: m.role === 'user' ? adb.blue : 'var(--th-card)',
+                  color: m.role === 'user' ? '#fff' : 'var(--th-text)',
+                  border: m.role === 'user' ? 'none' : '1px solid var(--th-border)',
+                  fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap',
+                }}>
+                  {m.content || (m.role === 'assistant' && pubLoading ? (
+                    <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      {[0,1,2].map(i => (
+                        <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: adb.blue, display: 'inline-block', animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
+                      ))}
+                    </span>
+                  ) : m.content)}
+                </div>
+              </div>
+            ))}
+            <div ref={pubChatEndRef} />
+          </div>
+
+          {/* Input */}
+          <div style={{
+            padding: '12px 16px', borderTop: '1px solid var(--th-border)',
+            display: 'flex', gap: 8, flexShrink: 0,
+          }}>
+            <input
+              value={pubInput}
+              onChange={e => setPubInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askPub(pubInput) } }}
+              placeholder="Ask a question about this publication…"
+              style={{
+                flex: 1, padding: '9px 12px', borderRadius: 7,
+                border: '1px solid var(--th-border)', background: 'var(--th-chart)',
+                color: 'var(--th-text)', fontSize: 12, outline: 'none',
+              }}
+            />
+            <button
+              onClick={() => askPub(pubInput)}
+              disabled={pubLoading || !pubInput.trim()}
+              style={{
+                padding: '9px 16px', background: adb.blue, border: 'none',
+                borderRadius: 7, color: '#fff', fontSize: 12, fontWeight: 600,
+                cursor: pubLoading || !pubInput.trim() ? 'default' : 'pointer',
+                opacity: pubLoading || !pubInput.trim() ? 0.5 : 1,
+              }}
+            >Ask</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ padding: '8px 0 40px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 500 }}>ADB Publications</h2>
-          <div style={{ fontSize: 11, color: 'var(--th-muted)', marginTop: 3 }}>
-            Publicly available reports, monitors, and working papers — sourced from adb.org
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button
-            onClick={() => scroll('left')} disabled={!canLeft}
-            style={{
-              width: 30, height: 30, borderRadius: 4, border: '1px solid var(--th-border)',
-              background: canLeft ? 'var(--th-card)' : 'transparent',
-              color: canLeft ? 'var(--th-text)' : 'var(--th-muted)',
-              cursor: canLeft ? 'pointer' : 'default', fontSize: 14,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>‹</button>
-          <button
-            onClick={() => scroll('right')} disabled={!canRight}
-            style={{
-              width: 30, height: 30, borderRadius: 4, border: '1px solid var(--th-border)',
-              background: canRight ? 'var(--th-card)' : 'transparent',
-              color: canRight ? 'var(--th-text)' : 'var(--th-muted)',
-              cursor: canRight ? 'pointer' : 'default', fontSize: 14,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>›</button>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 500 }}>ADB Publications</h2>
+        <div style={{ fontSize: 11, color: 'var(--th-muted)' }}>
+          Click any publication to read and ask questions with AI
         </div>
       </div>
 
-      {/* Carousel */}
-      <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        style={{
-          display: 'flex', gap: 14, overflowX: 'auto',
-          scrollbarWidth: 'none', paddingBottom: 4,
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
         {PUBLICATIONS.map(pub => (
-          <a
+          <div
             key={pub.id}
-            href={pub.url}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={() => { setSelected(pub); setPubChat([]) }}
             style={{
-              flexShrink: 0, width: isMobile ? 220 : 252,
-              background: 'var(--th-card)',
-              border: '1px solid var(--th-border)',
-              borderRadius: 6, overflow: 'hidden',
-              display: 'flex', flexDirection: 'column',
-              textDecoration: 'none', color: 'inherit',
-              transition: 'border-color 0.15s, transform 0.15s',
+              background: 'var(--th-card)', border: '1px solid var(--th-border)',
+              borderRadius: 6, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+              cursor: 'pointer', transition: 'border-color 0.15s, transform 0.15s',
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.borderColor = pub.typeBg
@@ -831,76 +975,43 @@ function PublicationsView() {
               ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
             }}
           >
-            {/* Cover */}
             <div style={coverStyle(pub)}>
-              {/* Diagonal accent */}
               <div style={{
-                position: 'absolute', top: 0, right: 0,
-                width: 80, height: 80,
-                background: `${pub.typeBg}1a`,
-                transform: 'translate(20px,-20px) rotate(45deg)',
+                position: 'absolute', top: 0, right: 0, width: 80, height: 80,
+                background: `${pub.typeBg}1a`, transform: 'translate(20px,-20px) rotate(45deg)',
               }}/>
-              {/* Top-right ADB badge */}
               <div style={{
-                position: 'absolute', top: 10, right: 10,
-                background: '#002569', borderRadius: 3,
-                padding: '2px 6px', fontSize: 9, fontWeight: 700,
-                color: '#fff', letterSpacing: '0.06em',
+                position: 'absolute', top: 10, right: 10, background: '#002569',
+                borderRadius: 3, padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: '0.06em',
               }}>ADB</div>
-              {/* Series label */}
-              <div style={{
-                fontSize: 8.5, fontWeight: 600, letterSpacing: '0.08em',
-                textTransform: 'uppercase', color: `${pub.typeBg}cc`,
-                marginBottom: 5,
-              }}>{pub.series}</div>
-              {/* Title on cover */}
-              <div style={{
-                fontSize: 12.5, fontWeight: 600, lineHeight: 1.35,
-                color: '#fff',
-              }}>{pub.title}</div>
+              <div style={{ fontSize: 8.5, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: `${pub.typeBg}cc`, marginBottom: 5 }}>{pub.series}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.35, color: '#fff' }}>{pub.title}</div>
             </div>
-
-            {/* Body */}
             <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-              {/* Type + date */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: '0.07em',
-                  textTransform: 'uppercase', color: pub.typeBg,
-                  background: `${pub.typeBg}18`, padding: '2px 7px', borderRadius: 2,
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
+                  color: pub.typeBg, background: `${pub.typeBg}18`, padding: '2px 7px', borderRadius: 2,
                 }}>{pub.type}</span>
                 <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.date}</span>
               </div>
-              {/* Subtitle */}
-              <div style={{ fontSize: 11, color: 'var(--th-muted)', fontStyle: 'italic', lineHeight: 1.4 }}>
-                {pub.subtitle}
-              </div>
-              {/* Abstract */}
-              <div style={{ fontSize: 10.5, color: 'var(--th-muted)', lineHeight: 1.65, flex: 1 }}>
-                {pub.abstract}
-              </div>
-              {/* Footer */}
+              <div style={{ fontSize: 11, color: 'var(--th-muted)', fontStyle: 'italic', lineHeight: 1.4 }}>{pub.subtitle}</div>
+              <div style={{ fontSize: 10.5, color: 'var(--th-muted)', lineHeight: 1.65, flex: 1 }}>{pub.abstract}</div>
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 borderTop: '1px solid var(--th-border)', paddingTop: 8, marginTop: 4,
               }}>
-                {pub.pages && (
-                  <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.pages} pages</span>
-                )}
-                <span style={{ fontSize: 10.5, color: pub.typeBg, marginLeft: 'auto' }}>
-                  Read online ↗
-                </span>
+                {pub.pages && <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.pages} pages</span>}
+                <span style={{ fontSize: 10.5, color: pub.typeBg, marginLeft: 'auto' }}>Open & Chat →</span>
               </div>
             </div>
-          </a>
+          </div>
         ))}
       </div>
 
-      {/* Footer note */}
       <div style={{ marginTop: 16, fontSize: 10.5, color: 'var(--th-muted)' }}>
         All publications are freely available at{' '}
         <span style={{ color: adb.blueLight }}>adb.org/publications</span>.
-        For restricted working papers, request access through your department's library portal.
       </div>
     </div>
   )
@@ -1406,9 +1517,9 @@ This report is for internal ADB use only and does not constitute official ADB fo
                         <span style={{
                           fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
                           padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase',
-                          background: item.source === 'home' ? `${adb.blue}20` : `${adb.green}20`,
-                          color: item.source === 'home' ? adb.blue : adb.green,
-                        }}>{item.source === 'home' ? 'AI' : 'Explorer'}</span>
+                          background: `${adb.blue}20`,
+                          color: adb.blue,
+                        }}>Intelligence Hub</span>
                         <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{item.ts}</span>
                       </div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', marginBottom: 3, lineHeight: 1.4 }}>
