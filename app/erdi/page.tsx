@@ -937,6 +937,9 @@ export default function ERDIPage() {
   const [improveLoading, setImproveLoading] = useState(false)
   const [chatHistory, setChatHistory] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string; ts: string }>>([])
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const [globalHistory, setGlobalHistory] = useState<Array<{ id: string; source: 'home' | 'explorer'; question: string; answer: string; ts: string }>>([])
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const sidebarEndRef = useRef<HTMLDivElement>(null)
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom?: number } | undefined>()
   const countryCarouselRef = useRef<HTMLDivElement>(null)
   const [aiAnswer, setAiAnswer] = useState('')
@@ -1065,9 +1068,12 @@ Write in a concise, analytical tone suitable for an ADB economist audience. Use 
           accumulated += decoder.decode(value, { stream: true })
           setAiAnswer(accumulated)
         }
+        setGlobalHistory(h => [...h, { id: `h-${Date.now()}`, source: 'home', question: q, answer: accumulated, ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
       } else {
         const data = await res.json()
-        setAiAnswer(data.answer ?? '')
+        const ans = data.answer ?? ''
+        setAiAnswer(ans)
+        setGlobalHistory(h => [...h, { id: `h-${Date.now()}`, source: 'home', question: q, answer: ans, ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
       }
     } catch {
       setAiAnswer('Sorry, I could not reach the AI service. Try exploring the data directly in the Data Explorer.')
@@ -1341,50 +1347,146 @@ This report is for internal ADB use only and does not constitute official ADB fo
         )}
       </nav>
 
+      {/* ── Content area: sidebar + main ── */}
+      <div style={{ display: 'flex', flex: 1 }}>
+
+        {/* ── Global Conversation Sidebar ── */}
+        {!briefingMode && (activeNav === 'Home' || activeNav === 'Data Explorer') && (
+          <aside style={{
+            width: sidebarCollapsed ? 40 : 260,
+            flexShrink: 0,
+            background: isDark ? '#071829' : '#f0f6fc',
+            borderRight: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+            display: 'flex',
+            flexDirection: 'column',
+            height: 'calc(100vh - 52px)',
+            position: 'sticky',
+            top: 52,
+            transition: 'width 0.2s',
+            overflow: 'hidden',
+          }}>
+            {/* Sidebar header */}
+            <div style={{
+              height: 44, display: 'flex', alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+              padding: sidebarCollapsed ? '0' : '0 12px',
+              borderBottom: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+              flexShrink: 0,
+            }}>
+              {!sidebarCollapsed && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--th-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  History
+                </span>
+              )}
+              <button
+                onClick={() => setSidebarCollapsed(c => !c)}
+                title={sidebarCollapsed ? 'Expand history' : 'Collapse history'}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--th-muted)', fontSize: 14, padding: 4,
+                  display: 'flex', alignItems: 'center',
+                }}
+              >{sidebarCollapsed ? '›' : '‹'}</button>
+            </div>
+
+            {/* Conversation list */}
+            {!sidebarCollapsed && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+                {globalHistory.length === 0 ? (
+                  <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--th-muted)', fontSize: 11 }}>
+                    Questions you ask will appear here
+                  </div>
+                ) : (
+                  [...globalHistory].reverse().map(item => (
+                    <div key={item.id} style={{
+                      padding: '8px 12px',
+                      borderBottom: `1px solid ${isDark ? '#1e406030' : '#c0d4e820'}`,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
+                          padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase',
+                          background: item.source === 'home' ? `${adb.blue}20` : `${adb.green}20`,
+                          color: item.source === 'home' ? adb.blue : adb.green,
+                        }}>{item.source === 'home' ? 'AI' : 'Explorer'}</span>
+                        <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{item.ts}</span>
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', marginBottom: 3, lineHeight: 1.4 }}>
+                        {item.question.length > 80 ? item.question.slice(0, 80) + '…' : item.question}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.4 }}>
+                        {item.answer.length > 120 ? item.answer.slice(0, 120) + '…' : item.answer}
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={sidebarEndRef} />
+              </div>
+            )}
+          </aside>
+        )}
+
       {/* ── Main ── */}
       <main style={{
-        maxWidth: briefingMode ? '100%' : 900,
+        flex: 1,
+        maxWidth: briefingMode ? '100%' : (!briefingMode && (activeNav === 'Home' || activeNav === 'Data Explorer') && !sidebarCollapsed) ? 'calc(900px)' : 900,
         margin: '0 auto',
         padding: briefingMode ? '0' : '24px 20px',
+        minWidth: 0,
       }}>
 
         {/* Data Explorer view */}
-        {activeNav === 'Data Explorer' && <DataExplorer initialQuery={pendingQuery} />}
+        {activeNav === 'Data Explorer' && <DataExplorer initialQuery={pendingQuery} onConversation={(q, a) => setGlobalHistory(h => [...h, { id: `h-${Date.now()}`, source: 'explorer', question: q, answer: a, ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])} />}
         {activeNav === 'Publications' && <PublicationsView />}
         {activeNav !== 'Home' && activeNav !== 'Data Explorer' && activeNav !== 'Publications' && (
           <div style={{ padding: '48px 0', textAlign: 'center', color: adb.muted, fontSize: 13 }}>
             {activeNav} — coming soon
           </div>
         )}
-        {/* ── Briefing Note Editor ── */}
-        {activeNav === 'Home' && briefingMode && (
+        {/* ── Briefing Note Editor (fixed full-screen overlay) ── */}
+        {briefingMode && (
           <div style={{
+            position: 'fixed', inset: 0, zIndex: 50,
+            background: isDark ? '#071829' : '#f0f6fc',
             display: 'flex', flexDirection: 'column',
-            height: 'calc(100vh - 100px)', padding: '16px 24px', boxSizing: 'border-box',
+            fontFamily: adb.font,
           }}>
-            {/* Header */}
+            {/* ── Top bar ── */}
             <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--th-border)', flexShrink: 0,
+              height: 52, flexShrink: 0, display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between', padding: '0 20px',
+              background: isDark ? '#0d2137' : '#ffffff',
+              borderBottom: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <button
                   onClick={() => { setBriefingMode(false); setHomeSearch(''); setChatHistory([]) }}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px',
                     background: 'var(--th-chart)', border: '1px solid var(--th-border)',
-                    borderRadius: 5, color: 'var(--th-muted)', fontSize: 12, cursor: 'pointer', fontFamily: adb.font,
+                    borderRadius: 6, color: 'var(--th-muted)', fontSize: 12, cursor: 'pointer',
                   }}
                 >← Back</button>
-                <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.blue }}>Country Briefing Note</div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--th-text)', marginTop: 1 }}>{briefingCountry}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: adb.blue, background: `${adb.blue}18`, padding: '2px 10px', borderRadius: 3, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+                    ✦ Country Briefing Note
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--th-text)' }}>{briefingCountry}</span>
+                  {(briefingLoading || improveLoading) && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: adb.blue }}>
+                      {[0,1,2].map(i => (
+                        <span key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: adb.blue, display: 'inline-block', animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
+                      ))}
+                      {briefingLoading ? 'Generating' : 'Improving'}
+                    </span>
+                  )}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={() => navigator.clipboard?.writeText(editorContent)}
-                  style={{ padding: '6px 14px', background: 'none', border: '1px solid var(--th-border)', borderRadius: 5, color: 'var(--th-muted)', fontSize: 11, cursor: 'pointer', fontFamily: adb.font }}
+                  style={{ padding: '6px 14px', background: 'none', border: '1px solid var(--th-border)', borderRadius: 5, color: 'var(--th-muted)', fontSize: 11, cursor: 'pointer' }}
                 >Copy</button>
                 <button
                   onClick={() => {
@@ -1392,52 +1494,67 @@ This report is for internal ADB use only and does not constitute official ADB fo
                     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
                     a.download = `Briefing-Note-${briefingCountry.replace(/\s+/g, '-')}.txt`; a.click()
                   }}
-                  style={{ padding: '6px 14px', background: adb.blue, border: 'none', borderRadius: 5, color: '#fff', fontSize: 11, cursor: 'pointer', fontFamily: adb.font, fontWeight: 500 }}
+                  style={{ padding: '6px 14px', background: adb.blue, border: 'none', borderRadius: 5, color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
                 >Download</button>
               </div>
             </div>
 
-            {/* Two-panel layout */}
-            <div style={{ display: 'flex', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            {/* ── Body: left panel + right editor ── */}
+            <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-              {/* Left — Conversation memory */}
+              {/* LEFT — Conversation panel */}
               <div style={{
-                width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column',
-                background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 8, overflow: 'hidden',
+                width: 300, flexShrink: 0,
+                display: 'flex', flexDirection: 'column',
+                borderRight: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+                background: isDark ? '#0a1e30' : '#ffffff',
               }}>
-                {/* Panel header */}
+                {/* Panel label */}
                 <div style={{
-                  padding: '10px 14px', borderBottom: '1px solid var(--th-border)',
-                  background: `${adb.blue}09`, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '11px 16px', flexShrink: 0,
+                  borderBottom: `1px solid ${isDark ? '#1e4060' : '#e0eaf4'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.blue, background: `${adb.blue}18`, padding: '2px 8px', borderRadius: 2 }}>
-                    ✦ Conversation
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.blue }}>
+                    Conversation
                   </span>
-                  <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{chatHistory.filter(m => m.role === 'user').length} prompt{chatHistory.filter(m => m.role === 'user').length !== 1 ? 's' : ''}</span>
+                  <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>
+                    {chatHistory.filter(m => m.role === 'user').length} message{chatHistory.filter(m => m.role === 'user').length !== 1 ? 's' : ''}
+                  </span>
                 </div>
 
-                {/* Message list */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Messages — scrollable */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {chatHistory.length === 0 && (
+                    <div style={{ fontSize: 11, color: 'var(--th-muted)', textAlign: 'center', marginTop: 24, lineHeight: 1.6 }}>
+                      Your conversation will<br />appear here
+                    </div>
+                  )}
                   {chatHistory.map(msg => (
-                    <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                      <div style={{ fontSize: 9, color: 'var(--th-muted)', letterSpacing: '0.04em', paddingLeft: msg.role === 'assistant' ? 4 : 0, paddingRight: msg.role === 'user' ? 4 : 0 }}>
+                    <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                      <div style={{ fontSize: 9, color: 'var(--th-muted)', letterSpacing: '0.04em', paddingLeft: msg.role === 'assistant' ? 2 : 0, paddingRight: msg.role === 'user' ? 2 : 0 }}>
                         {msg.role === 'user' ? 'You' : '✦ ERDI AI'} · {msg.ts}
                       </div>
                       <div style={{
-                        maxWidth: '92%', padding: '8px 12px', borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                        background: msg.role === 'user' ? `${adb.blue}22` : 'var(--th-chart)',
-                        border: `1px solid ${msg.role === 'user' ? `${adb.blue}44` : 'var(--th-border)'}`,
-                        fontSize: 11.5, color: msg.role === 'user' ? adb.blueLight : 'var(--th-subtle)',
-                        lineHeight: 1.55,
+                        maxWidth: '90%', padding: '9px 13px',
+                        borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                        background: msg.role === 'user' ? `${adb.blue}28` : (isDark ? '#0f2840' : '#f0f6fc'),
+                        border: `1px solid ${msg.role === 'user' ? `${adb.blue}55` : (isDark ? '#1e4060' : '#d0e4f4')}`,
+                        fontSize: 12, lineHeight: 1.55,
+                        color: msg.role === 'user' ? (isDark ? '#68C5EA' : adb.blue) : 'var(--th-subtle)',
                       }}>
                         {msg.role === 'user'
                           ? msg.content
                           : msg.content
-                            ? msg.content.slice(0, 120) + (msg.content.length > 120 ? '…' : '')
-                            : <span style={{ display: 'flex', gap: 4, alignItems: 'center', color: 'var(--th-muted)' }}>
-                                Generating{[0,1,2].map(i => <span key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: adb.blue, display: 'inline-block', animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />)}
+                            ? msg.content.slice(0, 140) + (msg.content.length > 140 ? '…' : '')
+                            : (
+                              <span style={{ display: 'flex', gap: 5, alignItems: 'center', color: 'var(--th-muted)' }}>
+                                <span style={{ fontSize: 11 }}>Generating</span>
+                                {[0,1,2].map(i => (
+                                  <span key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: adb.blue, display: 'inline-block', animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
+                                ))}
                               </span>
+                            )
                         }
                       </div>
                     </div>
@@ -1445,63 +1562,78 @@ This report is for internal ADB use only and does not constitute official ADB fo
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Improve input pinned to bottom */}
+                {/* Input — pinned to bottom */}
                 <div style={{
-                  borderTop: '1px solid var(--th-border)', padding: '10px 10px', flexShrink: 0,
-                  background: 'var(--th-card)',
+                  flexShrink: 0, padding: '12px',
+                  borderTop: `1px solid ${isDark ? '#1e4060' : '#e0eaf4'}`,
+                  background: isDark ? '#0d2137' : '#f8fbff',
                 }}>
                   <div style={{
-                    display: 'flex', gap: 6, background: 'var(--th-chart)',
-                    border: `1px solid ${improveInput.trim() ? adb.blue : 'var(--th-border)'}`,
-                    borderRadius: 8, padding: '8px 10px', alignItems: 'center', transition: 'border-color 0.15s',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    background: isDark ? '#071829' : '#ffffff',
+                    border: `1.5px solid ${improveInput.trim() ? adb.blue : (isDark ? '#1e4060' : '#c0d4e8')}`,
+                    borderRadius: 8, padding: '8px 10px',
+                    transition: 'border-color 0.15s',
+                    boxShadow: improveInput.trim() ? `0 0 0 3px ${adb.blue}18` : 'none',
                   }}>
+                    <span style={{ fontSize: 13, color: adb.blue, flexShrink: 0 }}>✦</span>
                     <input
                       value={improveInput}
                       onChange={e => setImproveInput(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') improveNote() }}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) improveNote() }}
                       placeholder="Ask to improve…"
                       disabled={improveLoading || briefingLoading}
-                      style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--th-text)', fontSize: 12, fontFamily: adb.font }}
+                      style={{
+                        flex: 1, background: 'none', border: 'none', outline: 'none',
+                        color: 'var(--th-text)', fontSize: 12, fontFamily: adb.font,
+                        minWidth: 0,
+                      }}
                     />
                     <button
                       onClick={improveNote}
                       disabled={improveLoading || briefingLoading || !improveInput.trim()}
                       style={{
-                        padding: '4px 10px', background: improveInput.trim() && !improveLoading ? adb.blue : 'transparent',
-                        border: 'none', borderRadius: 5, color: improveInput.trim() && !improveLoading ? '#fff' : 'var(--th-muted)',
-                        fontSize: 11, fontWeight: 600, cursor: improveInput.trim() ? 'pointer' : 'default',
-                        fontFamily: adb.font, flexShrink: 0, transition: 'all 0.15s',
+                        padding: '4px 10px', borderRadius: 5, fontSize: 12, fontWeight: 700,
+                        cursor: improveInput.trim() && !improveLoading ? 'pointer' : 'default',
+                        background: improveInput.trim() && !improveLoading ? adb.blue : 'transparent',
+                        color: improveInput.trim() && !improveLoading ? '#fff' : 'var(--th-muted)',
+                        border: 'none', flexShrink: 0, transition: 'all 0.15s',
                       }}
                     >{improveLoading ? '…' : '↵'}</button>
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--th-muted)', marginTop: 5, lineHeight: 1.4, paddingLeft: 2 }}>
-                    e.g. "Add policy risks" · "Make more concise" · "Add recommendations"
+                  <div style={{ fontSize: 9, color: 'var(--th-muted)', marginTop: 6, lineHeight: 1.5 }}>
+                    Try: "Add a risks section" · "Make more concise" · "Add policy recommendations"
                   </div>
                 </div>
               </div>
 
-              {/* Right — editable draft */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 8, overflow: 'hidden' }}>
+              {/* RIGHT — Editable draft */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div style={{
-                  padding: '10px 18px', borderBottom: '1px solid var(--th-border)',
-                  background: `${adb.green}09`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '0 20px',
+                  borderBottom: `1px solid ${isDark ? '#1e4060' : '#e0eaf4'}`,
+                  background: isDark ? '#071829' : '#f8fbff',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.green, background: `${adb.green}18`, padding: '2px 8px', borderRadius: 2 }}>✎ Edit Draft</span>
-                    {(briefingLoading || improveLoading) && <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{briefingLoading ? 'Generating…' : 'Improving…'}</span>}
+                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.green }}>✎ Edit Draft</span>
+                    {(briefingLoading || improveLoading) && (
+                      <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{briefingLoading ? 'Generating…' : 'Improving…'}</span>
+                    )}
                   </div>
-                  <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>Editable · changes are yours</span>
+                  <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>Editable — changes are yours</span>
                 </div>
                 <textarea
                   value={editorContent}
                   onChange={e => setEditorContent(e.target.value)}
-                  placeholder={briefingLoading ? 'Generating briefing note…' : 'Your draft appears here — edit freely'}
+                  placeholder={briefingLoading ? 'Generating briefing note…' : 'Your editable draft will appear here'}
                   disabled={briefingLoading || improveLoading}
                   style={{
-                    flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                    padding: '20px 24px', color: 'var(--th-text)', fontSize: 13,
-                    lineHeight: 1.85, resize: 'none', fontFamily: adb.font,
-                    opacity: improveLoading ? 0.6 : 1,
+                    flex: 1, width: '100%', boxSizing: 'border-box',
+                    background: 'transparent', border: 'none', outline: 'none',
+                    padding: '24px 32px', color: 'var(--th-text)', fontSize: 13,
+                    lineHeight: 1.9, resize: 'none', fontFamily: adb.font,
+                    opacity: improveLoading ? 0.5 : 1, transition: 'opacity 0.2s',
                   }}
                 />
               </div>
@@ -2272,6 +2404,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
           </div>
         )}
       </main>
+      </div>{/* end sidebar+main flex row */}
     </div>
   )
 }

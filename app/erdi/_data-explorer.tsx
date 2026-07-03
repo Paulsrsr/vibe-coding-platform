@@ -341,7 +341,7 @@ function detectIntent(q: string): 'explain' | 'chart' {
 }
 
 // ── Main DataExplorer ──────────────────────────────────────────────────────
-export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
+export function DataExplorer({ initialQuery = '', onConversation }: { initialQuery?: string; onConversation?: (q: string, a: string) => void }) {
   const isMobile = useIsMobile()
   const [query, setQuery]           = useState(initialQuery)
   const [loading, setLoading]       = useState(false)
@@ -444,9 +444,12 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
             accumulated += decoder.decode(value, { stream: true })
             setExplainAnswer(accumulated)
           }
+          onConversation?.(q, accumulated)
         } else {
           const data = await res.json()
-          setExplainAnswer(data.answer ?? '')
+          const ans = data.answer ?? ''
+          setExplainAnswer(ans)
+          onConversation?.(q, ans)
         }
         setExplainCitations([
           'ADB Data · adb.org',
