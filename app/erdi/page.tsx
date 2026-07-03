@@ -545,107 +545,6 @@ POLICY RECOMMENDATIONS: The Monitor recommends: (i) Pacific governments strength
 ADB PORTFOLIO: ADB's active sovereign portfolio in the Pacific totals approximately USD 2.1 billion across 67 projects as of December 2025. Key active projects include Fiji Urban Water Supply and Wastewater Management Project (USD 88M), PNG Highlands Highway Maintenance and Rehabilitation (USD 125M), Samoa Climate Resilience Improvement Project Phase 2 (USD 40M), and Tonga Renewable Energy Project (USD 31M).`,
   },
   {
-    id: 'climate-finance-pacific-2026',
-    type: 'Technical Note', typeBg: '#8DC63F', coverBg: '#0d2a14',
-    title: 'Climate Finance Mechanisms for Pacific SIDS',
-    subtitle: 'Access, Barriers, and ADB Intervention Models',
-    date: 'March 2026', series: 'ADB Sustainable Development Working Papers',
-    abstract: 'Examines constrained access to global climate finance for small island states. Reviews Green Climate Fund utilisation and proposes a Pacific Climate Resilience Facility design.',
-    url: 'https://www.adb.org/publications/series/sustainable-development-working-papers', pages: 68,
-    keyContent: `CONTEXT: Pacific Small Island Developing States (SIDS) are among the world's most climate-vulnerable countries yet receive a disproportionately small share of global climate finance. This technical note examines why Pacific SIDS face constrained access and proposes an ADB-anchored facility to address structural barriers.
-
-KEY FINDINGS ON CLIMATE FINANCE ACCESS:
-- Pacific SIDS received approximately USD 285 million in climate finance in 2023, representing just 0.4% of global climate finance flows despite hosting 22 of the world's most climate-vulnerable nations (Notre Dame Global Adaptation Index).
-- Per-capita climate finance for Pacific SIDS (USD ~110/person) is significantly below the global average (USD ~320/person) when adjusted for GDP exposure to climate risk.
-- Green Climate Fund (GCF) accreditation: Only 3 Pacific entities have direct access accreditation to the GCF—the Fiji Development Bank, the Pacific Community (SPC), and the UNDP Pacific Office. All other Pacific DMCs must access through international intermediaries (ADB, World Bank, UN agencies), which slows disbursement and increases transaction costs.
-- Absorption capacity constraints: Pacific governments typically lack the project preparation capacity, environmental and social safeguard expertise, and financial management systems required to access multilateral climate funds directly. Average project preparation costs for a GCF project are USD 2–5 million, prohibitive for small Pacific administrations.
-
-GREEN CLIMATE FUND UTILISATION IN THE PACIFIC:
-- Total GCF approvals for Pacific SIDS (cumulative to December 2025): USD 1.14 billion across 28 projects.
-- Largest recipients: Fiji (USD 220M), PNG (USD 189M), Vanuatu (USD 145M), Kiribati (USD 98M).
-- Average disbursement rate: 34% of approved amounts, well below the GCF global average of 51%, reflecting implementation bottlenecks.
-- Top barriers to disbursement: procurement delays (42%), lack of counterpart staff (31%), co-financing mobilisation gaps (18%), safeguard compliance issues (9%).
-
-PROPOSED PACIFIC CLIMATE RESILIENCE FACILITY (PCRF):
-- ADB proposes establishing a PCRF with initial capitalisation of USD 500 million, combining ADB ordinary capital resources (OCR), ADF grants, GCF co-financing, and bilateral contributions (Australia, New Zealand, Japan).
-- The PCRF would function as a one-stop-shop: providing project preparation grants (up to USD 3M per project), simplified access modalities tailored to Pacific SIDS absorptive capacity, and a fast-track approval pathway for post-disaster response (within 72 hours for initial emergency disbursements).
-- Eligible interventions: coastal protection (seawalls, mangrove restoration), freshwater security (rainwater harvesting, desalination), renewable energy (solar, battery storage), climate-resilient agriculture, and early warning systems.
-- Expected outcomes: 5 million Pacific people with improved climate resilience; 1.2 GW renewable energy installed; 350 km of coastline protected; 200,000 households with improved freshwater access by 2035.
-
-POLICY RECOMMENDATIONS:
-1. Establish the PCRF under ADB administration with co-governance by Pacific governments through a Pacific Board.
-2. Develop a Pacific-specific simplified environmental and social safeguard framework proportionate to project scale and risk.
-3. Build direct access capacity: ADB and GCF to fund accreditation readiness support for 5 additional Pacific entities by 2028.
-4. Integrate Nationally Determined Contributions (NDC) investment plans into national budgeting frameworks to improve climate finance pipeline quality.
-5. Explore innovative instruments: Blue Bonds for ocean economy investments, Catastrophe (CAT) bonds for parametric disaster insurance, and remittance-linked green savings instruments.`,
-  },
-  {
-    id: 'debt-sustainability-pacific-2026',
-    type: 'Working Paper', typeBg: '#FDB915', coverBg: '#2a1d00',
-    title: 'Debt Sustainability in Pacific Island Countries',
-    subtitle: 'Post-Pandemic Trajectories and Policy Options',
-    date: 'February 2026', series: 'ADB Economics Working Papers',
-    abstract: 'Analyses debt dynamics in Vanuatu, Tonga, Solomon Islands, Fiji, and Samoa following the COVID-19 pandemic and recent natural disasters. Includes DSA scenarios to 2030.',
-    url: 'https://www.adb.org/publications/series/economics-working-papers', pages: 44,
-    keyContent: `OVERVIEW: This working paper analyses public debt dynamics in five Pacific Island countries—Fiji, Tonga, Samoa, Vanuatu, and Solomon Islands—from 2015 to 2025 and projects trajectories to 2030 under baseline and stress scenarios using the IMF/World Bank Low-Income Country Debt Sustainability Analysis (LIC-DSA) framework.
-
-DEBT LEVELS AND TRAJECTORIES:
-- Fiji: Public debt rose sharply from 48% of GDP in 2019 to 86% of GDP in 2022 due to COVID-19 pandemic spending (tourism sector collapse, wage subsidy schemes, health expenditure). By 2025, debt moderated to 82% of GDP as growth recovered. The paper projects debt declining to 74% by 2030 under the baseline scenario, contingent on fiscal consolidation. Fiji is assessed at MODERATE risk of debt distress.
-- Tonga: Public debt at 49% of GDP in 2025. Dominated by external concessional debt (China Exim Bank 34%, ADB 28%, World Bank 19%, Australia/NZ bilateral 14%). The 2022 Hunga Tonga volcanic eruption added approximately 9 percentage points to the debt ratio through emergency borrowing. Assessed at HIGH risk of debt distress in the IMF's March 2025 DSA.
-- Samoa: Public debt at 52% of GDP in 2025, down from a peak of 58% in 2021. Remittances (34% of GDP) provide significant external buffer, reducing import coverage risks. Assessed at MODERATE risk under baseline, HIGH risk under the natural disaster stress scenario.
-- Vanuatu: Public debt at 48% of GDP in 2025, elevated from 33% pre-pandemic. Cyclone Judy (2024) added 7 percentage points through reconstruction borrowing. Vanuatu's Citizenship-by-Investment (CBI) programme revenues (approximately 15–20% of government revenue) provide unusual fiscal support but create vulnerability to programme suspension. Assessed at MODERATE risk.
-- Solomon Islands: Public debt at 22% of GDP—the lowest in the sample—but rising from 10% in 2019. Fiscal capacity is constrained by weak revenue mobilisation (tax-to-GDP ratio 18.5%) and dependence on logging royalties (a declining resource). Assessed at LOW-MODERATE risk.
-
-DSA STRESS SCENARIOS TO 2030:
-The paper tests three stress scenarios: (1) Natural Disaster Shock (Category 4 cyclone hitting Fiji in 2027, costing 15% of GDP in damages—Fiji debt peaks at 95% of GDP); (2) Tourism Revenue Collapse (50% decline for two years—Fiji debt reaches 102% of GDP); (3) Global Interest Rate Surge (500 bps increase in external borrowing costs—Tonga and Samoa breach high-risk thresholds).
-
-KEY VULNERABILITIES IDENTIFIED:
-- Currency mismatch: 65–80% of Pacific Island debt is denominated in foreign currency (USD, AUD, SDR), exposing countries to exchange rate risk.
-- Climate-debt nexus: Each major natural disaster adds an average of 5–12 percentage points to the debt-to-GDP ratio in Pacific SIDS, creating a vicious cycle of borrowing for reconstruction.
-- Chinese bilateral debt: Tonga and Vanuatu have significant Chinese Exim Bank loans (31–42% of external debt). These typically carry 2.0–2.5% interest rates with 20-year maturities, but limited transparency on conditionality.
-
-POLICY OPTIONS:
-1. Debt-for-climate swaps: The paper estimates USD 150–250 million in Pacific bilateral debt could be eligible for debt-for-nature/climate swap arrangements with Australia and New Zealand.
-2. Revenue reform: Broadening the VAT base and improving tax compliance could yield 1.5–2.0% of GDP in additional revenue across all five countries.
-3. Catastrophe insurance: Expanding Pacific Catastrophe Risk Assessment and Financing Initiative (PCRAFI) parametric insurance coverage to reduce post-disaster borrowing needs.
-4. Concessional finance prioritisation: Governments should maintain at least 80% of new external borrowing on concessional terms (grant element ≥35%) to keep debt on sustainable trajectories.`,
-  },
-  {
-    id: 'remittances-resilience-2025',
-    type: 'Working Paper', typeBg: '#FDB915', coverBg: '#2a1d00',
-    title: 'Remittances and Economic Resilience in the Pacific',
-    subtitle: 'Evidence from Tonga, Samoa, and Fiji',
-    date: 'October 2025', series: 'ADB Economics Working Papers',
-    abstract: 'Quantifies the stabilising effect of remittance inflows on household consumption and government revenues. Finds a 1% remittance shock reduces poverty by 0.3% in Tonga.',
-    url: 'https://www.adb.org/publications/series/economics-working-papers', pages: 38,
-    keyContent: `OVERVIEW: This working paper uses household survey data and national accounts to quantify remittance inflows to Tonga, Samoa, and Fiji from 2010 to 2024, examining their role as an automatic stabiliser for household consumption, government revenues, and current account balances.
-
-REMITTANCE MAGNITUDES:
-- Tonga: Remittances reached TOP 558 million (USD ~234 million) in FY2024/25, equivalent to 44% of GDP—the highest remittance-to-GDP ratio in the Pacific and among the highest globally. Remittances are primarily sourced from New Zealand (45%), Australia (35%), United States (12%), and other (8%). The PALM (Pacific Australia Labour Mobility) Scheme expansion in 2022 accelerated growth; Tongan participants in PALM reached 18,400 workers by 2025 (up from 4,500 in 2019).
-- Samoa: Remittances of WST 901 million (USD ~326 million) in FY2024/25, equal to 34% of GDP. Sources: New Zealand (52%), Australia (29%), American Samoa (10%), United States (6%). Samoan workers in RSE (Recognised Seasonal Employer) scheme in New Zealand: 14,200 workers.
-- Fiji: Remittances of FJD 1.02 billion (USD ~465 million) in 2024, equal to 13% of GDP—lower ratio than Tonga/Samoa due to Fiji's larger and more diversified economy. Sources: Australia (38%), New Zealand (24%), United States (16%), United Kingdom (12%).
-
-KEY FINDINGS:
-1. Automatic stabiliser effect: During the COVID-19 pandemic (2020–2021), remittances to Tonga fell only 4% while GDP contracted 3.5%, demonstrating counter-cyclical properties. In contrast, tourism revenues fell 98% in Fiji in 2020. Household consumption in high-remittance-receiving households contracted just 6% versus 22% in non-receiving households.
-
-2. Poverty reduction: The paper estimates that a 1 percentage point increase in remittances as a share of GDP reduces the poverty headcount ratio (at USD 2.15/day, 2017 PPP) by approximately 0.30 percentage points in Tonga, 0.22 in Samoa, and 0.09 in Fiji. The lower elasticity in Fiji reflects the more urban, diversified economic structure.
-
-3. Fiscal multiplier: Government revenue benefits from remittances through VAT on remittance-funded consumption and import duties on goods purchased. The paper estimates that each USD 1 in remittances generates approximately USD 0.14 in government revenue in Tonga and USD 0.11 in Samoa through the consumption-tax channel.
-
-4. Current account buffer: Without remittances, the current account deficit in Tonga would widen from an estimated -3% to approximately -28% of GDP; in Samoa from -5% to -22% of GDP.
-
-5. Transfer costs: The average cost of sending USD 200 to Tonga is 7.8% (2024), above the UN SDG target of 3%. Bank-based transfers remain most expensive (avg. 9.1%); mobile money operators (MPaisa, MyCash) average 4.2%. Reducing transfer costs to 3% could increase remittance receipts by an estimated 6–8%.
-
-PALM SCHEME ANALYSIS:
-The PALM Scheme (replacing the earlier Seasonal Worker Programme and Pacific Labour Scheme) has materially increased remittance volumes. The paper finds PALM participants remit on average AUD 12,400 per year (net of costs), compared to AUD 8,200 for pre-PALM seasonal workers. The paper attributes the increase to longer contract durations (up to 4 years under PALM vs. seasonal only), better wages under Australian Award rates, and lower recruitment fees following 2023 reforms.
-
-POLICY RECOMMENDATIONS:
-1. Reduce remittance transfer costs: Regulate fintech entrants to reduce fees; promote interoperability between mobile money platforms.
-2. Formalise remittance-savings linkages: Partner with commercial banks to offer remittance-linked savings and housing loan products to diaspora communities.
-3. Invest in financial inclusion at origin: Only 52% of Tongan adults and 58% of Samoan adults hold formal bank accounts; expanding access would increase productive remittance use.
-4. Manage PALM dependency risks: Develop domestic labour market pathways to ensure communities are not entirely reliant on seasonal migration for income, given the programme's political vulnerability to Australian labour market pressures.`,
-  },
-  {
     id: 'adr-2025',
     type: 'Journal', typeBg: '#E9532B', coverBg: '#2a0e00',
     title: 'Asian Development Review',
@@ -758,6 +657,203 @@ RECENT FEATURED PACIFIC CONTENT:
 INTERACTIVE DATA TOOLS: Development Asia hosts several interactive data portals including: Asia-Pacific Climate Change and Disaster Risk Dashboard; Pacific SIDS Economic Vulnerability Tracker; KIDB Data Visualizer (the public-facing equivalent of this ERDI platform); and the SDG Progress Monitor for ADB members.
 
 TARGET AUDIENCE: Policy-oriented general public, government officials, researchers, students, media, and development practitioners. Content is designed to be accessible without technical economics training while remaining substantively rigorous.`,
+  },
+  // ── Pacific Media ─────────────────────────────────────────────────────────
+  {
+    id: 'rnz-pacific',
+    type: 'News', typeBg: '#00A5D2', coverBg: '#021d30',
+    title: 'RNZ Pacific',
+    subtitle: 'Radio New Zealand — Pacific News Hub',
+    date: 'Daily', series: 'Radio New Zealand',
+    abstract: 'New Zealand\'s public broadcaster covering Pacific Island nations daily. Reporting in English and Pacific languages on politics, economics, climate, and development across the region.',
+    url: 'https://www.rnz.co.nz/international/pacific-news', pages: 0,
+    keyContent: `SOURCE: RNZ Pacific (Radio New Zealand) — https://www.rnz.co.nz/international/pacific-news
+
+RNZ Pacific is New Zealand's most comprehensive English-language Pacific news service, publishing daily reporting across all Pacific Island nations. It is publicly funded and editorially independent.
+
+KEY COVERAGE AREAS:
+- Pacific politics and governance: elections, government policy, parliamentary developments across Fiji, Samoa, Tonga, PNG, Solomon Islands, Vanuatu, Cook Islands, Niue, and all Pacific Forum member states.
+- Economic and development news: IMF/World Bank/ADB programme updates, budget announcements, trade agreements, infrastructure projects, tourism sector performance, and remittance trends.
+- Climate and environment: cyclone and disaster reporting, climate finance negotiations (UNFCCC COP coverage from Pacific perspective), sea-level rise impacts, and renewable energy developments.
+- Labour mobility: PALM Scheme and RSE Scheme worker stories, diaspora community news, migration policy from Australian and New Zealand perspective.
+- Health and social issues: Pacific maternal and child health, NCDs (non-communicable diseases), COVID-19 legacy impacts, food security.
+
+BROADCAST SERVICES: RNZ Pacific also broadcasts via shortwave and AM radio to the Pacific, and produces news in Samoan, Tongan, Niuean, Cook Islands Māori, and Tokelauan.
+
+RELEVANCE TO ERDI: RNZ Pacific is the primary source for near-real-time economic and policy developments in Pacific nations, complementing the statistical data in KIDB with qualitative policy context. Journalists frequently interview ADB, IMF, and Pacific government officials.`,
+  },
+  {
+    id: 'abc-pacific',
+    type: 'News', typeBg: '#007DB7', coverBg: '#001a30',
+    title: 'ABC Pacific',
+    subtitle: 'Australian Broadcasting Corporation — Pacific Beat',
+    date: 'Daily', series: 'ABC International',
+    abstract: 'Australia\'s public broadcaster with dedicated Pacific coverage via Pacific Beat. Reporting on politics, economics, and development across Melanesia, Polynesia, and Micronesia.',
+    url: 'https://www.abc.net.au/pacific', pages: 0,
+    keyContent: `SOURCE: ABC Pacific / Pacific Beat (Australian Broadcasting Corporation) — https://www.abc.net.au/pacific
+
+ABC Pacific is Australia's premier Pacific-focused news service, operated by the Australian Broadcasting Corporation. The flagship programme Pacific Beat airs daily on ABC Radio Australia and is broadcast across the Pacific via shortwave, FM relay stations, and online streaming.
+
+KEY COVERAGE AREAS:
+- Papua New Guinea: Extensive coverage as Australia's nearest large neighbour — political developments, LNG and mining sector news, PNGDF operations, Australian aid programme updates, and border security.
+- Pacific security and geopolitics: Australian strategic engagement in the Pacific, China's Pacific engagement (infrastructure loans, diplomatic recognition), US COMPACT of Free Association negotiations, and Pacific Islands Forum geopolitics.
+- Economic policy: Budget analysis, IMF Article IV consultations, Australian aid (DFAT Pacific programmes), infrastructure investment, and trade.
+- Climate and disaster: Cyclone reporting, Pacific climate advocacy at UNFCCC, coral bleaching and reef health, and climate migration.
+- Labour mobility: Worker testimonials and policy analysis on PALM Scheme, RSE Scheme conditions, and return migration.
+
+PACIFIC BEAT PROGRAMME: Airs Monday–Friday, produced in Sydney with Pacific correspondents in Port Moresby, Suva, Honiara, and Apia. Frequency: shortwave 9580 kHz, 11695 kHz; online via ABC Listen app.
+
+RELEVANCE TO ERDI: ABC Pacific provides Australian government and aid agency perspectives on Pacific economic developments, and is essential for tracking Australia's bilateral economic relationships with Pacific DMCs.`,
+  },
+  {
+    id: 'islands-business',
+    type: 'Magazine', typeBg: '#8DC63F', coverBg: '#0d2a14',
+    title: 'Islands Business',
+    subtitle: 'The Pacific\'s Business & Political Magazine',
+    date: 'Monthly', series: 'Islands Business',
+    abstract: 'Fiji-based regional magazine covering Pacific business, politics, and economics since 1975. The primary English-language business publication across Pacific Island nations.',
+    url: 'https://islandsbusiness.com/', pages: 0,
+    keyContent: `SOURCE: Islands Business — https://islandsbusiness.com/
+
+Islands Business is the Pacific region's longest-running and most widely read business and political magazine, published monthly from Suva, Fiji since 1975. It is read by government officials, business leaders, and development practitioners across all Pacific Island nations.
+
+KEY COVERAGE AREAS:
+- Pacific business news: Corporate developments, banking and finance sector news, investment climate, tourism industry, and trade across all Pacific Island nations.
+- Political economy: Elections, government formation, budget analysis, public policy, and regional diplomacy at Pacific Islands Forum, MSG, and PIF meetings.
+- Sector analysis: Mining and resources (PNG, Solomon Islands), tourism (Fiji, Vanuatu, Cook Islands), fisheries (FSM, Kiribati, Tuvalu), agriculture and copra, and telecommunications.
+- Regional infrastructure: Port, airport, and road development projects; ADB, World Bank, and Chinese-funded infrastructure.
+- Finance and banking: Central bank news (RBF, NRBT, CBS, CBSI, BPNG), interest rate decisions, credit growth, banking system developments, and financial inclusion.
+
+FLAGSHIP SECTIONS:
+- Business Monitor: Monthly economic indicators and commentary for each Pacific nation
+- Pacific CEO Profiles: Interviews with regional business leaders
+- Political Analysis: Regional political risk assessments
+- Tourism Tracker: Visitor arrival data and hotel occupancy rates
+
+RELEVANCE TO ERDI: Islands Business provides the business community perspective on Pacific economic data, bridging statistical indicators with ground-level business conditions and investment sentiment across the region.`,
+  },
+  {
+    id: 'pacific-island-times',
+    type: 'News', typeBg: '#E9532B', coverBg: '#2a0e00',
+    title: 'Pacific Island Times',
+    subtitle: 'News from Guam, CNMI, Palau, FSM, Marshall Islands',
+    date: 'Daily', series: 'Pacific Island Times',
+    abstract: 'Independent news outlet covering Micronesia — Guam, Commonwealth of the Northern Mariana Islands, Palau, Federated States of Micronesia, and Marshall Islands.',
+    url: 'https://www.pacificislandtimes.com/', pages: 0,
+    keyContent: `SOURCE: Pacific Island Times — https://www.pacificislandtimes.com/
+
+Pacific Island Times is an independent digital news outlet focused primarily on Micronesian territories and nations: Guam, the Commonwealth of the Northern Mariana Islands (CNMI), Palau, the Federated States of Micronesia (FSM), and the Marshall Islands. It provides English-language coverage of politics, economics, and community affairs across this largely underreported subregion.
+
+KEY COVERAGE AREAS:
+- COMPACT of Free Association: US COMPACT agreement negotiations and implementation for FSM, Marshall Islands, and Palau — federal funding flows, military use agreements, and migration rights.
+- Military and geopolitics: US military base developments on Guam and Tinian; strategic competition in the Pacific; China-Pacific diplomatic relations.
+- Economic development: Federal grants and Compact funding utilisation; tourism (Palau's conservation-focused tourism model); fisheries (FSM EEZ management); infrastructure development.
+- CNMI economy: Tourism from Japan and South Korea; casino sector (Imperial Pacific); garment industry legacy; labour and immigration policy.
+- Palau environmental economics: UNESCO World Heritage marine protected area management; green fee tourism policy; coral reef conservation and climate adaptation.
+- FSM and Marshall Islands: Subsistence fishing economy; migration to US; climate vulnerability (Marshall Islands faces complete inundation risk); PITI-VITI governance.
+
+MICRONESIA ECONOMIC CONTEXT: FSM, Marshall Islands, and Palau are among the world's most aid-dependent economies. US Compact grants represent 40–70% of government revenue in these nations. These economies use the USD and have no independent monetary policy.
+
+RELEVANCE TO ERDI: Essential for tracking economic and political developments in Micronesian ADB member states (FSM, Marshall Islands, Palau, Nauru) which receive limited coverage from other Pacific media.`,
+  },
+  {
+    id: 'saipan-tribune',
+    type: 'News', typeBg: '#FDB915', coverBg: '#2a1d00',
+    title: 'Saipan Tribune',
+    subtitle: 'CNMI & Marianas Business Journal — Northern Mariana Islands',
+    date: 'Daily', series: 'Saipan Tribune / Marianas Business Journal',
+    abstract: 'Primary news and business publication for the Commonwealth of the Northern Mariana Islands (CNMI), covering local politics, business, tourism, and regional economic developments.',
+    url: 'https://www.saipantribune.com/', pages: 0,
+    keyContent: `SOURCE: Saipan Tribune / Marianas Business Journal — https://www.saipantribune.com/
+
+The Saipan Tribune is the CNMI's primary daily newspaper and serves as the principal outlet for business and economic reporting in the Northern Mariana Islands, including coverage previously published under the Marianas Business Journal brand.
+
+KEY COVERAGE AREAS:
+- CNMI economy: Tourism sector recovery (visitor arrivals from Japan, South Korea, China, Russia); casino sector developments; federal COVID-19 relief fund utilisation; labour market conditions.
+- Business and investment: CNMI investment incentives; garment industry legacy (post-WTO quota expiration); small business developments; construction and real estate.
+- US federal relations: CNMI relationship with US federal government; Congressional developments affecting CNMI; immigration and labour waivers; military land use issues.
+- Fiscal and budget: CNMI government budget, tax revenues, pension fund conditions (CNMI pension system has faced significant underfunding), and public debt.
+- Regional Pacific business: Selected coverage of Guam business, Palau tourism, and Western Pacific COMPACT economies.
+
+CNMI ECONOMIC CONTEXT: CNMI uses the USD and is a US territory with full US federal programme access. Tourism is the primary private sector driver (pre-pandemic: ~600,000 visitors/year, mostly from Asia). The economy has not fully recovered from the combined impacts of Typhoon Yutu (2018) and COVID-19 border closures (2020–2023). CNMI GDP estimated at approximately USD 900 million (2024).
+
+RELEVANCE TO ERDI: The Saipan Tribune/Marianas Business Journal is the key source for economic developments in CNMI, a US Pacific territory whose economy has significant linkages to Asian tourism markets and US federal fiscal policy.`,
+  },
+  {
+    id: 'png-post-courier',
+    type: 'News', typeBg: '#E9532B', coverBg: '#2a0800',
+    title: 'PNG Post-Courier',
+    subtitle: 'Papua New Guinea\'s Leading Daily Newspaper',
+    date: 'Daily', series: 'Post-Courier',
+    abstract: 'Papua New Guinea\'s largest circulation daily newspaper, founded in 1969. Primary source for PNG business, economic, political, and mining sector news.',
+    url: 'https://postcourier.com.pg/', pages: 0,
+    keyContent: `SOURCE: PNG Post-Courier — https://postcourier.com.pg/
+
+The Post-Courier is Papua New Guinea's largest circulation daily newspaper, first published in 1969 (the year before PNG independence). It is the primary English-language source for PNG business, political, and economic news.
+
+KEY COVERAGE AREAS:
+- PNG economy and budget: Annual national budget coverage, mid-year economic updates, Treasury Department announcements, Bank of Papua New Guinea monetary policy decisions (Kina Facility Rate), and currency (PGK) movement.
+- Extractive industries: LNG sector (ExxonMobil PNG LNG project, Papua LNG development), gold and copper mining (Lihir Gold, Ok Tedi, Porgera resumption, Wafi-Golpu), and oil production. PNG's extractive sector generates approximately 70% of export earnings.
+- Agriculture and commodities: Cocoa, coffee, palm oil, and copra price and production reporting — important for rural smallholder livelihoods.
+- Political economy: Parliamentary developments, government budget and fiscal policy, corruption investigations, SOE privatisation debates, and ADB/World Bank project approvals.
+- Business and corporate: PNG banking sector (BSP Financial Group, Kina Bank, ANZ PNG), PNG Stock Exchange (PNGX) listings, and private sector investment.
+- Infrastructure: Highlands Highway (PNG's critical transport artery), port development (Port Moresby, Lae), and telecommunications (Digicel, Telikom PNG).
+
+PNG ECONOMIC CONTEXT: PNG is the largest economy in the Pacific (GDP ~USD 28.6 billion, 2024). Despite significant resource wealth, poverty remains high (36.9% at USD 2.15/day). The kina has faced sustained depreciation pressure against the USD due to FX shortages. The Bank of PNG (BPNG) maintains the Kina Facility Rate at 3.0% (2025).
+
+RELEVANCE TO ERDI: PNG's economy dominates Pacific subregional aggregates. Post-Courier is essential for tracking PNG-specific developments that significantly affect Pacific-wide economic indicators.`,
+  },
+  {
+    id: 'png-the-national',
+    type: 'News', typeBg: '#007DB7', coverBg: '#001a30',
+    title: 'The National (PNG)',
+    subtitle: 'Papua New Guinea\'s National Newspaper',
+    date: 'Daily', series: 'The National',
+    abstract: 'Papua New Guinea\'s second major daily newspaper. Known for business analysis, government policy coverage, and investigative reporting on PNG\'s political economy.',
+    url: 'https://www.thenational.com.pg/', pages: 0,
+    keyContent: `SOURCE: The National (Papua New Guinea) — https://www.thenational.com.pg/
+
+The National is Papua New Guinea's second major daily broadsheet newspaper. While the Post-Courier has higher circulation, The National is widely regarded for stronger business analysis and more in-depth policy reporting.
+
+KEY COVERAGE AREAS:
+- PNG fiscal and economic policy: Budget analysis, Treasury and Finance Department policy announcements, IMF Article IV consultation outcomes, ADB and World Bank programme developments.
+- Mining and petroleum: Detailed coverage of Ok Tedi, Lihir, Porgera, and new project developments; PNG LNG production updates; resource revenue management (Sovereign Wealth Fund debates).
+- Bank of Papua New Guinea: Monetary policy decisions, foreign exchange (FX) shortage reporting, kina exchange rate developments, and banking system supervision.
+- PNG government and parliament: Political economy reporting on fiscal policy, SOE reform, and public sector management.
+- Business and investment: Private sector investment climate, PNG Chamber of Commerce & Industry developments, SME policy, and foreign investment approvals.
+- Agricultural sector: Coffee, cocoa, copra, palm oil — smallholder and plantation sector economics, commodity prices, and export performance.
+
+DISTINCTIVE COVERAGE: The National publishes a regular "Business Monday" supplement with in-depth PNG economic analysis, and provides detailed coverage of the PNG Stock Exchange (PNGX) and financial sector developments that are not always covered by the Post-Courier.
+
+PNG BANKING SECTOR: BSP Financial Group (PNG's largest bank, also operating in 10 Pacific countries), Kina Bank, ANZ PNG, and Westpac PNG. Combined banking assets approximately PGK 45 billion (2024). Non-performing loan ratio approximately 5.2%.
+
+RELEVANCE TO ERDI: Complements Post-Courier coverage with more analytical business and economic reporting; valuable for tracking PNG policy debates that affect the broader Pacific economic outlook.`,
+  },
+  {
+    id: 'fbc-news',
+    type: 'News', typeBg: '#8DC63F', coverBg: '#0d2a14',
+    title: 'FBC News',
+    subtitle: 'Fiji Broadcasting Corporation — Fiji & Pacific News',
+    date: 'Daily', series: 'Fiji Broadcasting Corporation',
+    abstract: 'Fiji\'s national broadcaster covering Fiji business, politics, and Pacific regional news. Primary broadcast source for Reserve Bank of Fiji monetary policy and government economic announcements.',
+    url: 'https://www.fbcnews.com.fj/', pages: 0,
+    keyContent: `SOURCE: FBC News (Fiji Broadcasting Corporation) — https://www.fbcnews.com.fj/
+
+Fiji Broadcasting Corporation (FBC) is Fiji's national public broadcaster, operating radio and television services in English, iTaukei (Fijian), and Hindi. FBC News is its online news platform, covering Fiji and the broader Pacific.
+
+KEY COVERAGE AREAS:
+- Fiji economy: Reserve Bank of Fiji (RBF) Overnight Policy Rate (OPR) decisions, credit growth data, foreign reserves, remittance inflows, and banking sector news. The RBF holds its OPR at 0.25% (2025) in support of economic recovery.
+- Government budget and fiscal policy: Annual Fiji national budget (typically presented in June), Ministry of Economy fiscal updates, public debt management, and tax policy changes.
+- Tourism: Visitor arrival statistics (Tourism Fiji monthly data), hotel occupancy, airline capacity, and cruise ship arrivals. Fiji's tourism sector recovered to exceed pre-pandemic levels by 2025.
+- Sugar and agriculture: Fiji Sugar Corporation (FSC) performance, cane production, and sugar price developments — sugar remains a major rural livelihood sector employing ~200,000 people directly and indirectly.
+- Inflation and cost of living: Consumer Price Index (CPI) releases from Fiji Bureau of Statistics, food price tracking, and utility costs (FEA electricity tariffs).
+- Pacific regional news: Regional diplomacy (Pacific Islands Forum, MSG), neighbour country economic developments, and climate policy.
+
+FIJI ECONOMIC CONTEXT: Fiji is the Pacific's most economically diverse nation (GDP ~USD 5.1 billion, 2024). Key sectors: tourism (27% of GDP), sugar, gold mining (Vatukoula), garments, and financial services. Fiji is the regional financial hub, hosting the Reserve Bank of Fiji, BSP Fiji, ANZ Fiji, Westpac Fiji, and HFC Bank.
+
+KEY FBC PROGRAMMES: FBC Business Report (daily); Saturday Business Edition; RBF Press Conference coverage; Budget Night special broadcast.
+
+RELEVANCE TO ERDI: FBC News is the most reliable source for real-time Fiji economic data releases (CPI, visitor arrivals, RBF decisions) and Pacific Islands Forum diplomatic developments that affect regional economic cooperation.`,
   },
 ]
 
@@ -1150,6 +1246,60 @@ function PublicationsView() {
     )
   }
 
+  const adbPubs = PUBLICATIONS.filter(p => !['rnz-pacific','abc-pacific','islands-business','pacific-island-times','saipan-tribune','png-post-courier','png-the-national','fbc-news'].includes(p.id))
+  const mediaPubs = PUBLICATIONS.filter(p => ['rnz-pacific','abc-pacific','islands-business','pacific-island-times','saipan-tribune','png-post-courier','png-the-national','fbc-news'].includes(p.id))
+
+  const PubCard = ({ pub }: { pub: Publication }) => (
+    <div
+      key={pub.id}
+      onClick={() => { setSelected(pub); setPubChat([]) }}
+      style={{
+        background: 'var(--th-card)', border: '1px solid var(--th-border)',
+        borderRadius: 6, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        cursor: 'pointer', transition: 'border-color 0.15s, transform 0.15s',
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.borderColor = pub.typeBg
+        ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.borderColor = 'var(--th-border)'
+        ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+      }}
+    >
+      <div style={coverStyle(pub)}>
+        <div style={{
+          position: 'absolute', top: 0, right: 0, width: 80, height: 80,
+          background: `${pub.typeBg}1a`, transform: 'translate(20px,-20px) rotate(45deg)',
+        }}/>
+        <div style={{
+          position: 'absolute', top: 10, right: 10, background: '#002569',
+          borderRadius: 3, padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: '0.06em',
+        }}>{mediaPubs.includes(pub) ? 'MEDIA' : 'ADB'}</div>
+        <div style={{ fontSize: 8.5, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: `${pub.typeBg}cc`, marginBottom: 5 }}>{pub.series}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.35, color: '#fff' }}>{pub.title}</div>
+      </div>
+      <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
+            color: pub.typeBg, background: `${pub.typeBg}18`, padding: '2px 7px', borderRadius: 2,
+          }}>{pub.type}</span>
+          <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.date}</span>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--th-muted)', fontStyle: 'italic', lineHeight: 1.4 }}>{pub.subtitle}</div>
+        <div style={{ fontSize: 10.5, color: 'var(--th-muted)', lineHeight: 1.65, flex: 1 }}>{pub.abstract}</div>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          borderTop: '1px solid var(--th-border)', paddingTop: 8, marginTop: 4,
+        }}>
+          {pub.pages ? <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.pages} pages</span> : <span />}
+          <span style={{ fontSize: 10.5, color: pub.typeBg }}>Open & Chat →</span>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div style={{ padding: '8px 0 40px' }}>
       <div style={{ marginBottom: 20 }}>
@@ -1160,61 +1310,25 @@ function PublicationsView() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
-        {PUBLICATIONS.map(pub => (
-          <div
-            key={pub.id}
-            onClick={() => { setSelected(pub); setPubChat([]) }}
-            style={{
-              background: 'var(--th-card)', border: '1px solid var(--th-border)',
-              borderRadius: 6, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-              cursor: 'pointer', transition: 'border-color 0.15s, transform 0.15s',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = pub.typeBg
-              ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'var(--th-border)'
-              ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-            }}
-          >
-            <div style={coverStyle(pub)}>
-              <div style={{
-                position: 'absolute', top: 0, right: 0, width: 80, height: 80,
-                background: `${pub.typeBg}1a`, transform: 'translate(20px,-20px) rotate(45deg)',
-              }}/>
-              <div style={{
-                position: 'absolute', top: 10, right: 10, background: '#002569',
-                borderRadius: 3, padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: '0.06em',
-              }}>ADB</div>
-              <div style={{ fontSize: 8.5, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: `${pub.typeBg}cc`, marginBottom: 5 }}>{pub.series}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.35, color: '#fff' }}>{pub.title}</div>
-            </div>
-            <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
-                  color: pub.typeBg, background: `${pub.typeBg}18`, padding: '2px 7px', borderRadius: 2,
-                }}>{pub.type}</span>
-                <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.date}</span>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--th-muted)', fontStyle: 'italic', lineHeight: 1.4 }}>{pub.subtitle}</div>
-              <div style={{ fontSize: 10.5, color: 'var(--th-muted)', lineHeight: 1.65, flex: 1 }}>{pub.abstract}</div>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                borderTop: '1px solid var(--th-border)', paddingTop: 8, marginTop: 4,
-              }}>
-                {pub.pages && <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.pages} pages</span>}
-                <span style={{ fontSize: 10.5, color: pub.typeBg, marginLeft: 'auto' }}>Open & Chat →</span>
-              </div>
-            </div>
-          </div>
-        ))}
+        {adbPubs.map(pub => <PubCard key={pub.id} pub={pub} />)}
       </div>
 
-      <div style={{ marginTop: 16, fontSize: 10.5, color: 'var(--th-muted)' }}>
-        All publications are freely available at{' '}
-        <span style={{ color: adb.blueLight }}>adb.org/publications</span>.
+      <div style={{
+        margin: '32px 0 16px', display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <div style={{ flex: 1, height: 1, background: 'var(--th-border)' }} />
+        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--th-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>
+          Pacific Media Sources
+        </span>
+        <div style={{ flex: 1, height: 1, background: 'var(--th-border)' }} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+        {mediaPubs.map(pub => <PubCard key={pub.id} pub={pub} />)}
+      </div>
+
+      <div style={{ marginTop: 20, fontSize: 10.5, color: 'var(--th-muted)' }}>
+        ADB publications at <span style={{ color: adb.blueLight }}>adb.org/publications</span>. Media sources link to their respective homepages.
       </div>
     </div>
   )
