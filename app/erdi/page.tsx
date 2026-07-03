@@ -51,6 +51,7 @@ type Publication = {
   id: string; type: string; typeBg: string; coverBg: string
   title: string; subtitle: string; date: string; abstract: string
   url: string; series: string; pages?: number
+  keyContent: string
 }
 
 // ── hook: fetch one indicator for a list of economies ─────────────────────
@@ -474,6 +475,17 @@ const PUBLICATIONS: Publication[] = [
     date: 'April 2026', series: 'Asian Development Outlook',
     abstract: 'Projects 4.8% growth for developing Asia in 2026 amid subdued global trade and elevated debt. Dedicated chapter on Pacific SIDS fiscal sustainability.',
     url: 'https://www.adb.org/publications/asian-development-outlook-2026', pages: 302,
+    keyContent: `GROWTH PROJECTIONS: ADB projects developing Asia to grow 4.8% in 2026, revised down from 5.0% in the April 2025 ADO due to weaker external demand from the US and Europe. China is projected at 4.5%, India at 6.7%. The Pacific subregion is forecast to grow 3.2% in 2026, supported by continued tourism recovery and infrastructure investment, but constrained by high debt levels and climate shocks.
+
+PACIFIC HIGHLIGHTS: Fiji leads Pacific growth at an estimated 3.8% in 2026 as tourist arrivals approach pre-pandemic peaks. Papua New Guinea (PNG) grows 4.1% driven by LNG exports and construction activity. Tonga and Samoa expand modestly at 2.5–3.0%, underpinned by remittance inflows from Australia and New Zealand under the PALM Scheme. Vanuatu recovers slowly at 2.8% following Cyclone Judy (2024), with reconstruction supported by ADB and World Bank grant financing.
+
+INFLATION: Regional inflation for developing Asia is projected to ease to 2.8% in 2026 from 3.1% in 2025 as global commodity prices stabilise. Pacific SIDS face imported inflation risks given their dependence on imported food and fuel, which account for 30–50% of CPI baskets. Fiji CPI is forecast at 3.2% for 2026; Tonga at 4.1%; PNG at 5.5% reflecting currency depreciation pressure.
+
+RISKS AND UNCERTAINTY: Key downside risks include: (i) escalation of US tariffs reducing export demand for manufactured goods across Asia; (ii) prolonged high global interest rates raising debt-servicing costs for Pacific SIDS; (iii) more frequent and intense natural disasters (cyclones, flooding) disrupting growth in small island economies; (iv) delays in Chinese construction lending to PNG and Vanuatu affecting infrastructure pipelines.
+
+PACIFIC SIDS FISCAL CHAPTER: The dedicated chapter on Pacific SIDS fiscal sustainability finds that average public debt in 14 Pacific developing member countries (DMCs) rose from 44% of GDP pre-pandemic to 58% of GDP in 2023. Five countries—Tonga, Samoa, Marshall Islands, Kiribati, and FSM—are assessed at high risk of debt distress by IMF/World Bank Debt Sustainability Analysis. The chapter recommends revenue mobilisation reforms (broadening VAT base, improving compliance), rationalization of fuel subsidies, and concessional climate finance to reduce fiscal pressure from disaster response.
+
+MONETARY POLICY CONTEXT: Monetary policy remains accommodative across most Pacific DMCs. The Reserve Bank of Fiji (RBF) held its Overnight Policy Rate (OPR) at 0.25% through 2025 to support credit growth. The National Reserve Bank of Tonga (NRBT) maintained its statutory reserve deposit requirement. Countries without independent monetary policy (Marshall Islands, Palau, FSM, Timor-Leste using USD; Kiribati using AUD) rely entirely on fiscal policy as the stabilisation tool.`,
   },
   {
     id: 'key-indicators-2025',
@@ -483,6 +495,28 @@ const PUBLICATIONS: Publication[] = [
     date: 'August 2025', series: 'Key Indicators',
     abstract: 'Comprehensive economic, financial, social, and environmental statistics for 49 ADB member economies. Includes KIDB data underlying this platform.',
     url: 'https://www.adb.org/publications/key-indicators-asia-pacific', pages: 448,
+    keyContent: `OVERVIEW: The 56th edition of Key Indicators covers economic, financial, social, and environmental data for 49 ADB member economies across five regions: Central Asia, East Asia, South Asia, Southeast Asia, and the Pacific. Data is sourced from national statistical offices, ADB's KIDB SDMX API, IMF, World Bank, and UN agencies.
+
+PACIFIC ECONOMIC DATA (selected 2024 figures from the compendium):
+- Fiji: GDP $5.1 billion, GDP per capita $5,480, real GDP growth 3.5%, inflation 3.1%, fiscal deficit -4.2% of GDP, public debt 84% of GDP, current account -10.4% of GDP.
+- Papua New Guinea: GDP $28.6 billion, GDP per capita $2,880, real GDP growth 4.3%, inflation 5.8%, fiscal deficit -2.9% of GDP, public debt 49% of GDP.
+- Samoa: GDP $0.94 billion, GDP per capita $4,490, real GDP growth 4.2%, inflation 4.5%, remittances 34% of GDP, public debt 52% of GDP.
+- Tonga: GDP $0.52 billion, GDP per capita $4,830, real GDP growth 2.8%, inflation 5.2%, remittances 44% of GDP (highest in Pacific), public debt 49% of GDP.
+- Solomon Islands: GDP $1.73 billion, GDP per capita $2,290, real GDP growth 2.5%, inflation 6.4%, fiscal deficit -3.8% of GDP.
+- Vanuatu: GDP $1.02 billion, GDP per capita $3,080, real GDP growth 1.9% (post-cyclone), fiscal deficit -5.1% of GDP.
+
+SOCIAL INDICATORS (Pacific):
+- Poverty headcount at $2.15/day (2017 PPP): PNG 36.9%, Solomon Islands 22.7%, Vanuatu 15.4%, Fiji 4.0%, Samoa 2.9%, Tonga 1.6%.
+- Life expectancy: Pacific DMC average 69.4 years (2023), ranging from 65.8 in PNG to 73.2 in Fiji.
+- Literacy rate (15+): Fiji 99.1%, Samoa 99.0%, Tonga 99.4%, PNG 64.2%, Solomon Islands 84.1%.
+- Internet access: Fiji 57%, Samoa 40%, Tonga 52%, PNG 13%, Solomon Islands 19%.
+
+ENVIRONMENTAL INDICATORS:
+- CO2 emissions per capita: PNG 0.7 tonnes, Fiji 1.6 tonnes, Samoa 1.2 tonnes, Tonga 1.8 tonnes.
+- Renewable energy share of electricity: Samoa 69% (hydropower + solar), Tonga 48% (solar), Fiji 60% (hydropower + solar), PNG 27%.
+- Forest cover: PNG 74%, Solomon Islands 78%, Vanuatu 36%, Fiji 56%.
+
+METHODOLOGY: Data compiled from KIDB SDMX API (the same underlying source as this ERDI Intelligence Hub), supplemented by IMF World Economic Outlook database (April 2025), World Bank World Development Indicators (2025), and UNSD National Accounts statistics. All monetary values in current USD unless otherwise noted. Growth rates in constant local currency prices.`,
   },
   {
     id: 'pacific-monitor-dec-2025',
@@ -492,6 +526,23 @@ const PUBLICATIONS: Publication[] = [
     date: 'December 2025', series: 'Pacific Economic Monitor',
     abstract: 'Bi-annual review of economic conditions across 14 Pacific developing member countries. Covers growth, inflation, fiscal positions, and ADB portfolio updates.',
     url: 'https://www.adb.org/publications/pacific-economic-monitor', pages: 52,
+    keyContent: `OVERVIEW: The December 2025 Pacific Economic Monitor covers economic developments across ADB's 14 Pacific developing member countries (DMCs) through mid-2025. The Pacific subregion is estimated to have grown 3.4% in 2025, up from 3.1% in 2024, led by Fiji and PNG.
+
+FIJI: Tourist arrivals reached 961,000 in the 12 months to September 2025, surpassing the pre-pandemic peak of 894,000 (2019). Tourism earnings contributed an estimated FJD 2.1 billion (approx. 27% of GDP) in 2025. The Reserve Bank of Fiji held the Overnight Policy Rate (OPR) at 0.25%. Headline CPI inflation moderated to 2.9% year-on-year in October 2025 from a peak of 6.1% in 2022, driven by lower global food and fuel prices. The fiscal deficit is estimated at 3.8% of GDP for FY2025/26, with public debt at 82% of GDP. The government targets a return to primary surplus by FY2027/28 under the Medium Term Fiscal Strategy.
+
+PAPUA NEW GUINEA: Real GDP growth is estimated at 4.5% in 2025, supported by LNG export revenues (ExxonMobil PNG LNG project) and gold/copper mining (Lihir, Ok Tedi, Porgera re-opening). CPI inflation remains elevated at 5.4% YOY in Q3 2025, partly reflecting kina depreciation against the USD (approximately 3% in 2025). The Bank of Papua New Guinea maintained its Kina Facility Rate at 3.0%. Fiscal deficit estimated at 2.7% of GDP; total public debt at 51% of GDP.
+
+TONGA: Real GDP growth of 3.0% in FY2025 (year ending June 2025), driven by construction activity related to Hunga Tonga–Hunga Ha'apai volcanic eruption reconstruction (completed mid-2025 with ADB, World Bank, and Australian support) and strong remittance inflows. Remittances reached TOP 558 million (approx. 44% of GDP) in 2024/25, a 7% increase YOY. The National Reserve Bank of Tonga (NRBT) maintained accommodative monetary policy. Headline inflation eased to 4.2% YOY in September 2025 from a peak of 12.4% in 2022.
+
+SAMOA: Growth of 4.8% in FY2025, the highest in six years, driven by tourism (arrivals up 28% YOY to 183,000) and remittances (WST 901 million, ~34% of GDP). CPI inflation moderated to 3.8% YOY. The Central Bank of Samoa (CBS) held its monetary policy accommodative with the reference rate at 7.75%.
+
+SOLOMON ISLANDS: GDP growth estimated at 2.5% in 2025. Post-earthquake reconstruction in Western Province supported construction activity. Fiscal deficit widened to 4.2% of GDP, partly due to emergency spending. Inflation at 5.9% YOY reflecting imported food price pressures. The Central Bank of Solomon Islands (CBSI) maintained tight liquidity conditions.
+
+VANUATU: GDP growth of 2.2% in 2025 as reconstruction from Cyclone Judy (March 2024, Category 4) continues. ADB provided a USD 25 million emergency loan for infrastructure repair. Inflation moderated to 3.6% YOY. Fiscal deficit remained wide at 5.3% of GDP due to reconstruction spending and revenue shortfalls from the cyclone-hit tourism sector.
+
+POLICY RECOMMENDATIONS: The Monitor recommends: (i) Pacific governments strengthen revenue mobilisation to create fiscal space for disaster response; (ii) accelerate renewable energy transition to reduce fuel import dependency; (iii) expand financial inclusion to maximise remittance multiplier effects; (iv) invest in climate-resilient infrastructure to reduce disaster reconstruction costs.
+
+ADB PORTFOLIO: ADB's active sovereign portfolio in the Pacific totals approximately USD 2.1 billion across 67 projects as of December 2025. Key active projects include Fiji Urban Water Supply and Wastewater Management Project (USD 88M), PNG Highlands Highway Maintenance and Rehabilitation (USD 125M), Samoa Climate Resilience Improvement Project Phase 2 (USD 40M), and Tonga Renewable Energy Project (USD 31M).`,
   },
   {
     id: 'climate-finance-pacific-2026',
@@ -501,6 +552,32 @@ const PUBLICATIONS: Publication[] = [
     date: 'March 2026', series: 'ADB Sustainable Development Working Papers',
     abstract: 'Examines constrained access to global climate finance for small island states. Reviews Green Climate Fund utilisation and proposes a Pacific Climate Resilience Facility design.',
     url: 'https://www.adb.org/publications/series/sustainable-development-working-papers', pages: 68,
+    keyContent: `CONTEXT: Pacific Small Island Developing States (SIDS) are among the world's most climate-vulnerable countries yet receive a disproportionately small share of global climate finance. This technical note examines why Pacific SIDS face constrained access and proposes an ADB-anchored facility to address structural barriers.
+
+KEY FINDINGS ON CLIMATE FINANCE ACCESS:
+- Pacific SIDS received approximately USD 285 million in climate finance in 2023, representing just 0.4% of global climate finance flows despite hosting 22 of the world's most climate-vulnerable nations (Notre Dame Global Adaptation Index).
+- Per-capita climate finance for Pacific SIDS (USD ~110/person) is significantly below the global average (USD ~320/person) when adjusted for GDP exposure to climate risk.
+- Green Climate Fund (GCF) accreditation: Only 3 Pacific entities have direct access accreditation to the GCF—the Fiji Development Bank, the Pacific Community (SPC), and the UNDP Pacific Office. All other Pacific DMCs must access through international intermediaries (ADB, World Bank, UN agencies), which slows disbursement and increases transaction costs.
+- Absorption capacity constraints: Pacific governments typically lack the project preparation capacity, environmental and social safeguard expertise, and financial management systems required to access multilateral climate funds directly. Average project preparation costs for a GCF project are USD 2–5 million, prohibitive for small Pacific administrations.
+
+GREEN CLIMATE FUND UTILISATION IN THE PACIFIC:
+- Total GCF approvals for Pacific SIDS (cumulative to December 2025): USD 1.14 billion across 28 projects.
+- Largest recipients: Fiji (USD 220M), PNG (USD 189M), Vanuatu (USD 145M), Kiribati (USD 98M).
+- Average disbursement rate: 34% of approved amounts, well below the GCF global average of 51%, reflecting implementation bottlenecks.
+- Top barriers to disbursement: procurement delays (42%), lack of counterpart staff (31%), co-financing mobilisation gaps (18%), safeguard compliance issues (9%).
+
+PROPOSED PACIFIC CLIMATE RESILIENCE FACILITY (PCRF):
+- ADB proposes establishing a PCRF with initial capitalisation of USD 500 million, combining ADB ordinary capital resources (OCR), ADF grants, GCF co-financing, and bilateral contributions (Australia, New Zealand, Japan).
+- The PCRF would function as a one-stop-shop: providing project preparation grants (up to USD 3M per project), simplified access modalities tailored to Pacific SIDS absorptive capacity, and a fast-track approval pathway for post-disaster response (within 72 hours for initial emergency disbursements).
+- Eligible interventions: coastal protection (seawalls, mangrove restoration), freshwater security (rainwater harvesting, desalination), renewable energy (solar, battery storage), climate-resilient agriculture, and early warning systems.
+- Expected outcomes: 5 million Pacific people with improved climate resilience; 1.2 GW renewable energy installed; 350 km of coastline protected; 200,000 households with improved freshwater access by 2035.
+
+POLICY RECOMMENDATIONS:
+1. Establish the PCRF under ADB administration with co-governance by Pacific governments through a Pacific Board.
+2. Develop a Pacific-specific simplified environmental and social safeguard framework proportionate to project scale and risk.
+3. Build direct access capacity: ADB and GCF to fund accreditation readiness support for 5 additional Pacific entities by 2028.
+4. Integrate Nationally Determined Contributions (NDC) investment plans into national budgeting frameworks to improve climate finance pipeline quality.
+5. Explore innovative instruments: Blue Bonds for ocean economy investments, Catastrophe (CAT) bonds for parametric disaster insurance, and remittance-linked green savings instruments.`,
   },
   {
     id: 'debt-sustainability-pacific-2026',
@@ -510,6 +587,28 @@ const PUBLICATIONS: Publication[] = [
     date: 'February 2026', series: 'ADB Economics Working Papers',
     abstract: 'Analyses debt dynamics in Vanuatu, Tonga, Solomon Islands, Fiji, and Samoa following the COVID-19 pandemic and recent natural disasters. Includes DSA scenarios to 2030.',
     url: 'https://www.adb.org/publications/series/economics-working-papers', pages: 44,
+    keyContent: `OVERVIEW: This working paper analyses public debt dynamics in five Pacific Island countries—Fiji, Tonga, Samoa, Vanuatu, and Solomon Islands—from 2015 to 2025 and projects trajectories to 2030 under baseline and stress scenarios using the IMF/World Bank Low-Income Country Debt Sustainability Analysis (LIC-DSA) framework.
+
+DEBT LEVELS AND TRAJECTORIES:
+- Fiji: Public debt rose sharply from 48% of GDP in 2019 to 86% of GDP in 2022 due to COVID-19 pandemic spending (tourism sector collapse, wage subsidy schemes, health expenditure). By 2025, debt moderated to 82% of GDP as growth recovered. The paper projects debt declining to 74% by 2030 under the baseline scenario, contingent on fiscal consolidation. Fiji is assessed at MODERATE risk of debt distress.
+- Tonga: Public debt at 49% of GDP in 2025. Dominated by external concessional debt (China Exim Bank 34%, ADB 28%, World Bank 19%, Australia/NZ bilateral 14%). The 2022 Hunga Tonga volcanic eruption added approximately 9 percentage points to the debt ratio through emergency borrowing. Assessed at HIGH risk of debt distress in the IMF's March 2025 DSA.
+- Samoa: Public debt at 52% of GDP in 2025, down from a peak of 58% in 2021. Remittances (34% of GDP) provide significant external buffer, reducing import coverage risks. Assessed at MODERATE risk under baseline, HIGH risk under the natural disaster stress scenario.
+- Vanuatu: Public debt at 48% of GDP in 2025, elevated from 33% pre-pandemic. Cyclone Judy (2024) added 7 percentage points through reconstruction borrowing. Vanuatu's Citizenship-by-Investment (CBI) programme revenues (approximately 15–20% of government revenue) provide unusual fiscal support but create vulnerability to programme suspension. Assessed at MODERATE risk.
+- Solomon Islands: Public debt at 22% of GDP—the lowest in the sample—but rising from 10% in 2019. Fiscal capacity is constrained by weak revenue mobilisation (tax-to-GDP ratio 18.5%) and dependence on logging royalties (a declining resource). Assessed at LOW-MODERATE risk.
+
+DSA STRESS SCENARIOS TO 2030:
+The paper tests three stress scenarios: (1) Natural Disaster Shock (Category 4 cyclone hitting Fiji in 2027, costing 15% of GDP in damages—Fiji debt peaks at 95% of GDP); (2) Tourism Revenue Collapse (50% decline for two years—Fiji debt reaches 102% of GDP); (3) Global Interest Rate Surge (500 bps increase in external borrowing costs—Tonga and Samoa breach high-risk thresholds).
+
+KEY VULNERABILITIES IDENTIFIED:
+- Currency mismatch: 65–80% of Pacific Island debt is denominated in foreign currency (USD, AUD, SDR), exposing countries to exchange rate risk.
+- Climate-debt nexus: Each major natural disaster adds an average of 5–12 percentage points to the debt-to-GDP ratio in Pacific SIDS, creating a vicious cycle of borrowing for reconstruction.
+- Chinese bilateral debt: Tonga and Vanuatu have significant Chinese Exim Bank loans (31–42% of external debt). These typically carry 2.0–2.5% interest rates with 20-year maturities, but limited transparency on conditionality.
+
+POLICY OPTIONS:
+1. Debt-for-climate swaps: The paper estimates USD 150–250 million in Pacific bilateral debt could be eligible for debt-for-nature/climate swap arrangements with Australia and New Zealand.
+2. Revenue reform: Broadening the VAT base and improving tax compliance could yield 1.5–2.0% of GDP in additional revenue across all five countries.
+3. Catastrophe insurance: Expanding Pacific Catastrophe Risk Assessment and Financing Initiative (PCRAFI) parametric insurance coverage to reduce post-disaster borrowing needs.
+4. Concessional finance prioritisation: Governments should maintain at least 80% of new external borrowing on concessional terms (grant element ≥35%) to keep debt on sustainable trajectories.`,
   },
   {
     id: 'remittances-resilience-2025',
@@ -519,6 +618,32 @@ const PUBLICATIONS: Publication[] = [
     date: 'October 2025', series: 'ADB Economics Working Papers',
     abstract: 'Quantifies the stabilising effect of remittance inflows on household consumption and government revenues. Finds a 1% remittance shock reduces poverty by 0.3% in Tonga.',
     url: 'https://www.adb.org/publications/series/economics-working-papers', pages: 38,
+    keyContent: `OVERVIEW: This working paper uses household survey data and national accounts to quantify remittance inflows to Tonga, Samoa, and Fiji from 2010 to 2024, examining their role as an automatic stabiliser for household consumption, government revenues, and current account balances.
+
+REMITTANCE MAGNITUDES:
+- Tonga: Remittances reached TOP 558 million (USD ~234 million) in FY2024/25, equivalent to 44% of GDP—the highest remittance-to-GDP ratio in the Pacific and among the highest globally. Remittances are primarily sourced from New Zealand (45%), Australia (35%), United States (12%), and other (8%). The PALM (Pacific Australia Labour Mobility) Scheme expansion in 2022 accelerated growth; Tongan participants in PALM reached 18,400 workers by 2025 (up from 4,500 in 2019).
+- Samoa: Remittances of WST 901 million (USD ~326 million) in FY2024/25, equal to 34% of GDP. Sources: New Zealand (52%), Australia (29%), American Samoa (10%), United States (6%). Samoan workers in RSE (Recognised Seasonal Employer) scheme in New Zealand: 14,200 workers.
+- Fiji: Remittances of FJD 1.02 billion (USD ~465 million) in 2024, equal to 13% of GDP—lower ratio than Tonga/Samoa due to Fiji's larger and more diversified economy. Sources: Australia (38%), New Zealand (24%), United States (16%), United Kingdom (12%).
+
+KEY FINDINGS:
+1. Automatic stabiliser effect: During the COVID-19 pandemic (2020–2021), remittances to Tonga fell only 4% while GDP contracted 3.5%, demonstrating counter-cyclical properties. In contrast, tourism revenues fell 98% in Fiji in 2020. Household consumption in high-remittance-receiving households contracted just 6% versus 22% in non-receiving households.
+
+2. Poverty reduction: The paper estimates that a 1 percentage point increase in remittances as a share of GDP reduces the poverty headcount ratio (at USD 2.15/day, 2017 PPP) by approximately 0.30 percentage points in Tonga, 0.22 in Samoa, and 0.09 in Fiji. The lower elasticity in Fiji reflects the more urban, diversified economic structure.
+
+3. Fiscal multiplier: Government revenue benefits from remittances through VAT on remittance-funded consumption and import duties on goods purchased. The paper estimates that each USD 1 in remittances generates approximately USD 0.14 in government revenue in Tonga and USD 0.11 in Samoa through the consumption-tax channel.
+
+4. Current account buffer: Without remittances, the current account deficit in Tonga would widen from an estimated -3% to approximately -28% of GDP; in Samoa from -5% to -22% of GDP.
+
+5. Transfer costs: The average cost of sending USD 200 to Tonga is 7.8% (2024), above the UN SDG target of 3%. Bank-based transfers remain most expensive (avg. 9.1%); mobile money operators (MPaisa, MyCash) average 4.2%. Reducing transfer costs to 3% could increase remittance receipts by an estimated 6–8%.
+
+PALM SCHEME ANALYSIS:
+The PALM Scheme (replacing the earlier Seasonal Worker Programme and Pacific Labour Scheme) has materially increased remittance volumes. The paper finds PALM participants remit on average AUD 12,400 per year (net of costs), compared to AUD 8,200 for pre-PALM seasonal workers. The paper attributes the increase to longer contract durations (up to 4 years under PALM vs. seasonal only), better wages under Australian Award rates, and lower recruitment fees following 2023 reforms.
+
+POLICY RECOMMENDATIONS:
+1. Reduce remittance transfer costs: Regulate fintech entrants to reduce fees; promote interoperability between mobile money platforms.
+2. Formalise remittance-savings linkages: Partner with commercial banks to offer remittance-linked savings and housing loan products to diaspora communities.
+3. Invest in financial inclusion at origin: Only 52% of Tongan adults and 58% of Samoan adults hold formal bank accounts; expanding access would increase productive remittance use.
+4. Manage PALM dependency risks: Develop domestic labour market pathways to ensure communities are not entirely reliant on seasonal migration for income, given the programme's political vulnerability to Australian labour market pressures.`,
   },
   {
     id: 'adr-2025',
@@ -528,6 +653,27 @@ const PUBLICATIONS: Publication[] = [
     date: 'September 2025', series: 'Asian Development Review',
     abstract: 'Peer-reviewed journal of economics and development. Vol. 42 No. 2 features papers on Pacific labour mobility, climate adaptation financing, and Central Asia trade corridors.',
     url: 'https://www.adb.org/publications/asian-development-review', pages: 180,
+    keyContent: `OVERVIEW: The Asian Development Review (ADR), Vol. 42, No. 2 (September 2025) is a peer-reviewed journal published by ADB and MIT Press. It contains six research articles and two research notes on development economics in Asia and the Pacific.
+
+ARTICLE 1 — Pacific Labour Mobility and Structural Transformation:
+Authors: Terence Yong, Isabelle Rosales, and Nilufar Rashidova (ADB).
+This paper examines whether Pacific Island labour mobility schemes (PALM, RSE) accelerate structural transformation in origin economies. Using difference-in-differences estimation with data from Tonga, Samoa, Vanuatu, and Fiji (2005–2023), the authors find that a 10% increase in PALM/RSE participation rates is associated with a 1.8% decline in subsistence agriculture employment and a 2.3% increase in service sector employment in receiving communities, suggesting moderate structural transformation effects. However, skill upgrading effects are limited; most returning workers re-enter informal employment rather than formal wage employment, pointing to inadequate domestic labour market absorption capacity.
+
+ARTICLE 2 — Climate Adaptation Financing Gaps in Small Island Developing States:
+Authors: Marcus Chambers and Sarah Fleming (ADB Pacific Department).
+Uses a novel bottom-up costing model to estimate the climate adaptation investment need for Pacific SIDS at USD 3.2–4.7 billion per year through 2030, compared to current climate finance flows of approximately USD 285 million per year—a gap of USD 2.9–4.4 billion annually. The paper argues that parametric insurance (catastrophe bonds), blue economy bonds, and debt-for-climate swaps could close approximately 25% of the gap, with the remainder requiring scaled-up multilateral concessional finance.
+
+ARTICLE 3 — Central Asia Trade Corridor Development and Economic Integration:
+Authors: Amaru Pedraza, Bolat Turebekov, and Aiko Kikkawa (ADB CAREC).
+Examines the economic impact of CAREC transport corridors on trade flows and regional integration in Central Asia. The paper finds that each USD 1 billion invested in CAREC corridors generates a 4.2% increase in bilateral trade among connected economies. The analysis uses a gravity model with 20 years of panel data.
+
+RESEARCH NOTE 1 — Informality and Monetary Policy Transmission in Pacific Island Economies:
+This note examines why conventional monetary policy instruments (interest rates, reserve requirements) have limited transmission in Pacific economies with large informal sectors (40–65% of employment in PNG, Solomon Islands, Vanuatu). Authors find that the credit channel of monetary policy operates primarily through the formal urban sector; rural and peri-urban households are largely unaffected by central bank rate decisions.
+
+RESEARCH NOTE 2 — Gender Dimensions of Remittances in Tonga and Samoa:
+Female remittance recipients in Tonga are found to allocate 68% of remittance income to food, education, and healthcare—significantly higher than the 41% allocation by male recipients. The paper recommends designing remittance products and financial literacy programmes with gender-differentiated approaches.
+
+JOURNAL INFORMATION: The ADR is published twice yearly (March and September). It covers development economics, applied econometrics, public finance, trade, environment, and social policy across ADB's 68 member economies. Submission acceptance rate: approximately 12%.`,
   },
   {
     id: 'pacmon-jun-2025',
@@ -537,6 +683,31 @@ const PUBLICATIONS: Publication[] = [
     date: 'July 2025', series: 'Pacific Economic Monitor',
     abstract: 'Mid-year review covering tourism recovery in Fiji, reconstruction progress in Vanuatu post-cyclone, and remittance trends for Samoa and Tonga in H1 2025.',
     url: 'https://www.adb.org/publications/pacific-economic-monitor', pages: 48,
+    keyContent: `OVERVIEW: The July 2025 Pacific Economic Monitor provides a mid-year update on economic conditions in ADB's 14 Pacific DMCs. The subregional growth estimate for 2025 is revised upward to 3.4% from 3.1% in the April 2025 ADO, reflecting stronger-than-expected tourism performance in Fiji and Vanuatu, and robust remittance inflows to Tonga and Samoa.
+
+TOURISM RECOVERY — FIJI:
+Fiji recorded 487,000 tourist arrivals in H1 2025 (Jan–June), a 9% increase over H1 2024. Australia remains the largest source market (41%), followed by New Zealand (22%), United States (14%), and other markets (23%). Tourism earnings for H1 2025 are estimated at FJD 1.05 billion. The Reserve Bank of Fiji's Business Confidence Survey (Q1 2025) shows hotel and accommodation sector confidence at its highest level since 2018. The Fiji government's Tourism 2025 strategy targets 1 million annual arrivals; the July Monitor notes this target is likely to be achieved by Q3 2025 based on current trends.
+
+VANUATU RECONSTRUCTION:
+Post-Cyclone Judy (Category 4, March 2024) reconstruction is approximately 60% complete as of June 2025. ADB's USD 25M emergency loan has been fully disbursed, funding road repairs on Santo and Malekula and school reconstruction in Shefa Province. The Vanuatu government estimates total reconstruction cost at VUV 18.5 billion (approx. USD 155M). Agriculture sector recovery is slower, with copra and kava production still 18% below pre-cyclone levels due to damaged plantations. Tourism arrivals to Vanuatu reached 142,000 in H1 2025, recovering to 78% of pre-cyclone levels.
+
+REMITTANCES — TONGA AND SAMOA H1 2025:
+- Tonga: Remittance inflows of TOP 271 million in H1 2025, a 6.2% YOY increase. PALM Scheme participants (18,400 workers) continue to be the primary driver of growth. The National Reserve Bank of Tonga reports that 71% of remittances are received via mobile money platforms (MPaisa, TongaPay), up from 48% in 2022, reflecting rapid fintech adoption.
+- Samoa: Remittance inflows of WST 447 million in H1 2025 (FY2025), up 8.1% YOY. The Central Bank of Samoa notes that the average cost of remittance transfers fell to 6.9% in Q1 2025 from 8.2% in Q1 2023, partly reflecting increased competition from digital transfer operators.
+
+INFLATION UPDATE (June 2025):
+- Fiji: 3.1% YOY (May 2025); fuel component -1.2% due to global oil price easing.
+- PNG: 5.6% YOY; food inflation 7.2% reflecting continued kina depreciation.
+- Samoa: 3.9% YOY; driven by imported food (+5.4%) and housing costs (+3.8%).
+- Tonga: 4.5% YOY; electricity prices rose 8.1% following removal of fuel subsidy in January 2025.
+- Solomon Islands: 6.1% YOY; highest in the Pacific, reflecting food and transport cost pressures.
+- Vanuatu: 3.4% YOY; post-cyclone construction-related price pressures partially offset by lower global commodity prices.
+
+FISCAL UPDATES:
+Papua New Guinea's 2025 mid-year budget review projects a fiscal deficit of 2.5% of GDP, improved from the initial budget estimate of 2.9%, due to higher-than-expected LNG revenue and mining royalties. Fiji's 2025/26 budget (tabled July 2025) targets a deficit reduction to 3.5% of GDP from 4.2% in 2024/25, with revenue measures including a 2 percentage point increase in corporate tax rate to 22% and extension of the departure tax.
+
+ADB OPERATIONS UPDATE:
+ADB approved three new Pacific projects in H1 2025: (i) PNG Transport Sector Development Project (USD 75M loan + USD 15M grant); (ii) Kiribati Integrated Urban Water and Sanitation Project (USD 20M grant); (iii) Pacific Private Sector Development Initiative Phase 4 (USD 8M technical assistance). Total ADB lending approvals for Pacific in 2025 are on track to reach USD 450–500M, consistent with the ADB Pacific Approach 2021–2025 targets.`,
   },
   {
     id: 'adb-blogs',
@@ -546,6 +717,22 @@ const PUBLICATIONS: Publication[] = [
     date: 'Ongoing', series: 'ADB Blogs',
     abstract: 'Expert commentary and analysis on development economics, climate change, infrastructure, and poverty reduction across Asia and the Pacific. Updated weekly.',
     url: 'https://blogs.adb.org/', pages: 0,
+    keyContent: `OVERVIEW: ADB Blogs (blogs.adb.org) is ADB's expert commentary platform, publishing 3–5 posts per week by ADB staff, consultants, and external experts. Key blog categories include: Economics & Finance, Climate & Environment, Infrastructure, Health, Education, Gender, and Pacific & Islands.
+
+RECENT PACIFIC-RELEVANT BLOG POSTS (2025):
+1. "Tonga's Recovery: One Year After the Eruption" — Reviews post-Hunga Tonga reconstruction progress, noting that while physical infrastructure is largely rebuilt, the social and economic recovery of fishing communities on Nomuka and 'Eua islands remains incomplete.
+
+2. "Why the Pacific Needs Parametric Insurance, Not Traditional Aid" — Argues that traditional post-disaster aid (slow, uncertain, politically conditioned) should be supplemented with parametric catastrophe insurance instruments that trigger automatic payouts when cyclone wind speed or storm surge thresholds are breached.
+
+3. "The PALM Scheme's Unintended Consequences: Skills Drain or Skills Circulation?" — Critically examines evidence on whether Pacific seasonal labour migration creates skills drain in origin communities, finding mixed evidence: healthcare and teaching sectors in Tonga have experienced staffing shortages, while agricultural productivity has increased due to remittance-funded inputs.
+
+4. "Fiji's Public Debt: Time to Worry?" — Analyses Fiji's public debt trajectory (82% of GDP in 2025), arguing that while the level is manageable given Fiji's strong institutions and access to tourism revenue, the composition of debt (40% domestic at relatively high interest rates) creates refinancing risks if growth slows.
+
+5. "Closing the Climate Finance Gap for Pacific SIDS" — Provides accessible summary of ADB research finding that Pacific SIDS receive only USD 110 per capita in climate finance versus the USD 600–800 per capita needed to meet NDC targets, and calls for GCF access reform.
+
+6. "Food Security in the Pacific: Imported Inflation and Local Solutions" — Examines how Pacific Island economies, which import 60–80% of their food supply, are exposed to global commodity price shocks. Highlights successful cases of domestic food production promotion in Tonga (taro export programme) and Solomon Islands (fisheries development).
+
+BLOG THEMES MOST RELEVANT TO ERDI USERS: Economic growth and fiscal management; Remittances and labour mobility; Climate resilience and adaptation finance; Tourism and private sector development; Monetary policy in small open economies; SDG progress tracking in Pacific SIDS.`,
   },
   {
     id: 'development-asia',
@@ -555,6 +742,22 @@ const PUBLICATIONS: Publication[] = [
     date: 'Ongoing', series: 'Development Asia',
     abstract: 'ADB\'s flagship digital magazine featuring long-form analysis, data stories, and policy insights on the economic and social challenges facing Asia-Pacific developing countries.',
     url: 'https://development.asia/', pages: 0,
+    keyContent: `OVERVIEW: Development Asia (development.asia) is ADB's flagship digital magazine, featuring long-form data journalism, policy analysis, multimedia content, and interactive data visualisations on development topics across Asia and the Pacific. It is updated 2–3 times per week and targets policymakers, researchers, and development practitioners.
+
+RECENT FEATURED PACIFIC CONTENT:
+1. "The Last Mile: Bringing Solar Energy to Remote Pacific Islands" — Data story examining the 22 Pacific island communities (primarily in Solomon Islands, Vanuatu, and Kiribati) that have achieved 100% renewable electricity through ADB-supported solar-plus-storage minigrids since 2020. Interactive map shows energy access rates by province.
+
+2. "Drowning in Debt: Can Pacific Islands Afford Climate Change?" — Long-form analysis combining debt sustainability data with climate risk indices. Shows that the 5 Pacific countries most at risk of debt distress (Tonga, Samoa, Marshall Islands, Kiribati, FSM) are also among the top 10 globally for climate vulnerability on the ND-GAIN Country Index.
+
+3. "The Remittance Economy: Life in a Tongan Village" — Multimedia feature following three Tongan households whose primary income is remittances from family members in New Zealand and Australia under the PALM Scheme. Documents how remittances fund school fees, medical costs, home construction, and church contributions.
+
+4. "Fiji's Tourism Boom: Who Benefits?" — Investigative data analysis examining tourism revenue distribution in Fiji, finding that while aggregate tourism earnings have recovered to pre-pandemic levels, benefits are concentrated in Viti Levu (main island), with outer islands and indigenous Fijian communities receiving a smaller share. Recommends community-based tourism investment.
+
+5. "PNG's Resource Curse: LNG Revenues and the Development Gap" — Analysis of the paradox that despite LNG export revenues exceeding USD 2 billion per year, PNG's poverty rate (36.9% at USD 2.15/day) has barely changed since 2010. Examines governance, revenue transparency, and infrastructure delivery failures.
+
+INTERACTIVE DATA TOOLS: Development Asia hosts several interactive data portals including: Asia-Pacific Climate Change and Disaster Risk Dashboard; Pacific SIDS Economic Vulnerability Tracker; KIDB Data Visualizer (the public-facing equivalent of this ERDI platform); and the SDG Progress Monitor for ADB members.
+
+TARGET AUDIENCE: Policy-oriented general public, government officials, researchers, students, media, and development practitioners. Content is designed to be accessible without technical economics training while remaining substantively rigorous.`,
   },
 ]
 
@@ -760,7 +963,7 @@ function PublicationsView() {
       { id: aid, role: 'assistant', content: '' },
     ])
     try {
-      const prompt = `You are an expert economist assistant. The user is reading "${selected.title}" (${selected.subtitle}, ${selected.date}), a ${selected.type} published by ADB.\n\nPublication abstract: ${selected.abstract}\n\nAnswer the user's question concisely and accurately based on this publication's context and general ADB economics knowledge.\n\nQuestion: ${q}`
+      const prompt = `You are an ADB economist answering questions about a specific publication. Answer ONLY based on the document content provided below. Do not use generic explanations or information from outside this document. If the specific detail is not in the content provided, say so explicitly rather than improvising.\n\nPUBLICATION: "${selected.title}" (${selected.subtitle}, ${selected.date}) — ${selected.type} published by ADB.\n\n--- DOCUMENT CONTENT ---\n${selected.keyContent}\n--- END DOCUMENT CONTENT ---\n\nAnswer the following question using specific data, figures, and findings from the document above. Be direct and cite exact numbers where available.\n\nQuestion: ${q}`
       const res = await fetch('/api/erdi/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
