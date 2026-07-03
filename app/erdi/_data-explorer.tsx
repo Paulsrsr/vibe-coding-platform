@@ -6,7 +6,7 @@ import type { ChartConfigType } from '@/app/api/kidb/explore/route'
 import { ECONOMIES } from '@/app/api/kidb/route'
 import { D3LineChart, D3BarChart, ChartLegend, type ChartData, type KidbObs } from './_d3-charts'
 import { useIsMobile } from './_use-mobile'
-import { ScenarioPanel, SCENARIOS, computeProjections } from './_scenario-panel'
+import { ScenarioPanel, EPISODES, computeProjections } from './_scenario-panel'
 
 const adb = {
   navy: 'var(--th-bg)', navyCard: 'var(--th-card)', navyBorder: 'var(--th-border)',
@@ -357,14 +357,13 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
   const [explainLoading, setExplainLoading] = useState(false)
   const [explainCitations, setExplainCitations] = useState<string[]>([])
   const [scenarioId, setScenarioId]         = useState<string | null>(null)
-  const [scenarioSeverity, setScenarioSeverity] = useState(50)
 
-  const activeScenario = SCENARIOS.find(s => s.id === scenarioId) ?? null
+  const activeEpisode = EPISODES.find(e => e.id === scenarioId) ?? null
   const projections = useMemo(
-    () => activeScenario && config && chartData
-      ? computeProjections(chartData, config.indicator, config.economies, activeScenario, scenarioSeverity)
+    () => activeEpisode && config && chartData
+      ? computeProjections(chartData, config.indicator, config.economies, activeEpisode)
       : [],
-    [activeScenario, config, chartData, scenarioSeverity],
+    [activeEpisode, config, chartData],
   )
 
   function exportAsPng() {
@@ -734,8 +733,6 @@ export function DataExplorer({ initialQuery = '' }: { initialQuery?: string }) {
               chartData={chartData}
               activeId={scenarioId}
               setActiveId={setScenarioId}
-              severity={scenarioSeverity}
-              setSeverity={setScenarioSeverity}
               projections={projections}
             />
           </div>

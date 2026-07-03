@@ -928,6 +928,15 @@ export default function ERDIPage() {
   const [briefPickerOpen, setBriefPickerOpen] = useState(false)
   const [briefingFilter, setBriefingFilter] = useState<string>('All')
   const [briefingPage, setBriefingPage] = useState(0)
+  const [briefingMode, setBriefingMode] = useState(false)
+  const [briefingContent, setBriefingContent] = useState('')
+  const [briefingLoading, setBriefingLoading] = useState(false)
+  const [briefingCountry, setBriefingCountry] = useState('')
+  const [editorContent, setEditorContent] = useState('')
+  const [improveInput, setImproveInput] = useState('')
+  const [improveLoading, setImproveLoading] = useState(false)
+  const [chatHistory, setChatHistory] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string; ts: string }>>([])
+  const chatEndRef = useRef<HTMLDivElement>(null)
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom?: number } | undefined>()
   const countryCarouselRef = useRef<HTMLDivElement>(null)
   const [aiAnswer, setAiAnswer] = useState('')
@@ -936,6 +945,11 @@ export default function ERDIPage() {
   const isMobile = useIsMobile()
   const th = isDark ? DARK : LIGHT
 
+
+  // Auto-scroll chat to bottom when history updates
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatHistory])
 
   // Auth guard — redirect to login if not authenticated
   useEffect(() => {
@@ -955,6 +969,81 @@ export default function ERDIPage() {
     e.preventDefault()
     const q = homeSearch.trim()
     if (!q) return
+
+    // Briefing note → split-pane editor
+    if (q.toLowerCase().includes('briefing note')) {
+      const m = q.match(/for\s+(.+)$/i)
+      const country = m ? m[1].trim() : 'Selected Country'
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      const userMsgId = `u-${Date.now()}`
+      const asstMsgId = `a-${Date.now()}`
+      setBriefingCountry(country)
+      setBriefingContent('')
+      setEditorContent('')
+      setBriefingLoading(true)
+      setBriefingMode(true)
+      setChatHistory([
+        { id: userMsgId, role: 'user', content: q, ts: now },
+        { id: asstMsgId, role: 'assistant', content: '', ts: now },
+      ])
+      const briefingPrompt = `Write a structured country economic briefing note for ${country}. Use the exact section structure below. For each bullet point, provide specific data, recent trends, and brief analytical commentary. Draw on ADB, IMF, and World Bank data where available.
+
+OVERVIEW OF THE ECONOMY & CURRENT DEVELOPMENTS
+- Growth and Inflation: Describe real GDP growth rate (%), recent trend, and CPI inflation (%). Comment on whether growth is accelerating or decelerating and inflationary pressures.
+- GDP Per Capita Growth: Provide GDP per capita level (USD) and recent growth trend. Comment on living standards trajectory.
+- Key Economic Sectors and Their Share of GDP: Identify the top 2–3 sectors (e.g. agriculture, tourism, mining, services), their approximate share of GDP, and recent performance.
+
+MONETARY POLICY & FINANCIAL SECTOR
+- Interest Rates: Describe the central bank policy rate (if applicable), monetary policy stance (accommodative/neutral/tight), and credit growth trends.
+
+FISCAL POLICY & PUBLIC DEBT
+- Budget Surplus/Deficit: Provide the fiscal balance as % of GDP, recent trend, and key revenue/expenditure drivers.
+- Debt: Provide public debt as % of GDP, trajectory, and any debt sustainability concerns.
+
+BALANCE OF PAYMENTS
+- Current Account Balance: Provide current account balance as % of GDP. Describe key drivers (exports, remittances, tourism, imports).
+- Foreign Reserves: Provide reserve level in months of import cover and adequacy assessment.
+
+Write in a concise, analytical tone suitable for an ADB economist audience. Use actual data figures where known.`
+
+      try {
+        const res = await fetch('/api/erdi/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: briefingPrompt }),
+        })
+        if (!res.ok) throw new Error()
+        const ct = res.headers.get('content-type') ?? ''
+        if (ct.includes('text/plain') && res.body) {
+          const reader = res.body.getReader()
+          const decoder = new TextDecoder()
+          let acc = ''
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            acc += decoder.decode(value, { stream: true })
+            setBriefingContent(acc)
+            setChatHistory(h => h.map(msg => msg.id === asstMsgId ? { ...msg, content: acc } : msg))
+          }
+          setEditorContent(acc)
+        } else {
+          const data = await res.json()
+          const text = data.answer ?? ''
+          setBriefingContent(text)
+          setEditorContent(text)
+          setChatHistory(h => h.map(msg => msg.id === asstMsgId ? { ...msg, content: text } : msg))
+        }
+      } catch {
+        const err = 'Sorry, I could not generate the briefing note. Please try again.'
+        setBriefingContent(err)
+        setChatHistory(h => h.map(msg => msg.id === asstMsgId ? { ...msg, content: err } : msg))
+      } finally {
+        setBriefingLoading(false)
+      }
+      return
+    }
+
+    // Standard AI query
     setAiQuestion(q)
     setAiAnswer('')
     setAiLoading(true)
@@ -967,7 +1056,6 @@ export default function ERDIPage() {
       if (!res.ok) throw new Error('Request failed')
       const contentType = res.headers.get('content-type') ?? ''
       if (contentType.includes('text/plain') && res.body) {
-        // Streaming response
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
         let accumulated = ''
@@ -986,6 +1074,50 @@ export default function ERDIPage() {
     } finally {
       setAiLoading(false)
     }
+  }
+
+  async function improveNote() {
+    const instruction = improveInput.trim()
+    if (!instruction || improveLoading) return
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    const userMsgId = `u-${Date.now()}`
+    const asstMsgId = `a-${Date.now()}`
+    setImproveLoading(true)
+    setImproveInput('')
+    setChatHistory(h => [
+      ...h,
+      { id: userMsgId, role: 'user', content: instruction, ts: now },
+      { id: asstMsgId, role: 'assistant', content: '', ts: now },
+    ])
+    const prompt = `Here is a country economic briefing note:\n\n${editorContent}\n\nPlease revise it with the following instruction: ${instruction}`
+    try {
+      const res = await fetch('/api/erdi/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: prompt }),
+      })
+      if (!res.ok) throw new Error()
+      const ct = res.headers.get('content-type') ?? ''
+      if (ct.includes('text/plain') && res.body) {
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let acc = ''
+        setEditorContent('')
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          acc += decoder.decode(value, { stream: true })
+          setEditorContent(acc)
+          setChatHistory(h => h.map(msg => msg.id === asstMsgId ? { ...msg, content: acc } : msg))
+        }
+      } else {
+        const data = await res.json()
+        const text = data.answer ?? editorContent
+        setEditorContent(text)
+        setChatHistory(h => h.map(msg => msg.id === asstMsgId ? { ...msg, content: text } : msg))
+      }
+    } catch { /* keep existing content */ }
+    finally { setImproveLoading(false) }
   }
 
   const allIndData = useMultiKidb(PACIFIC)
@@ -1210,7 +1342,11 @@ This report is for internal ADB use only and does not constitute official ADB fo
       </nav>
 
       {/* ── Main ── */}
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '24px 20px' }}>
+      <main style={{
+        maxWidth: briefingMode ? '100%' : 900,
+        margin: '0 auto',
+        padding: briefingMode ? '0' : '24px 20px',
+      }}>
 
         {/* Data Explorer view */}
         {activeNav === 'Data Explorer' && <DataExplorer initialQuery={pendingQuery} />}
@@ -1220,7 +1356,160 @@ This report is for internal ADB use only and does not constitute official ADB fo
             {activeNav} — coming soon
           </div>
         )}
-        {activeNav === 'Home' && (<>
+        {/* ── Briefing Note Editor ── */}
+        {activeNav === 'Home' && briefingMode && (
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            height: 'calc(100vh - 100px)', padding: '16px 24px', boxSizing: 'border-box',
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--th-border)', flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <button
+                  onClick={() => { setBriefingMode(false); setHomeSearch(''); setChatHistory([]) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                    background: 'var(--th-chart)', border: '1px solid var(--th-border)',
+                    borderRadius: 5, color: 'var(--th-muted)', fontSize: 12, cursor: 'pointer', fontFamily: adb.font,
+                  }}
+                >← Back</button>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.blue }}>Country Briefing Note</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--th-text)', marginTop: 1 }}>{briefingCountry}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => navigator.clipboard?.writeText(editorContent)}
+                  style={{ padding: '6px 14px', background: 'none', border: '1px solid var(--th-border)', borderRadius: 5, color: 'var(--th-muted)', fontSize: 11, cursor: 'pointer', fontFamily: adb.font }}
+                >Copy</button>
+                <button
+                  onClick={() => {
+                    const blob = new Blob([editorContent], { type: 'text/plain' })
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+                    a.download = `Briefing-Note-${briefingCountry.replace(/\s+/g, '-')}.txt`; a.click()
+                  }}
+                  style={{ padding: '6px 14px', background: adb.blue, border: 'none', borderRadius: 5, color: '#fff', fontSize: 11, cursor: 'pointer', fontFamily: adb.font, fontWeight: 500 }}
+                >Download</button>
+              </div>
+            </div>
+
+            {/* Two-panel layout */}
+            <div style={{ display: 'flex', gap: 14, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+
+              {/* Left — Conversation memory */}
+              <div style={{
+                width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column',
+                background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 8, overflow: 'hidden',
+              }}>
+                {/* Panel header */}
+                <div style={{
+                  padding: '10px 14px', borderBottom: '1px solid var(--th-border)',
+                  background: `${adb.blue}09`, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.blue, background: `${adb.blue}18`, padding: '2px 8px', borderRadius: 2 }}>
+                    ✦ Conversation
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{chatHistory.filter(m => m.role === 'user').length} prompt{chatHistory.filter(m => m.role === 'user').length !== 1 ? 's' : ''}</span>
+                </div>
+
+                {/* Message list */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {chatHistory.map(msg => (
+                    <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                      <div style={{ fontSize: 9, color: 'var(--th-muted)', letterSpacing: '0.04em', paddingLeft: msg.role === 'assistant' ? 4 : 0, paddingRight: msg.role === 'user' ? 4 : 0 }}>
+                        {msg.role === 'user' ? 'You' : '✦ ERDI AI'} · {msg.ts}
+                      </div>
+                      <div style={{
+                        maxWidth: '92%', padding: '8px 12px', borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                        background: msg.role === 'user' ? `${adb.blue}22` : 'var(--th-chart)',
+                        border: `1px solid ${msg.role === 'user' ? `${adb.blue}44` : 'var(--th-border)'}`,
+                        fontSize: 11.5, color: msg.role === 'user' ? adb.blueLight : 'var(--th-subtle)',
+                        lineHeight: 1.55,
+                      }}>
+                        {msg.role === 'user'
+                          ? msg.content
+                          : msg.content
+                            ? msg.content.slice(0, 120) + (msg.content.length > 120 ? '…' : '')
+                            : <span style={{ display: 'flex', gap: 4, alignItems: 'center', color: 'var(--th-muted)' }}>
+                                Generating{[0,1,2].map(i => <span key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: adb.blue, display: 'inline-block', animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />)}
+                              </span>
+                        }
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Improve input pinned to bottom */}
+                <div style={{
+                  borderTop: '1px solid var(--th-border)', padding: '10px 10px', flexShrink: 0,
+                  background: 'var(--th-card)',
+                }}>
+                  <div style={{
+                    display: 'flex', gap: 6, background: 'var(--th-chart)',
+                    border: `1px solid ${improveInput.trim() ? adb.blue : 'var(--th-border)'}`,
+                    borderRadius: 8, padding: '8px 10px', alignItems: 'center', transition: 'border-color 0.15s',
+                  }}>
+                    <input
+                      value={improveInput}
+                      onChange={e => setImproveInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') improveNote() }}
+                      placeholder="Ask to improve…"
+                      disabled={improveLoading || briefingLoading}
+                      style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--th-text)', fontSize: 12, fontFamily: adb.font }}
+                    />
+                    <button
+                      onClick={improveNote}
+                      disabled={improveLoading || briefingLoading || !improveInput.trim()}
+                      style={{
+                        padding: '4px 10px', background: improveInput.trim() && !improveLoading ? adb.blue : 'transparent',
+                        border: 'none', borderRadius: 5, color: improveInput.trim() && !improveLoading ? '#fff' : 'var(--th-muted)',
+                        fontSize: 11, fontWeight: 600, cursor: improveInput.trim() ? 'pointer' : 'default',
+                        fontFamily: adb.font, flexShrink: 0, transition: 'all 0.15s',
+                      }}
+                    >{improveLoading ? '…' : '↵'}</button>
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--th-muted)', marginTop: 5, lineHeight: 1.4, paddingLeft: 2 }}>
+                    e.g. "Add policy risks" · "Make more concise" · "Add recommendations"
+                  </div>
+                </div>
+              </div>
+
+              {/* Right — editable draft */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{
+                  padding: '10px 18px', borderBottom: '1px solid var(--th-border)',
+                  background: `${adb.green}09`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.green, background: `${adb.green}18`, padding: '2px 8px', borderRadius: 2 }}>✎ Edit Draft</span>
+                    {(briefingLoading || improveLoading) && <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{briefingLoading ? 'Generating…' : 'Improving…'}</span>}
+                  </div>
+                  <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>Editable · changes are yours</span>
+                </div>
+                <textarea
+                  value={editorContent}
+                  onChange={e => setEditorContent(e.target.value)}
+                  placeholder={briefingLoading ? 'Generating briefing note…' : 'Your draft appears here — edit freely'}
+                  disabled={briefingLoading || improveLoading}
+                  style={{
+                    flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                    padding: '20px 24px', color: 'var(--th-text)', fontSize: 13,
+                    lineHeight: 1.85, resize: 'none', fontFamily: adb.font,
+                    opacity: improveLoading ? 0.6 : 1,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeNav === 'Home' && !briefingMode && (<>
 
         {/* Hero */}
         <div style={{
