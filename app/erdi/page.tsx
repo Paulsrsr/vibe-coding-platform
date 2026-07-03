@@ -1100,25 +1100,56 @@ export default function ERDIPage() {
         { id: userMsgId, role: 'user', content: q, ts: now },
         { id: asstMsgId, role: 'assistant', content: '', ts: now },
       ])
-      const briefingPrompt = `Write a structured country economic briefing note for ${country}. Use the exact section structure below. For each bullet point, provide specific data, recent trends, and brief analytical commentary. Draw on ADB, IMF, and World Bank data where available.
+      const briefingPrompt = `You are an ADB economist writing a country economic briefing note for ${country}. Write in the style of a professional intelligence brief — narrative paragraphs with specific data, historical sequences, policy institution names, quantified targets, and concise analytical commentary. Do NOT use bullet points. Model your prose on the following example style (from a Sri Lanka brief):
+
+EXAMPLE STYLE:
+"Inflation remains well below the Central Bank of Sri Lanka (CBSL) target level of 5.0%. CBSL plans to review the inflation target this year, although it expects headline inflation to gradually converge to the 5% year-on-year (YOY) target by 2H 2026, faster than initially anticipated due to the Middle-East conflict impact on domestic prices. Inflation, as measured by Colombo Consumer Price Index (CCPI), eased from a peak of 70% YOY in September 2022 and an annual average of 46.4% in 2022, to 17.4% in 2023, 1.2% in 2024, and -0.5% in 2025. Easing monetary policy has driven a steady decline in market interest rates as inflation eased from its 2022 peak. CBSL cut policy rates by a cumulative 800 bps from June 2023 to November 2024."
+
+Now write a full briefing note for ${country} using the four sections below. For each section, write 2–4 narrative paragraphs in the same style: name the central bank / ministry / statistical office, cite actual or best-available data with specific figures and dates, describe historical trends and turning points, explain policy actions taken and their rationale, and give a forward-looking analytical assessment. Contextualise everything to Pacific Island Small Island Developing States (SIDS) realities — tourism dependence, remittance flows, commodity import exposure, climate vulnerability, and ADB/IMF programme context where relevant.
+
+---
 
 OVERVIEW OF THE ECONOMY & CURRENT DEVELOPMENTS
-- Growth and Inflation: Describe real GDP growth rate (%), recent trend, and CPI inflation (%). Comment on whether growth is accelerating or decelerating and inflationary pressures.
-- GDP Per Capita Growth: Provide GDP per capita level (USD) and recent growth trend. Comment on living standards trajectory.
-- Key Economic Sectors and Their Share of GDP: Identify the top 2–3 sectors (e.g. agriculture, tourism, mining, services), their approximate share of GDP, and recent performance.
+
+Write 2–3 paragraphs covering:
+• Real GDP growth rate for 2023, 2024, 2025 (actual or estimate) and the 2026 outlook; what drove the trajectory (tourism recovery, natural disasters, commodity prices, external demand).
+• CPI inflation: peak level and year, subsequent disinflation path with specific YOY figures for 2022–2025, current level, and the central bank or government inflation target if one exists.
+• GDP per capita (USD, most recent year) and trend relative to pre-pandemic level; living standards implications.
+• The top 2–3 economic sectors (tourism/hospitality, subsistence agriculture, fishing, mining, remittances) and their approximate share of GDP or export earnings, with recent performance commentary.
+
+---
 
 MONETARY POLICY & FINANCIAL SECTOR
-- Interest Rates: Describe the central bank policy rate (if applicable), monetary policy stance (accommodative/neutral/tight), and credit growth trends.
+
+Write 2–3 paragraphs covering:
+• The central bank (name it — e.g. Reserve Bank of Fiji, National Reserve Bank of Tonga, Bank of Papua New Guinea) and its current policy rate or reserve money target, and the stance (accommodative/neutral/tightening).
+• Any rate changes in the past 18 months: magnitude in basis points, dates, and rationale. If no independent monetary policy (e.g. dollarised economies like Palau or Marshall Islands), explain the monetary framework.
+• Private-sector credit growth trend (YOY %) and banking system health; any non-performing loan concerns or liquidity conditions.
+• Money supply (M2 or M2b) growth and its relationship to inflation and nominal GDP.
+
+---
 
 FISCAL POLICY & PUBLIC DEBT
-- Budget Surplus/Deficit: Provide the fiscal balance as % of GDP, recent trend, and key revenue/expenditure drivers.
-- Debt: Provide public debt as % of GDP, trajectory, and any debt sustainability concerns.
+
+Write 2–3 paragraphs covering:
+• Central government fiscal balance as % of GDP for 2022, 2023, 2024, and the 2025/2026 budget target. Key revenue drivers (tax, grants, resource royalties) and expenditure pressures (post-disaster reconstruction, public-sector wages, debt service).
+• Public debt as % of GDP: trajectory from 2020 to present, composition (domestic vs external, bilateral vs multilateral), and any IMF/ADB debt sustainability assessment.
+• Any ongoing IMF programme, ADB budget support, or fiscal consolidation plan; key conditionalities or reform milestones.
+
+---
 
 BALANCE OF PAYMENTS
-- Current Account Balance: Provide current account balance as % of GDP. Describe key drivers (exports, remittances, tourism, imports).
-- Foreign Reserves: Provide reserve level in months of import cover and adequacy assessment.
 
-Write in a concise, analytical tone suitable for an ADB economist audience. Use actual data figures where known.`
+Write 2–3 paragraphs covering:
+• Current account balance as % of GDP for the most recent 2–3 years and its key drivers. Quantify tourism receipts, remittances (% of GDP), merchandise export earnings, and import bill (especially fuel and food).
+• Foreign reserves in months of import cover: most recent figure, trend, and adequacy threshold (typically 3–4 months for Pacific SIDS).
+• Exchange rate regime and any recent pressure or adjustments. Capital account openness and FDI inflows.
+
+---
+
+End with a short OUTLOOK paragraph (3–5 sentences) summarising the key risks (climate shocks, global interest rates, tourism volatility, debt rollover) and the baseline trajectory for 2026.
+
+Write only the briefing note content. Use section headers in ALL CAPS. No preamble, no meta-commentary.`
 
       try {
         const res = await fetch('/api/erdi/ask', {
