@@ -1059,11 +1059,11 @@ function PublicationsView() {
       { id: aid, role: 'assistant', content: '' },
     ])
     try {
-      const prompt = `You are an ADB economist answering questions about a specific publication. Answer ONLY based on the document content provided below. Do not use generic explanations or information from outside this document. If the specific detail is not in the content provided, say so explicitly rather than improvising.\n\nPUBLICATION: "${selected.title}" (${selected.subtitle}, ${selected.date}) — ${selected.type} published by ADB.\n\n--- DOCUMENT CONTENT ---\n${selected.keyContent}\n--- END DOCUMENT CONTENT ---\n\nAnswer the following question using specific data, figures, and findings from the document above. Be direct and cite exact numbers where available.\n\nQuestion: ${q}`
+      const pubContext = `PUBLICATION: "${selected.title}" (${selected.subtitle}, ${selected.date}) — ${selected.type}.\n\n${selected.keyContent}`
       const res = await fetch('/api/erdi/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: prompt }),
+        body: JSON.stringify({ question: q, context: pubContext }),
       })
       let accumulated = ''
       if (res.headers.get('content-type')?.includes('text/plain')) {

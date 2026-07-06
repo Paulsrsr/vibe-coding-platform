@@ -55,7 +55,7 @@ RESPONSE STYLE:
 - Write for a professional economist audience but stay accessible`
 
 export async function POST(req: NextRequest) {
-  const { question } = await req.json()
+  const { question, context } = await req.json()
   if (!question?.trim()) {
     return NextResponse.json({ error: 'Question required' }, { status: 400 })
   }
@@ -65,11 +65,23 @@ export async function POST(req: NextRequest) {
   if (hasGateway) {
     try {
       const { model } = getModelOptions(Models.AnthropicClaudeSonnet46)
-      const result = streamText({ model, system: SYSTEM, prompt: question })
+      // When document context is provided, use a grounded system prompt
+      const system = context
+        ? `You are an ADB economist answering questions about a specific publication. Answer ONLY using the document content provided in the user message. Do not use general knowledge or information outside the provided content. If the specific detail is not in the document, say so explicitly. Cite exact figures, dates, and findings from the document. Be direct and specific — no generic explanations.`
+        : SYSTEM
+      const prompt = context
+        ? `DOCUMENT CONTENT:\n${context}\n\n---\n\nQuestion: ${question}`
+        : question
+      const result = streamText({ model, system, prompt })
       return result.toTextStreamResponse()
     } catch (err) {
       console.warn('[erdi/ask] streaming failed, falling back:', err)
     }
+  }
+
+  // When context is provided but no gateway, return a clear message
+  if (context) {
+    return NextResponse.json({ answer: 'AI service is required to answer questions about this publication. Please ensure the AI gateway is configured.' })
   }
 
   // Fallback when no AI gateway is configured
