@@ -303,6 +303,19 @@ function InsightPanel({ config, chartData }: { config: ChartConfigType; chartDat
               })}
             </div>
           </div>
+
+          {/* AI disclaimer */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 7,
+            background: 'rgba(253,185,21,0.06)', border: '1px solid rgba(253,185,21,0.2)',
+            borderRadius: 4, padding: '7px 10px',
+          }}>
+            <span style={{ fontSize: 11, flexShrink: 0, marginTop: 1 }}>⚠</span>
+            <span style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.6 }}>
+              <strong style={{ fontWeight: 600, color: 'var(--th-text)' }}>AI-generated analysis.</strong>{' '}
+              The narrative above is produced automatically from ADB KIDB data by a rule-based engine and large language model. It is intended for orientation only and may contain errors or omissions. Always verify figures against the primary sources cited in References before use in reports or decisions.
+            </span>
+          </div>
         </div>
       )}
     </div>
