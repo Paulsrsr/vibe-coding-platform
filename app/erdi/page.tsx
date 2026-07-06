@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ECONOMIES, INDICATORS } from '@/app/api/kidb/route'
 import { DataExplorer } from './_data-explorer'
 import { useIsMobile } from './_use-mobile'
+import { STATIC_BRIEFING_NOTES, matchCountry } from './_briefing-notes'
 
 const PacificMapLeaflet = dynamic(() => import('./_pacific-map-leaflet'), { ssr: false })
 
@@ -1455,6 +1456,28 @@ OUTLOOK
 3–5 sentences: baseline growth and inflation trajectory for 2026–2027; top 3 downside risks; policy priorities.
 
 Write ONLY the briefing note. Section headers in ALL CAPS. No preamble, no meta-commentary.`
+
+      // Check for pre-written static note first (no API key needed)
+      const staticKey = matchCountry(country)
+      const staticNote = staticKey ? STATIC_BRIEFING_NOTES[staticKey] : null
+
+      if (staticNote) {
+        // Stream the pre-written note character by character for realism
+        let i = 0
+        const chunkSize = 12
+        const tick = setInterval(() => {
+          i = Math.min(i + chunkSize, staticNote.length)
+          const partial = staticNote.slice(0, i)
+          setBriefingContent(partial)
+          setChatHistory(h => h.map(msg => msg.id === asstMsgId ? { ...msg, content: partial } : msg))
+          if (i >= staticNote.length) {
+            clearInterval(tick)
+            setEditorContent(staticNote)
+            setBriefingLoading(false)
+          }
+        }, 8)
+        return
+      }
 
       try {
         const res = await fetch('/api/erdi/ask', {

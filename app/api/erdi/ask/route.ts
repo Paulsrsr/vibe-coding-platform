@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
   // No AI available — only keyword-match very short simple questions
   if (question.length > 200 || context) {
     return NextResponse.json({
-      answer: 'The AI service is not configured locally. Add ANTHROPIC_API_KEY to a .env.local file to enable briefing note generation and publication Q&A. The deployed version at erdi-portal.vercel.app is fully configured.'
+      answer: 'Briefing notes are available without an API key for Pacific Island countries — try: "generate a briefing note for Papua New Guinea", Fiji, Tonga, Samoa, Solomon Islands, or Vanuatu. For other countries or publication Q&A, add ANTHROPIC_API_KEY to .env.local.'
     })
   }
 
