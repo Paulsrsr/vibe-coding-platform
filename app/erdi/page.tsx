@@ -1417,56 +1417,44 @@ export default function ERDIPage() {
         { id: userMsgId, role: 'user', content: q, ts: now },
         { id: asstMsgId, role: 'assistant', content: '', ts: now },
       ])
-      const briefingPrompt = `You are an ADB economist writing a country economic briefing note for ${country}. Write in the style of a professional intelligence brief — narrative paragraphs with specific data, historical sequences, policy institution names, quantified targets, and concise analytical commentary. Do NOT use bullet points. Model your prose on the following example style (from a Sri Lanka brief):
+      const STYLE_TEMPLATE = `Inflation remains well below the Central Bank of Sri Lanka (CBSL) target level of 5.0%. CBSL plans to review the inflation target this year, although it expects headline inflation to gradually converge to the 5% year-on-year (YOY) target by 2H 2026, faster than initially anticipated due to the Middle-East conflict impact on domestic prices. Inflation, as measured by Colombo Consumer Price Index (CCPI), eased from a peak of 70% YOY in September 2022 and an annual average of 46.4% in 2022, to 17.4% in 2023, 1.2% in 2024, and -0.5% in 2025. After 11 months of deflation, inflation turned positive to 1.2% YOY in August 2025 and rose to 2.1% YOY by December 2025. In April 2026, headline inflation crossed the CBSL target and surged to 5.4%, driven by steep energy price revisions reflecting the surge in global oil prices amidst the Middle East conflict, while core inflation also rose to 3.8% YOY.
 
-EXAMPLE STYLE:
-"Inflation remains well below the Central Bank of Sri Lanka (CBSL) target level of 5.0%. CBSL plans to review the inflation target this year, although it expects headline inflation to gradually converge to the 5% year-on-year (YOY) target by 2H 2026, faster than initially anticipated due to the Middle-East conflict impact on domestic prices. Inflation, as measured by Colombo Consumer Price Index (CCPI), eased from a peak of 70% YOY in September 2022 and an annual average of 46.4% in 2022, to 17.4% in 2023, 1.2% in 2024, and -0.5% in 2025. Easing monetary policy has driven a steady decline in market interest rates as inflation eased from its 2022 peak. CBSL cut policy rates by a cumulative 800 bps from June 2023 to November 2024."
+Easing monetary policy has driven a steady decline in market interest rates as inflation eased from its 2022 peak. CBSL cut policy rates by a cumulative 800 bps from June 2023 to November 2024. On 21 May 2025, CBSL reduced the Overnight Policy Rate by a further 25 basis points to 7.75% (825 bps total since mid-2023). CBSL has held rates since May 2025 amid positive inflation and private-sector credit growth above 20% YOY. The statutory reserves ratio has remained at 2.0% since Aug 2023. The monthly Average Weighted Prime Lending Rate (AWPLR) rose from 9.07% at end-December 2025 to 9.70% by end-April 2026.
 
-Now write a full briefing note for ${country} using the four sections below. For each section, write 2–4 narrative paragraphs in the same style: name the central bank / ministry / statistical office, cite actual or best-available data with specific figures and dates, describe historical trends and turning points, explain policy actions taken and their rationale, and give a forward-looking analytical assessment. Contextualise everything to Pacific Island Small Island Developing States (SIDS) realities — tourism dependence, remittance flows, commodity import exposure, climate vulnerability, and ADB/IMF programme context where relevant.
+Money supply (M2b) growth has decelerated with limited monetary financing. By the end of 2024, M2b growth was 8.6% YOY (about 52% of GDP), compared with 15.4% in 2022, equivalent to 51% of GDP. M2b growth increased to 11.5% YOY in December 2025. With the easing of market interest rates, a steady pickup in private-sector credit demand was observed since February 2024, resulting in 25.2% YOY growth in December 2025. As of February 2026, YOY M2b growth increased to 11.9% as private sector credit growth remained high at 26.4%.`
 
----
+      const briefingPrompt = `You are a senior ADB economist writing a country economic briefing note for ${country}. Your output must exactly match the prose style, analytical density, and data specificity of the following template — this is the gold standard for format and tone:
+
+--- STYLE TEMPLATE (replicate this exact style for ${country}) ---
+${STYLE_TEMPLATE}
+--- END TEMPLATE ---
+
+CRITICAL STYLE RULES:
+1. Every paragraph must contain multiple specific data points: percentages, basis points, exact months and years, named instruments (e.g. CCPI, AWPLR, M2b, Kina Facility Rate, OPR), named institutions (full name first, then abbreviation).
+2. Show historical trajectories as comma-separated sequences: "eased from X% in 2022, to Y% in 2023, Z% in 2024, and W% in 2025."
+3. Policy actions must include the exact date, magnitude in basis points, and cumulative total.
+4. Paragraphs must flow analytically — each sentence builds on the last with cause-and-effect reasoning.
+5. NO bullet points. NO headers within sections. NO generic filler sentences.
+6. Name the exact central bank, statistical office, and relevant ministry for ${country}.
+
+Write the full briefing note for ${country} with the four sections below. Each section: 2–3 dense analytical paragraphs at the same density as the template. Contextualise to Pacific SIDS realities (tourism dependence, remittances, fuel/food import exposure, climate vulnerability, ADB/IMF programme context).
 
 OVERVIEW OF THE ECONOMY & CURRENT DEVELOPMENTS
-
-Write 2–3 paragraphs covering:
-• Real GDP growth rate for 2023, 2024, 2025 (actual or estimate) and the 2026 outlook; what drove the trajectory (tourism recovery, natural disasters, commodity prices, external demand).
-• CPI inflation: peak level and year, subsequent disinflation path with specific YOY figures for 2022–2025, current level, and the central bank or government inflation target if one exists.
-• GDP per capita (USD, most recent year) and trend relative to pre-pandemic level; living standards implications.
-• The top 2–3 economic sectors (tourism/hospitality, subsistence agriculture, fishing, mining, remittances) and their approximate share of GDP or export earnings, with recent performance commentary.
-
----
+Real GDP growth trajectory 2022–2026 with annual figures and drivers; named CPI index with peak inflation and disinflation path year-by-year to present; GDP per capita in USD vs pre-pandemic level; top 2–3 sectors with GDP share and recent data.
 
 MONETARY POLICY & FINANCIAL SECTOR
-
-Write 2–3 paragraphs covering:
-• The central bank (name it — e.g. Reserve Bank of Fiji, National Reserve Bank of Tonga, Bank of Papua New Guinea) and its current policy rate or reserve money target, and the stance (accommodative/neutral/tightening).
-• Any rate changes in the past 18 months: magnitude in basis points, dates, and rationale. If no independent monetary policy (e.g. dollarised economies like Palau or Marshall Islands), explain the monetary framework.
-• Private-sector credit growth trend (YOY %) and banking system health; any non-performing loan concerns or liquidity conditions.
-• Money supply (M2 or M2b) growth and its relationship to inflation and nominal GDP.
-
----
+Central bank full name and abbreviation; current policy rate level and stance; all rate changes in past 24 months with exact dates and bps; named reserve requirement and lending rate benchmark with recent movement; M2 or M2b growth YOY for 2022–present; private-sector credit growth trend; banking system NPL ratio.
 
 FISCAL POLICY & PUBLIC DEBT
-
-Write 2–3 paragraphs covering:
-• Central government fiscal balance as % of GDP for 2022, 2023, 2024, and the 2025/2026 budget target. Key revenue drivers (tax, grants, resource royalties) and expenditure pressures (post-disaster reconstruction, public-sector wages, debt service).
-• Public debt as % of GDP: trajectory from 2020 to present, composition (domestic vs external, bilateral vs multilateral), and any IMF/ADB debt sustainability assessment.
-• Any ongoing IMF programme, ADB budget support, or fiscal consolidation plan; key conditionalities or reform milestones.
-
----
+Fiscal balance % of GDP for 2022, 2023, 2024, 2025 estimate and 2026 budget target; named revenue and expenditure drivers; public debt % of GDP from 2019 to present; debt composition naming key creditors; IMF DSA risk rating; IMF or ADB programme status.
 
 BALANCE OF PAYMENTS
+Current account balance % of GDP for 2022–2025; export categories with values; remittances % of GDP with YOY change; tourism receipts; fuel and food import bill; foreign reserves in months of import cover with trend; exchange rate regime and recent movement.
 
-Write 2–3 paragraphs covering:
-• Current account balance as % of GDP for the most recent 2–3 years and its key drivers. Quantify tourism receipts, remittances (% of GDP), merchandise export earnings, and import bill (especially fuel and food).
-• Foreign reserves in months of import cover: most recent figure, trend, and adequacy threshold (typically 3–4 months for Pacific SIDS).
-• Exchange rate regime and any recent pressure or adjustments. Capital account openness and FDI inflows.
+OUTLOOK
+3–5 sentences: baseline growth and inflation trajectory for 2026–2027; top 3 downside risks; policy priorities.
 
----
-
-End with a short OUTLOOK paragraph (3–5 sentences) summarising the key risks (climate shocks, global interest rates, tourism volatility, debt rollover) and the baseline trajectory for 2026.
-
-Write only the briefing note content. Use section headers in ALL CAPS. No preamble, no meta-commentary.`
+Write ONLY the briefing note. Section headers in ALL CAPS. No preamble, no meta-commentary.`
 
       try {
         const res = await fetch('/api/erdi/ask', {
@@ -1554,7 +1542,14 @@ Write only the briefing note content. Use section headers in ALL CAPS. No preamb
       { id: userMsgId, role: 'user', content: instruction, ts: now },
       { id: asstMsgId, role: 'assistant', content: '', ts: now },
     ])
-    const prompt = `Here is a country economic briefing note:\n\n${editorContent}\n\nPlease revise it with the following instruction: ${instruction}`
+    const prompt = `You are a senior ADB economist editing a country economic briefing note. The note must maintain the following style throughout — dense analytical prose with named institutions, specific data sequences (year-by-year percentages), exact dates for policy decisions, basis-point precision, and named instruments (e.g. OPR, M2b, AWPLR, CPI index name). No bullet points. Every sentence must contain at least one concrete data point or causal link.
+
+CURRENT BRIEFING NOTE:
+${editorContent}
+
+REVISION INSTRUCTION: ${instruction}
+
+Apply the instruction and return the full revised briefing note. Keep all sections. Maintain the same dense, data-rich prose style throughout. Section headers in ALL CAPS. No preamble.`
     try {
       const res = await fetch('/api/erdi/ask', {
         method: 'POST',
