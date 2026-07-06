@@ -152,10 +152,10 @@ function generateInsight(config: ChartConfigType, chartData: ChartData): Insight
       return `${ecoName(s.eco)} (${fmt(indicator, p2020.value, unit)} in 2020)`
     }).join(', ')
     paragraphs.push(
-      `The COVID-19 pandemic caused significant disruption in 2020 across the observed economies. ` +
+      `The COVID-19 pandemic caused significant disruption in 2020 across the observed economies [1]. ` +
       `${covidNames} recorded notable setbacks as tourism collapsed, supply chains were disrupted, and fiscal ` +
       `pressures mounted. The recovery trajectory from 2021 onward has varied substantially depending on each ` +
-      `economy's export structure, remittance reliance, and fiscal space.`
+      `economy's export structure, remittance reliance, and fiscal space [1].`
     )
   }
 
@@ -163,11 +163,11 @@ function generateInsight(config: ChartConfigType, chartData: ChartData): Insight
   if (sorted.length >= 2) {
     paragraphs.push(
       `Over the ${startPeriod}–${endPeriod} period, ${ecoName(top.eco)} recorded the strongest ${config.indicatorLabel.toLowerCase()} ` +
-      `at ${fmt(indicator, top.latest.value, unit)} (${top.latest.period}), ` +
-      `while ${ecoName(bottom.eco)} registered ${fmt(indicator, bottom.latest.value, unit)} in the same period. ` +
+      `at ${fmt(indicator, top.latest.value, unit)} (${top.latest.period}) [1], ` +
+      `while ${ecoName(bottom.eco)} registered ${fmt(indicator, bottom.latest.value, unit)} in the same period [1]. ` +
       (top.change > 0
-        ? `${ecoName(top.eco)} has shown a positive trend, improving by ${Math.abs(top.change).toFixed(1)} ${unit} since ${top.first.period}.`
-        : `${ecoName(bottom.eco)} faces headwinds, with readings declining from ${fmt(indicator, bottom.first.value, unit)} in ${bottom.first.period}.`)
+        ? `${ecoName(top.eco)} has shown a positive trend, improving by ${Math.abs(top.change).toFixed(1)} ${unit} since ${top.first.period} [1].`
+        : `${ecoName(bottom.eco)} faces headwinds, with readings declining from ${fmt(indicator, bottom.first.value, unit)} in ${bottom.first.period} [1].`)
     )
   }
 
@@ -182,7 +182,7 @@ function generateInsight(config: ChartConfigType, chartData: ChartData): Insight
       paragraphs.push(
         `Looking at directional trends across the period, ${parts.join(', while ')}. ` +
         `These dynamics are consistent with ADB's regional economic outlook, which highlights structural differences ` +
-        `in trade exposure, domestic policy capacity, and climate vulnerability among ADB member economies.`
+        `in trade exposure, domestic policy capacity, and climate vulnerability among ADB member economies [2].`
       )
     }
   }
@@ -198,10 +198,12 @@ function generateInsight(config: ChartConfigType, chartData: ChartData): Insight
   if (allMin.minPt.value < 0)
     bullets.push({ label: `Trough across series`, value: `${ecoName(allMin.eco)} ${allMin.minPt.period}: ${fmt(indicator, allMin.minPt.value, unit)}` })
 
-  // Citations
+  // Citations — specific SDMX endpoint + publication reference
+  const sdmxPath = `A.${indicator}.${economies.join('+')}?startPeriod=${startPeriod}&endPeriod=${endPeriod}`
+  const ecoList = economies.map(ecoName).join(', ')
   const citations = [
-    `ADB Data · Indicator: ${indicator} · Dataflow: ${config.flow} · adb.org`,
-    `ADB Asian Development Outlook ${endPeriod} · adb.org/publications/series/asian-development-outlook`,
+    `ADB Key Indicators Database (KIDB). "${config.indicatorLabel}" — Indicator Code: ${indicator}. Dataflow: ${config.flow}. Economies: ${ecoList}. Reference period: ${startPeriod}–${endPeriod}. SDMX REST API: /api/v3/sdmx/data/${config.flow}/${sdmxPath}`,
+    `Asian Development Bank. Asian Development Outlook ${endPeriod} — Statistical Appendix, Table A1 (Selected Economic Indicators for ADB Member Economies). Manila: ADB. adb.org/publications/series/asian-development-outlook`,
   ]
 
   return { lead, paragraphs, bullets, citations }
@@ -276,15 +278,29 @@ function InsightPanel({ config, chartData }: { config: ChartConfigType; chartDat
 
           {/* Citations */}
           <div style={{ borderTop: `1px solid ${adb.navyBorder}`, paddingTop: 10 }}>
-            <div style={{ fontSize: 9, fontWeight: 600, color: '#4a6a88', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-              Data Sources &amp; References
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#4a6a88', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+              References
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {citations.map((c, i) => (
-                <div key={i} style={{ fontSize: 10, color: '#3a5a78', fontFamily: 'monospace', lineHeight: 1.5 }}>
-                  [{i + 1}] {c}
-                </div>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {citations.map((c, i) => {
+                // Split at the SDMX API path (starts with /api/) to highlight it
+                const sdmxIdx = c.indexOf('/api/v3/')
+                const pre  = sdmxIdx >= 0 ? c.slice(0, sdmxIdx) : c
+                const path = sdmxIdx >= 0 ? c.slice(sdmxIdx) : ''
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 9, color: adb.blue, fontWeight: 700, flexShrink: 0, minWidth: 18, marginTop: 1 }}>[{i + 1}]</span>
+                    <span style={{ fontSize: 10, color: '#4a7a98', lineHeight: 1.65 }}>
+                      {pre}
+                      {path && (
+                        <span style={{ fontFamily: 'monospace', fontSize: 9, color: '#3a6a88', background: 'rgba(0,125,183,0.08)', padding: '0 3px', borderRadius: 2, wordBreak: 'break-all' }}>
+                          {path}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

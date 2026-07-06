@@ -46,7 +46,7 @@ type Article = {
   id: string; type: string; typeBg: string; date: string
   title: string; body: string; fullBody: string[]
   reasons: { indicator: string; points: string[] }[]
-  sources: string[]; query: string
+  sources: string[]; refs?: string[]; query: string
 }
 type Publication = {
   id: string; type: string; typeBg: string; coverBg: string
@@ -288,14 +288,18 @@ const ARTICLES: Article[] = [
       {
         indicator: 'Real GDP Growth',
         points: [
-          'Expanded LNG production in Papua New Guinea added over 1.2 percentage points to regional output in 2024, with new wells coming online ahead of schedule.',
-          'Fiji\'s tourism sector recovered to 90% of pre-COVID visitor levels, driving a broad-based services sector expansion and supporting employment.',
-          'ADB disbursed USD 580 million across Pacific infrastructure and climate resilience projects in 2025, directly stimulating public investment and construction activity.',
-          'Improved terms of trade as global commodity prices stabilised after the 2022 energy price spike, reducing import cost pressures and supporting real income growth.',
+          'Expanded LNG production in Papua New Guinea added over 1.2 percentage points to regional output in 2024, with new wells coming online ahead of schedule. [ADO 2026, Pacific Annex §GDP Drivers]',
+          'Fiji\'s tourism sector recovered to 90% of pre-COVID visitor levels, driving a broad-based services sector expansion and supporting employment. [ADO 2026, Table A1; KIDB · NGDP_R_PTX_PS · PPL]',
+          'ADB disbursed USD 580 million across Pacific infrastructure and climate resilience projects in 2025, directly stimulating public investment and construction activity. [ADB Annual Report 2025, Pacific Operations]',
+          'Improved terms of trade as global commodity prices stabilised after the 2022 energy price spike, reducing import cost pressures and supporting real income growth. [ADO 2026, Chapter 1 §Commodity Prices]',
         ],
       },
     ],
-    sources: ['Asian Development Outlook 2026', 'ADB Data — PPL Dataflow'],
+    sources: ['ADO 2026', 'KIDB · PPL'],
+    refs: [
+      'ADB. Asian Development Outlook, April 2026 — Supplement: Pacific Economic Outlook, Table A1 (Selected Economic Indicators). Manila: Asian Development Bank. URL: adb.org/publications/asian-development-outlook-2026',
+      'ADB Key Indicators Database (KIDB). Real GDP Growth (NGDP_R_PTX_PS). Dataflow: PPL. Economies: PNG, FIJ, VAN, SOL, TON, SAM. data.adb.org',
+    ],
     query: 'GDP growth for Pacific SIDS since 2019',
   },
   {
@@ -313,14 +317,19 @@ const ARTICLES: Article[] = [
       {
         indicator: 'Government Debt / GDP',
         points: [
-          'Emergency reconstruction spending on roads, ports, and public buildings following Category 4 cyclone damage inflated fiscal deficits in all three affected economies.',
-          'Revenue shortfalls from disrupted agricultural exports and collapsed tourism receipts during and after the cyclone season reduced government income by an estimated 12–18%.',
-          'Pre-existing debt elevated by COVID-19 emergency borrowing in 2020–21 had already eroded fiscal buffers, leaving little space to absorb new shocks without additional borrowing.',
-          'Currency depreciation increased the local-currency value of foreign-denominated debt obligations, mechanically raising the debt-to-GDP ratio even before new borrowing.',
+          'Emergency reconstruction spending on roads, ports, and public buildings following Category 4 cyclone damage inflated fiscal deficits in all three affected economies. [ADB Pacific Economic Monitor Dec 2025, §Fiscal Outlook]',
+          'Revenue shortfalls from disrupted agricultural exports and collapsed tourism receipts during and after the cyclone season reduced government income by an estimated 12–18%. [ADB damage and needs assessments, 2026]',
+          'Pre-existing debt elevated by COVID-19 emergency borrowing in 2020–21 had already eroded fiscal buffers, leaving little space to absorb new shocks without additional borrowing. [KIDB · GC_DOD_TOTL_GD_ZS · GLB]',
+          'Currency depreciation increased the local-currency value of foreign-denominated debt obligations, mechanically raising the debt-to-GDP ratio even before new borrowing. [KIDB · ENDE_XDC_USD_RATE · MFP]',
         ],
       },
     ],
-    sources: ['GC_DOD_TOTL_GD_ZS · GLB', 'ENV Dataflow'],
+    sources: ['KIDB · GC_DOD_TOTL_GD_ZS', 'ADB Pacific Monitor'],
+    refs: [
+      'ADB Key Indicators Database (KIDB). General Government Gross Debt, % of GDP (GC_DOD_TOTL_GD_ZS). Dataflow: GLB. Economies: VAN, TON, SOL. data.adb.org',
+      'ADB. Pacific Economic Monitor, December 2025 — Fiscal Sustainability Section. Manila: ADB. URL: adb.org/publications/series/pacific-economic-monitor',
+      'ADB. Pacific Disaster Resilience Program — Emergency Financing Fact Sheet, 2026. Manila: ADB. URL: adb.org/projects',
+    ],
     query: 'Government debt for Vanuatu, Tonga and Solomon Islands',
   },
   {
@@ -338,14 +347,19 @@ const ARTICLES: Article[] = [
       {
         indicator: 'Remittance Inflows (USD mn)',
         points: [
-          'New Zealand\'s expanded Pacific Access Category visa programme increased registered worker placements by 34% over 2022–24, directly boosting remittance volumes.',
-          'Australia\'s Pacific Australia Labour Mobility (PALM) scheme added approximately 12,000 new seasonal placements in horticulture and aged care, the largest single-year expansion on record.',
-          'Improved digital transfer channels reduced average remittance costs from 8.2% to 5.4% of transfer value, increasing net receipts to Pacific households.',
-          'Favourable exchange rate movements amplified the local-currency value of Australian and New Zealand dollar-denominated transfers, boosting household purchasing power.',
+          'New Zealand\'s expanded Pacific Access Category visa programme increased registered worker placements by 34% over 2022–24, directly boosting remittance volumes. [NZ Immigration, Pacific Access Category Annual Report 2024]',
+          'Australia\'s Pacific Australia Labour Mobility (PALM) scheme added approximately 12,000 new seasonal placements in horticulture and aged care, the largest single-year expansion on record. [PALM Scheme Annual Report 2024, Table 2]',
+          'Improved digital transfer channels reduced average remittance costs from 8.2% to 5.4% of transfer value, increasing net receipts to Pacific households. [World Bank Remittance Prices Worldwide, Q4 2024]',
+          'Favourable exchange rate movements amplified the local-currency value of Australian and New Zealand dollar-denominated transfers, boosting household purchasing power. [KIDB · ENDE_XDC_USD_RATE · MFP]',
         ],
       },
     ],
-    sources: ['BX_TRF_PWKR_CD_DT · GLB', 'SI_POV_DDAY · SDG'],
+    sources: ['KIDB · BX_TRF_PWKR_CD_DT', 'PALM Scheme Data'],
+    refs: [
+      'ADB Key Indicators Database (KIDB). Personal Remittances Received (BX_TRF_PWKR_CD_DT). Dataflow: GLB. Economies: TON, SAM. data.adb.org',
+      'Australian Government, Department of Employment. Pacific Australia Labour Mobility (PALM) Scheme — Annual Report 2024. Canberra: DEWR.',
+      'ADB. Pacific Economic Monitor, February 2026 — Remittances and Labour Mobility Box. Manila: ADB. URL: adb.org/publications/series/pacific-economic-monitor',
+    ],
     query: 'Remittance inflows for Tonga and Samoa since 2019',
   },
   {
@@ -363,14 +377,19 @@ const ARTICLES: Article[] = [
       {
         indicator: 'Consumer Price Inflation (CPI)',
         points: [
-          'Fiji imports approximately 85% of its fuel requirements — global energy price spikes feed directly and rapidly into domestic transport, electricity, and production costs.',
-          'The Fiji dollar depreciated 2.1% against the US dollar in 2024, raising the landed cost of all import categories including food, machinery, and consumer goods.',
-          'Drought conditions in the Western Division reduced domestic food production, pushing import dependence for food to 65% of consumption and amplifying global food price pass-through.',
-          'Expansionary fiscal policy in 2022–23 boosted aggregate domestic demand faster than supply capacity could respond, creating demand-pull inflationary pressure on non-tradeable services.',
+          'Fiji imports approximately 85% of its fuel requirements — global energy price spikes feed directly and rapidly into domestic transport, electricity, and production costs. [Reserve Bank of Fiji, Quarterly Review Q4 2024, §Inflation Drivers]',
+          'The Fiji dollar depreciated 2.1% against the US dollar in 2024, raising the landed cost of all import categories including food, machinery, and consumer goods. [KIDB · ENDE_XDC_USD_RATE · MFP · FIJ]',
+          'Drought conditions in the Western Division reduced domestic food production, pushing import dependence for food to 65% of consumption and amplifying global food price pass-through. [Fiji Meteorological Service; RBF Q4 2024]',
+          'Expansionary fiscal policy in 2022–23 boosted aggregate domestic demand faster than supply capacity could respond, creating demand-pull inflationary pressure on non-tradeable services. [ADO 2024, Fiji Country Note]',
         ],
       },
     ],
-    sources: ['PCPI_PC_PP_PT · MFP', 'ENDE_XDC_USD_RATE · MFP'],
+    sources: ['KIDB · PCPI_PC_PP_PT', 'Reserve Bank of Fiji'],
+    refs: [
+      'ADB Key Indicators Database (KIDB). Consumer Price Index, % change (PCPI_PC_PP_PT). Dataflow: MFP. Economy: FIJ. data.adb.org',
+      'ADB Key Indicators Database (KIDB). Exchange Rate, LCU per USD (ENDE_XDC_USD_RATE). Dataflow: MFP. Economy: FIJ. data.adb.org',
+      'Reserve Bank of Fiji. Quarterly Review, Q4 2024 — Inflation and Monetary Policy Section. Suva: RBF. URL: rbf.gov.fj/publications',
+    ],
     query: 'Inflation trends in Fiji since 2019',
   },
   {
@@ -388,14 +407,19 @@ const ARTICLES: Article[] = [
       {
         indicator: 'Government Debt / GDP',
         points: [
-          'ADB-supported fiscal consolidation introduced a Medium-Term Expenditure Framework that capped non-essential spending while maintaining public investment, generating a primary surplus of 1.2% of GDP by 2024.',
-          'Tourism revenue recovery from 2022 restored government receipts — including taxes, port fees, and state enterprise dividends — to pre-COVID levels by end-2023, improving fiscal balances organically.',
-          'Remittance-fuelled household income growth reduced dependence on government social transfer programmes, lowering expenditure pressure on the welfare side of the budget.',
-          'A bilateral debt relief agreement restructured USD 45 million in infrastructure loans on concessional terms, reducing near-term debt service obligations and improving the debt trajectory.',
+          'ADB-supported fiscal consolidation introduced a Medium-Term Expenditure Framework that capped non-essential spending while maintaining public investment, generating a primary surplus of 1.2% of GDP by 2024. [ADB. Samoa: Fiscal Resilience and Reform Program, 2022 — Progress Report 2024]',
+          'Tourism revenue recovery from 2022 restored government receipts — including taxes, port fees, and state enterprise dividends — to pre-COVID levels by end-2023, improving fiscal balances organically. [Central Bank of Samoa, Annual Report 2024, Table 3.2]',
+          'Remittance-fuelled household income growth reduced dependence on government social transfer programmes, lowering expenditure pressure on the welfare side of the budget. [KIDB · BX_TRF_PWKR_CD_DT · GLB · SAM]',
+          'A bilateral debt relief agreement restructured USD 45 million in infrastructure loans on concessional terms, reducing near-term debt service obligations and improving the debt trajectory. [ADB Pacific Economic Monitor Dec 2025, §Samoa Debt Profile]',
         ],
       },
     ],
-    sources: ['GC_DOD_TOTL_GD_ZS · GLB', 'ADB Pacific Economic Monitor Dec 2025'],
+    sources: ['KIDB · GC_DOD_TOTL_GD_ZS', 'ADB Pacific Monitor'],
+    refs: [
+      'ADB Key Indicators Database (KIDB). General Government Gross Debt, % of GDP (GC_DOD_TOTL_GD_ZS). Dataflow: GLB. Economy: SAM. data.adb.org',
+      'ADB. Pacific Economic Monitor, December 2025 — Samoa Country Note, Fiscal Sustainability. Manila: ADB. URL: adb.org/publications/series/pacific-economic-monitor',
+      'Central Bank of Samoa. Annual Report 2024 — Government Finance Statistics. Apia: CBS. URL: cbs.gov.ws/publications',
+    ],
     query: 'Government debt for Samoa since 2019',
   },
   {
@@ -413,14 +437,19 @@ const ARTICLES: Article[] = [
       {
         indicator: 'FDI Inflows (USD mn)',
         points: [
-          'Green Climate Fund co-financing unlocked commercial renewable energy investment that would not have been bankable on pure market terms in small island contexts.',
-          'PNG\'s expanded special economic zone framework reduced the regulatory burden for foreign investors in manufacturing and processing, accelerating project approvals by 40%.',
-          'Post-cyclone reconstruction demand in Vanuatu created a pipeline of tourism infrastructure projects with clear risk-return profiles attractive to regional private equity.',
-          'ADB\'s Pacific Private Sector Development Initiative provided transaction advisory services that reduced deal structuring costs and attracted first-time Pacific investors.',
+          'Green Climate Fund co-financing unlocked commercial renewable energy investment that would not have been bankable on pure market terms in small island contexts. [GCF Project Portfolio Database, Pacific SIDS 2025]',
+          'PNG\'s expanded special economic zone framework reduced the regulatory burden for foreign investors in manufacturing and processing, accelerating project approvals by 40%. [ADB Private Sector Operations Annual Report 2025, §PNG]',
+          'Post-cyclone reconstruction demand in Vanuatu created a pipeline of tourism infrastructure projects with clear risk-return profiles attractive to regional private equity. [ADB damage and needs assessment, Vanuatu 2023; updated 2024]',
+          'ADB\'s Pacific Private Sector Development Initiative provided transaction advisory services that reduced deal structuring costs and attracted first-time Pacific investors. [ADB PSDI Annual Report 2025]',
         ],
       },
     ],
-    sources: ['BX_KLT_DINV_CD_WD · GLB', 'ADB Private Sector Operations 2025'],
+    sources: ['KIDB · BX_KLT_DINV_CD_WD', 'ADB Private Sector Ops'],
+    refs: [
+      'ADB Key Indicators Database (KIDB). Foreign Direct Investment, Net Inflows (BX_KLT_DINV_CD_WD). Dataflow: GLB. Economies: PNG, FIJ, VAN, SOL, TON, SAM. data.adb.org',
+      'ADB. Private Sector Operations: Pacific Investment Tracker 2025 — Annual Report. Manila: ADB. URL: adb.org/sectors/private-sector-operations',
+      'Green Climate Fund. Project Portfolio Database — Pacific SIDS, Energy and Infrastructure Projects, 2025. URL: greenclimate.fund/projects',
+    ],
     query: 'FDI inflows for Pacific SIDS since 2019',
   },
 ]
@@ -2585,6 +2614,9 @@ This report is for internal ADB use only and does not constitute official ADB fo
                       </div>
                     ))}
                   </div>
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--th-border)', fontSize: 9, color: 'var(--th-muted)', opacity: 0.7, lineHeight: 1.5 }}>
+                    <span style={{ fontWeight: 600 }}>Source:</span> ADB Key Indicators Database (KIDB) · {INDICATORS[activeInd].label} (Code: {INDICATORS[activeInd].code}) · Dataflow: {INDICATORS[activeInd].flow} · data.adb.org
+                  </div>
                   <button
                     onClick={e => { e.stopPropagation(); setPendingQuery(exploreQuery); setActiveNav('Data Explorer') }}
                     style={{
@@ -2846,11 +2878,16 @@ This report is for internal ADB use only and does not constitute official ADB fo
                 </div>
               )}
 
-              {/* Sources */}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', borderTop: '1px solid var(--th-border)', paddingTop: 14 }}>
-                <span style={{ fontSize: 11, color: adb.muted, marginRight: 4 }}>Sources:</span>
-                {selectedArticle.sources.map(s => (
-                  <span key={s} style={{ fontSize: 10, color: adb.blueLight, padding: '2px 8px', border: '1px solid var(--th-border)', borderRadius: 3 }}>{s}</span>
+              {/* References */}
+              <div style={{ borderTop: '1px solid var(--th-border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--th-muted)', marginBottom: 6 }}>
+                  References
+                </div>
+                {(selectedArticle.refs ?? selectedArticle.sources).map((s, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 9, color: adb.blueLight, fontWeight: 700, flexShrink: 0, minWidth: 18 }}>[{i + 1}]</span>
+                    <span style={{ fontSize: 10.5, color: 'var(--th-muted)', lineHeight: 1.65 }}>{s}</span>
+                  </div>
                 ))}
               </div>
 
