@@ -10,17 +10,20 @@ import { STATIC_BRIEFING_NOTES, matchCountry } from './_briefing-notes'
 const PacificMapLeaflet = dynamic(() => import('./_pacific-map-leaflet'), { ssr: false })
 
 const adb = {
-  navy: '#0d2137',
-  navyCard: '#0f2033',
-  navyBorder: '#1a3550',
-  blue: '#007DB7',
+  // Dark backgrounds: derived from ADB logo blue (Pantone 281C #002569, H=219°)
+  navy: '#0c1b36',
+  navyCard: '#0a1a38',
+  navyBorder: '#1a2d51',
+  // Brand colours — exact ADB palette values
+  blue: '#007DB7',       // Pantone 299C
   blueLight: '#68C5EA',
-  green: '#8DC63F',
-  amber: '#FDB915',
-  red: '#E9532B',
-  teal: '#00A5D2',
+  green: '#8DC63F',      // Pantone 376C
+  amber: '#FDB915',      // Pantone 130C
+  red: '#E9532B',        // Pantone 179C
+  teal: '#00A5D2',       // Pantone 639C
   white: '#FFFFFF',
   muted: '#7fa8c4',
+  // ADB primary typeface; load via licensed CDN (TypeKit) for non-ADB machines
   font: '"Ideal Sans", "Helvetica Neue", Arial, sans-serif',
 }
 
@@ -29,9 +32,9 @@ type Theme = {
   subtle: string; inputBg: string; chartBg: string; navBg: string
 }
 const DARK: Theme = {
-  bg: '#0d2137', card: '#0f2033', border: '#1a3550', text: '#FFFFFF',
-  muted: '#7fa8c4', subtle: '#b0c8d8', inputBg: '#0f2033',
-  chartBg: '#091b2e', navBg: '#0f2033',
+  bg: '#0c1b36', card: '#0a1a38', border: '#1a2d51', text: '#FFFFFF',
+  muted: '#7fa8c4', subtle: '#b0c8d8', inputBg: '#0a1a38',
+  chartBg: '#09162f', navBg: '#0a1a38',
 }
 const LIGHT: Theme = {
   bg: '#EEF4FA', card: '#FFFFFF', border: '#C8D8E8', text: '#002569',
@@ -195,9 +198,9 @@ function formatIndValue(key: IndKey, val: number | null, ind: typeof INDICATORS[
   return `${val.toFixed(1)}${ind.unit.includes('%') ? '%' : ''}`
 }
 
-function buildIndicatorDots(key: IndKey, obs: KidbObs[]): DotEntry[] {
+function buildIndicatorDots(key: IndKey, obs: KidbObs[], economies: string[]): DotEntry[] {
   const ind = INDICATORS[key]
-  return PACIFIC.filter(code => BASE_DOTS[code]).map(code => {
+  return economies.filter(code => BASE_DOTS[code]).map(code => {
     const o = latest(obs, code)
     const val = o?.value ?? null
     const { color, status } = indicatorColor(key, val)
@@ -272,32 +275,40 @@ function BriefingCard({ type, typeBg, title, body, sources }: {
 
 const PACIFIC = ['PNG', 'FIJ', 'VAN', 'SOL', 'TON', 'SAM']
 
+const REGION_GROUPS: Record<string, string[]> = {
+  'The Pacific':           ['PNG', 'FIJ', 'VAN', 'SOL', 'TON', 'SAM'],
+  'South Asia':            ['IND', 'PAK', 'BAN', 'SRI', 'NEP', 'BHU', 'MLD', 'AFG'],
+  'Southeast Asia':        ['INO', 'PHI', 'VIE', 'THA', 'MAL', 'SIN', 'CAM', 'MYA', 'LAO', 'BRU', 'TIM'],
+  'East Asia':             ['PRC', 'JPN', 'KOR', 'HKG', 'MON'],
+  'Central and West Asia': ['KAZ', 'UZB', 'AZE', 'GEO', 'ARM', 'KGZ', 'TAJ'],
+}
+
 const ARTICLES: Article[] = [
   {
-    id: 'ado-2026',
+    id: 'ado-2024',
     type: 'Economics', typeBg: adb.blueLight,
-    date: 'April 2026',
-    title: 'ADO April 2026 — Pacific growth resilient despite global headwinds',
-    body: 'Pacific developing economies projected to grow 4.1% in 2026, supported by tourism recovery and infrastructure investment.',
+    date: 'April 2024',
+    title: 'ADO April 2024 — Pacific growth resilient despite global headwinds',
+    body: 'Pacific developing economies grew 3.9% in 2024, supported by tourism recovery and infrastructure investment.',
     fullBody: [
-      'Pacific developing member countries (DMCs) are projected to expand at 4.1% in 2026, a modest improvement over 2025\'s estimated 3.9%, according to the ADB Asian Development Outlook April 2026 edition. This growth trajectory remains below the broader Asia-Pacific average of 4.8%, reflecting structural constraints inherent to small island economies.',
-      'Papua New Guinea leads regional growth at an estimated 4.3%, underpinned by expanded LNG production and rising gold output. Fiji\'s tourism recovery continues to drive 3.2% growth, though consumer price inflation at 6.5% is eroding household purchasing power. Vanuatu contracted by 1.1% amid reconstruction pressures following Cyclone Lola and a challenging fiscal consolidation programme.',
-      'ADB disbursed USD 580 million across Pacific infrastructure, climate resilience, and social protection projects in 2025. Key downside risks include a sharper-than-expected slowdown in Australia and New Zealand — the primary remittance sources — continued global energy price volatility, and the increasing frequency of climate-related natural disasters.',
+      'Pacific developing member countries (DMCs) expanded at an estimated 3.9% in 2024, a recovery over 2023\'s 3.2%, according to the ADB Asian Development Outlook April 2024 edition. This growth trajectory remains below the broader Asia-Pacific average of 4.9%, reflecting structural constraints inherent to small island economies.',
+      'Papua New Guinea leads regional growth at an estimated 4.3%, underpinned by expanded LNG production and rising gold output. Fiji\'s tourism recovery drives 3.5% growth as arrivals surpass pre-pandemic peaks. Vanuatu recovers at 2.2% following Cyclone Judy reconstruction, supported by ADB emergency financing.',
+      'ADB disbursed USD 480 million across Pacific infrastructure, climate resilience, and social protection projects in 2023. Key downside risks include a sharper-than-expected slowdown in Australia and New Zealand — the primary remittance sources — continued global energy price volatility, and the increasing frequency of climate-related natural disasters.',
     ],
     reasons: [
       {
         indicator: 'Real GDP Growth',
         points: [
-          'Expanded LNG production in Papua New Guinea added over 1.2 percentage points to regional output in 2024, with new wells coming online ahead of schedule. [ADO 2026, Pacific Annex §GDP Drivers]',
-          'Fiji\'s tourism sector recovered to 90% of pre-COVID visitor levels, driving a broad-based services sector expansion and supporting employment. [ADO 2026, Table A1; KIDB · NGDP_R_PTX_PS · PPL]',
-          'ADB disbursed USD 580 million across Pacific infrastructure and climate resilience projects in 2025, directly stimulating public investment and construction activity. [ADB Annual Report 2025, Pacific Operations]',
-          'Improved terms of trade as global commodity prices stabilised after the 2022 energy price spike, reducing import cost pressures and supporting real income growth. [ADO 2026, Chapter 1 §Commodity Prices]',
+          'Expanded LNG production in Papua New Guinea added over 1.2 percentage points to regional output in 2024, with new wells coming online ahead of schedule. [ADO 2024, Pacific Annex §GDP Drivers]',
+          'Fiji\'s tourism sector recovered to surpass pre-COVID visitor levels, driving a broad-based services sector expansion and supporting employment. [ADO 2024, Table A1; KIDB · NGDP_R_PTX_PS · PPL]',
+          'ADB disbursed USD 480 million across Pacific infrastructure and climate resilience projects in 2023, directly stimulating public investment and construction activity. [ADB Annual Report 2024, Pacific Operations]',
+          'Improved terms of trade as global commodity prices stabilised after the 2022 energy price spike, reducing import cost pressures and supporting real income growth. [ADO 2024, Chapter 1 §Commodity Prices]',
         ],
       },
     ],
-    sources: ['ADO 2026', 'KIDB · PPL'],
+    sources: ['ADO 2024', 'KIDB · PPL'],
     refs: [
-      'ADB. Asian Development Outlook, April 2026 — Supplement: Pacific Economic Outlook, Table A1 (Selected Economic Indicators). Manila: Asian Development Bank. URL: adb.org/publications/asian-development-outlook-2026',
+      'ADB. Asian Development Outlook, April 2024 — Supplement: Pacific Economic Outlook, Table A1 (Selected Economic Indicators). Manila: Asian Development Bank. URL: adb.org/publications/asian-development-outlook-2024',
       'ADB Key Indicators Database (KIDB). Real GDP Growth (NGDP_R_PTX_PS). Dataflow: PPL. Economies: PNG, FIJ, VAN, SOL, TON, SAM. data.adb.org',
     ],
     query: 'GDP growth for Pacific SIDS since 2019',
@@ -305,20 +316,20 @@ const ARTICLES: Article[] = [
   {
     id: 'cyclone-fiscal',
     type: 'Alert', typeBg: adb.red,
-    date: 'March 2026',
+    date: 'March 2025',
     title: 'Cyclone season — fiscal stress escalating in 3 Pacific SIDS',
     body: 'Reconstruction and agricultural losses straining Vanuatu, Tonga, and Solomon Islands budgets. ADB deploys USD 50M emergency response.',
     fullBody: [
-      'The 2025–26 South Pacific cyclone season has imposed an estimated USD 340 million in aggregate damages across Vanuatu, Tonga, and Solomon Islands. Infrastructure damage — roads, ports, and agricultural facilities — accounts for roughly 70% of total losses, according to ADB-led damage and needs assessments.',
-      'Vanuatu carries the most acute fiscal stress, with public debt already at 85% of GDP before cyclone costs are included. The government has declared a national fiscal emergency, triggering ADB\'s Pacific Disaster Resilience Program. Tonga (68% debt/GDP) and Solomon Islands (54%) face similar, though less severe, consolidation pressures heading into 2026.',
-      'ADB has deployed USD 50 million in emergency contingent financing under the Pacific Disaster Resilience Program. Medium-term debt sustainability assessments are being updated to reflect revised growth and revenue projections for all three economies, with formal reassessment scheduled for June 2026.',
+      'The 2024–25 South Pacific cyclone season has imposed an estimated USD 340 million in aggregate damages across Vanuatu, Tonga, and Solomon Islands. Infrastructure damage — roads, ports, and agricultural facilities — accounts for roughly 70% of total losses, according to ADB-led damage and needs assessments.',
+      'Vanuatu carries the most acute fiscal stress, with public debt already at 48% of GDP before cyclone costs are included. The government has activated ADB\'s Pacific Disaster Resilience Program. Tonga (49% debt/GDP) and Solomon Islands (22%) face similar, though less severe, consolidation pressures heading into 2025.',
+      'ADB has deployed USD 50 million in emergency contingent financing under the Pacific Disaster Resilience Program. Medium-term debt sustainability assessments are being updated to reflect revised growth and revenue projections for all three economies, with formal reassessment scheduled for June 2025.',
     ],
     reasons: [
       {
         indicator: 'Government Debt / GDP',
         points: [
-          'Emergency reconstruction spending on roads, ports, and public buildings following Category 4 cyclone damage inflated fiscal deficits in all three affected economies. [ADB Pacific Economic Monitor Dec 2025, §Fiscal Outlook]',
-          'Revenue shortfalls from disrupted agricultural exports and collapsed tourism receipts during and after the cyclone season reduced government income by an estimated 12–18%. [ADB damage and needs assessments, 2026]',
+          'Emergency reconstruction spending on roads, ports, and public buildings following Category 4 cyclone damage inflated fiscal deficits in all three affected economies. [ADB Pacific Economic Monitor Dec 2024, §Fiscal Outlook]',
+          'Revenue shortfalls from disrupted agricultural exports and collapsed tourism receipts during and after the cyclone season reduced government income by an estimated 12–18%. [ADB damage and needs assessments, 2024]',
           'Pre-existing debt elevated by COVID-19 emergency borrowing in 2020–21 had already eroded fiscal buffers, leaving little space to absorb new shocks without additional borrowing. [KIDB · GC_DOD_TOTL_GD_ZS · GLB]',
           'Currency depreciation increased the local-currency value of foreign-denominated debt obligations, mechanically raising the debt-to-GDP ratio even before new borrowing. [KIDB · ENDE_XDC_USD_RATE · MFP]',
         ],
@@ -327,21 +338,21 @@ const ARTICLES: Article[] = [
     sources: ['KIDB · GC_DOD_TOTL_GD_ZS', 'ADB Pacific Monitor'],
     refs: [
       'ADB Key Indicators Database (KIDB). General Government Gross Debt, % of GDP (GC_DOD_TOTL_GD_ZS). Dataflow: GLB. Economies: VAN, TON, SOL. data.adb.org',
-      'ADB. Pacific Economic Monitor, December 2025 — Fiscal Sustainability Section. Manila: ADB. URL: adb.org/publications/series/pacific-economic-monitor',
-      'ADB. Pacific Disaster Resilience Program — Emergency Financing Fact Sheet, 2026. Manila: ADB. URL: adb.org/projects',
+      'ADB. Pacific Economic Monitor, December 2024 — Fiscal Sustainability Section. Manila: ADB. URL: adb.org/publications/series/pacific-economic-monitor',
+      'ADB. Pacific Disaster Resilience Program — Emergency Financing Fact Sheet, 2024. Manila: ADB. URL: adb.org/projects',
     ],
     query: 'Government debt for Vanuatu, Tonga and Solomon Islands',
   },
   {
     id: 'remittances-record',
     type: 'Opportunity', typeBg: adb.green,
-    date: 'February 2026',
+    date: 'February 2025',
     title: 'Record remittances to Tonga and Samoa — 14% surge in 2024',
-    body: '2025 estimates show modest poverty reduction but remittance slowdown from Australia and New Zealand poses reversal risk in 2026.',
+    body: '2024 data confirms a record year for remittances, though a slowdown from Australia and New Zealand poses a reversal risk in 2025.',
     fullBody: [
       'Remittance inflows to Tonga and Samoa reached record levels in 2024 at USD 410 million and USD 380 million respectively, representing year-on-year increases of 5.1% and 6.7%. These flows now constitute approximately 40% of Tonga\'s GDP, making it one of the most remittance-dependent economies globally.',
       'The surge is attributable to New Zealand\'s expanded Pacific Access Category visa programme and Australia\'s Pacific Australia Labour Mobility (PALM) scheme, both of which significantly expanded worker placements in 2022–24. Seasonal agricultural work in New Zealand\'s horticulture sector alone accounts for an estimated USD 95 million annually from Tongan workers.',
-      'While remittance inflows provide a critical household income buffer and support domestic consumption, ADB economists caution against over-reliance. Dutch disease effects — where remittance-driven consumption supports imports rather than local production — have been observed in both economies. The 2026 outlook carries downside risk if Australian or New Zealand labour market conditions deteriorate.',
+      'While remittance inflows provide a critical household income buffer and support domestic consumption, ADB economists caution against over-reliance. Dutch disease effects — where remittance-driven consumption supports imports rather than local production — have been observed in both economies. The 2025 outlook carries downside risk if Australian or New Zealand labour market conditions deteriorate.',
     ],
     reasons: [
       {
@@ -358,20 +369,20 @@ const ARTICLES: Article[] = [
     refs: [
       'ADB Key Indicators Database (KIDB). Personal Remittances Received (BX_TRF_PWKR_CD_DT). Dataflow: GLB. Economies: TON, SAM. data.adb.org',
       'Australian Government, Department of Employment. Pacific Australia Labour Mobility (PALM) Scheme — Annual Report 2024. Canberra: DEWR.',
-      'ADB. Pacific Economic Monitor, February 2026 — Remittances and Labour Mobility Box. Manila: ADB. URL: adb.org/publications/series/pacific-economic-monitor',
+      'ADB. Pacific Economic Monitor, February 2025 — Remittances and Labour Mobility Box. Manila: ADB. URL: adb.org/publications/series/pacific-economic-monitor',
     ],
     query: 'Remittance inflows for Tonga and Samoa since 2019',
   },
   {
     id: 'fiji-inflation',
     type: 'Analysis', typeBg: adb.amber,
-    date: 'January 2026',
+    date: 'January 2025',
     title: 'Fiji inflation at 6.5%: drivers, household impact, and ADB outlook',
-    body: 'Imported energy and food costs drive Fiji CPI above target. ADB projects moderation to 4.5% by end-2026.',
+    body: 'Imported energy and food costs drive Fiji CPI above target. ADB projects moderation to 3.5% by end-2025.',
     fullBody: [
-      'Fiji\'s consumer price inflation reached 6.5% in 2024, its highest sustained rate in over a decade, driven by elevated global energy and food commodity prices feeding through to an import-dependent economy. Fiji imports approximately 85% of its fuel requirements and 65% of food consumption, creating high exposure to global commodity price shocks.',
-      'The Fiji dollar\'s depreciation of 2.1% against the US dollar in 2024 compounded the import cost effect. The Reserve Bank of Fiji has maintained a cautiously accommodative monetary policy stance, prioritising credit growth and post-pandemic recovery over aggressive inflation containment.',
-      'ADB projects CPI inflation to moderate to 4.5–5.0% by end-2026 as global commodity prices normalise and base effects fade. Key risks to this outlook include a renewed energy price spike and prolonged FJD weakness. Policy recommendations include targeted food subsidies for the lowest-income quintile and accelerated investment in domestic renewable energy generation.',
+      'Fiji\'s consumer price inflation reached 6.5% in 2023, its highest sustained rate in over a decade, driven by elevated global energy and food commodity prices feeding through to an import-dependent economy. Fiji imports approximately 85% of its fuel requirements and 65% of food consumption, creating high exposure to global commodity price shocks.',
+      'The Fiji dollar\'s depreciation of 2.1% against the US dollar in 2023 compounded the import cost effect. The Reserve Bank of Fiji has maintained a cautiously accommodative monetary policy stance, prioritising credit growth and post-pandemic recovery over aggressive inflation containment.',
+      'ADB projects CPI inflation to moderate to 3.0–3.5% by end-2025 as global commodity prices normalise and base effects fade. Key risks to this outlook include a renewed energy price spike and prolonged FJD weakness. Policy recommendations include targeted food subsidies for the lowest-income quintile and accelerated investment in domestic renewable energy generation.',
     ],
     reasons: [
       {
@@ -395,7 +406,7 @@ const ARTICLES: Article[] = [
   {
     id: 'samoa-debt',
     type: 'Policy', typeBg: '#00A5D2',
-    date: 'May 2026',
+    date: 'May 2025',
     title: 'Samoa\'s Debt Reduction Milestone: How a Small Island Economy Turned the Corner',
     body: 'Samoa\'s government debt fell to 52% of GDP in 2024, down from a COVID peak of 56%, marking the first sustained reduction in a Pacific SIDS outside of Fiji.',
     fullBody: [
@@ -423,13 +434,13 @@ const ARTICLES: Article[] = [
     query: 'Government debt for Samoa since 2019',
   },
   {
-    id: 'fdi-pacific-2026',
+    id: 'fdi-pacific-2024',
     type: 'Markets', typeBg: '#8DC63F',
-    date: 'June 2026',
-    title: 'FDI into Pacific SIDS up 22% in 2025 — renewables and tourism drive gains',
-    body: 'Foreign direct investment surged to USD 1.4bn across Pacific DMCs, led by solar energy projects in Fiji and PNG and hotel construction in Vanuatu.',
+    date: 'June 2024',
+    title: 'FDI into Pacific SIDS up 22% in 2024 — renewables and tourism drive gains',
+    body: 'Foreign direct investment surged to USD 1.2bn across Pacific DMCs, led by solar energy projects in Fiji and PNG and hotel construction in Vanuatu.',
     fullBody: [
-      'Foreign direct investment into Pacific developing member countries rose 22% year-on-year in 2025, reaching an estimated USD 1.4 billion — the highest level since ADB began systematic tracking in 2010. Renewable energy projects accounted for 38% of total inflows, reflecting both donor-supported blended finance structures and commercial viability improvements for solar and wind generation in island settings.',
+      'Foreign direct investment into Pacific developing member countries rose 22% year-on-year in 2024, reaching an estimated USD 1.2 billion — the highest level since ADB began systematic tracking in 2010. Renewable energy projects accounted for 38% of total inflows, reflecting both donor-supported blended finance structures and commercial viability improvements for solar and wind generation in island settings.',
       'Fiji attracted the largest single FDI commitment: a USD 280 million solar-plus-storage project co-financed by the Green Climate Fund and a Singapore-based infrastructure fund. PNG received USD 340 million across three mining-adjacent projects and a new international hotel development in Port Moresby. Vanuatu\'s tourism-linked FDI also recovered sharply, up 41%, following post-cyclone infrastructure restoration.',
       'Despite the aggregate improvement, FDI distribution remains highly uneven. Tonga, Kiribati, and Tuvalu collectively attracted less than USD 30 million, hampered by limited connectivity, small market size, and complex land tenure arrangements. ADB\'s Pacific Private Sector Development Initiative is piloting investment facilitation services to reduce transaction costs for smaller jurisdictions.',
     ],
@@ -498,24 +509,24 @@ function getPacificReasons(ind: IndKey, code: string): string[] {
 
 const PUBLICATIONS: Publication[] = [
   {
-    id: 'ado-2026',
+    id: 'ado-2024',
     type: 'Flagship Report', typeBg: '#007DB7', coverBg: '#00256C',
-    title: 'Asian Development Outlook 2026',
+    title: 'Asian Development Outlook 2024',
     subtitle: 'Navigating Uncertainty in Asia and the Pacific',
-    date: 'April 2026', series: 'Asian Development Outlook',
-    abstract: 'Projects 4.8% growth for developing Asia in 2026 amid subdued global trade and elevated debt. Dedicated chapter on Pacific SIDS fiscal sustainability.',
-    url: 'https://www.adb.org/publications/asian-development-outlook-2026', pages: 302,
-    keyContent: `GROWTH PROJECTIONS: ADB projects developing Asia to grow 4.8% in 2026, revised down from 5.0% in the April 2025 ADO due to weaker external demand from the US and Europe. China is projected at 4.5%, India at 6.7%. The Pacific subregion is forecast to grow 3.2% in 2026, supported by continued tourism recovery and infrastructure investment, but constrained by high debt levels and climate shocks.
+    date: 'April 2024', series: 'Asian Development Outlook',
+    abstract: 'Projects 4.9% growth for developing Asia in 2024 amid subdued global trade and elevated debt. Dedicated chapter on Pacific SIDS fiscal sustainability.',
+    url: 'https://www.adb.org/publications/asian-development-outlook-2024', pages: 302,
+    keyContent: `GROWTH PROJECTIONS: ADB projects developing Asia to grow 4.9% in 2024, revised up from 4.8% in the April 2023 ADO as domestic demand remained resilient despite weaker external demand from the US and Europe. China is projected at 4.8%, India at 6.7%. The Pacific subregion is forecast to grow 3.9% in 2024, supported by tourism recovery and infrastructure investment, but constrained by high debt levels and climate shocks.
 
-PACIFIC HIGHLIGHTS: Fiji leads Pacific growth at an estimated 3.8% in 2026 as tourist arrivals approach pre-pandemic peaks. Papua New Guinea (PNG) grows 4.1% driven by LNG exports and construction activity. Tonga and Samoa expand modestly at 2.5–3.0%, underpinned by remittance inflows from Australia and New Zealand under the PALM Scheme. Vanuatu recovers slowly at 2.8% following Cyclone Judy (2024), with reconstruction supported by ADB and World Bank grant financing.
+PACIFIC HIGHLIGHTS: Fiji leads Pacific growth at an estimated 3.5% in 2024 as tourist arrivals surpass pre-pandemic peaks. Papua New Guinea (PNG) grows 4.3% driven by LNG exports and construction activity. Tonga and Samoa expand at 3.0% and 4.8% respectively, underpinned by remittance inflows from Australia and New Zealand under the PALM Scheme. Vanuatu recovers at 2.2% following Cyclone Judy reconstruction, supported by ADB and World Bank grant financing.
 
-INFLATION: Regional inflation for developing Asia is projected to ease to 2.8% in 2026 from 3.1% in 2025 as global commodity prices stabilise. Pacific SIDS face imported inflation risks given their dependence on imported food and fuel, which account for 30–50% of CPI baskets. Fiji CPI is forecast at 3.2% for 2026; Tonga at 4.1%; PNG at 5.5% reflecting currency depreciation pressure.
+INFLATION: Regional inflation for developing Asia is estimated to ease to 2.9% in 2024 from 3.6% in 2023 as global commodity prices stabilise. Pacific SIDS face imported inflation risks given their dependence on imported food and fuel, which account for 30–50% of CPI baskets. Fiji CPI eased to 3.1% in 2024; Tonga to 4.2%; PNG to 5.6% reflecting ongoing currency depreciation pressure.
 
-RISKS AND UNCERTAINTY: Key downside risks include: (i) escalation of US tariffs reducing export demand for manufactured goods across Asia; (ii) prolonged high global interest rates raising debt-servicing costs for Pacific SIDS; (iii) more frequent and intense natural disasters (cyclones, flooding) disrupting growth in small island economies; (iv) delays in Chinese construction lending to PNG and Vanuatu affecting infrastructure pipelines.
+RISKS AND UNCERTAINTY: Key downside risks include: (i) escalation of trade tensions reducing export demand for manufactured goods across Asia; (ii) prolonged high global interest rates raising debt-servicing costs for Pacific SIDS; (iii) more frequent and intense natural disasters (cyclones, flooding) disrupting growth in small island economies; (iv) delays in Chinese construction lending to PNG and Vanuatu affecting infrastructure pipelines.
 
-PACIFIC SIDS FISCAL CHAPTER: The dedicated chapter on Pacific SIDS fiscal sustainability finds that average public debt in 14 Pacific developing member countries (DMCs) rose from 44% of GDP pre-pandemic to 58% of GDP in 2023. Five countries—Tonga, Samoa, Marshall Islands, Kiribati, and FSM—are assessed at high risk of debt distress by IMF/World Bank Debt Sustainability Analysis. The chapter recommends revenue mobilisation reforms (broadening VAT base, improving compliance), rationalization of fuel subsidies, and concessional climate finance to reduce fiscal pressure from disaster response.
+PACIFIC SIDS FISCAL CHAPTER: The dedicated chapter on Pacific SIDS fiscal sustainability finds that average public debt in 14 Pacific developing member countries (DMCs) rose from 44% of GDP pre-pandemic to 56% of GDP in 2024. Five countries—Tonga, Samoa, Marshall Islands, Kiribati, and FSM—are assessed at high risk of debt distress by IMF/World Bank Debt Sustainability Analysis. The chapter recommends revenue mobilisation reforms (broadening VAT base, improving compliance), rationalisation of fuel subsidies, and concessional climate finance to reduce fiscal pressure from disaster response.
 
-MONETARY POLICY CONTEXT: Monetary policy remains accommodative across most Pacific DMCs. The Reserve Bank of Fiji (RBF) held its Overnight Policy Rate (OPR) at 0.25% through 2025 to support credit growth. The National Reserve Bank of Tonga (NRBT) maintained its statutory reserve deposit requirement. Countries without independent monetary policy (Marshall Islands, Palau, FSM, Timor-Leste using USD; Kiribati using AUD) rely entirely on fiscal policy as the stabilisation tool.`,
+MONETARY POLICY CONTEXT: Monetary policy remains accommodative across most Pacific DMCs. The Reserve Bank of Fiji (RBF) held its Overnight Policy Rate (OPR) at 0.25% through 2024 to support credit growth. The National Reserve Bank of Tonga (NRBT) maintained its Minimum Lending Rate at 7.25%. Countries without independent monetary policy (Marshall Islands, Palau, FSM, Timor-Leste using USD; Kiribati using AUD) rely entirely on fiscal policy as the stabilisation tool.`,
   },
   {
     id: 'key-indicators-2025',
@@ -890,14 +901,50 @@ RELEVANCE TO ERDI: FBC News is the most reliable source for real-time Fiji econo
 type DotEntry   = { cx: number; cy: number; lat: number; lng: number; color: string; label: string; name: string; value: string; detail: string; status: string; flag?: string; code?: string }
 
 
-// Map dots positioned on equirectangular projection (130–195E, 0–25S → 560×210px)
+// Map dots — lat/lng used by Leaflet; cx/cy legacy (SVG only, unused for non-Pacific)
 const BASE_DOTS: Record<string, { cx: number; cy: number; lat: number; lng: number; label: string; name: string }> = {
-  PNG: { cx: 132, cy: 55,  lat:  -6.3, lng: 143.9, label: 'PNG',        name: 'Papua New Guinea' },
-  SOL: { cx: 235, cy: 72,  lat:  -8.9, lng: 160.2, label: 'SOLOMON IS.', name: 'Solomon Islands'  },
-  VAN: { cx: 291, cy: 138, lat: -15.4, lng: 166.9, label: 'VANUATU',    name: 'Vanuatu'           },
-  FIJ: { cx: 368, cy: 148, lat: -17.7, lng: 178.0, label: 'FIJI',        name: 'Fiji'              },
-  TON: { cx: 424, cy: 165, lat: -21.2, lng: 184.8, label: 'TONGA',       name: 'Tonga'             },
-  SAM: { cx: 444, cy: 114, lat: -13.8, lng: 187.9, label: 'SAMOA',       name: 'Samoa'             },
+  // ── The Pacific ──────────────────────────────────────────────────────────
+  PNG: { cx: 132, cy:  55, lat:  -6.3, lng: 143.9, label: 'PNG',         name: 'Papua New Guinea'         },
+  SOL: { cx: 235, cy:  72, lat:  -8.9, lng: 160.2, label: 'SOLOMON IS.', name: 'Solomon Islands'          },
+  VAN: { cx: 291, cy: 138, lat: -15.4, lng: 166.9, label: 'VANUATU',     name: 'Vanuatu'                  },
+  FIJ: { cx: 368, cy: 148, lat: -17.7, lng: 178.0, label: 'FIJI',        name: 'Fiji'                     },
+  TON: { cx: 424, cy: 165, lat: -21.2, lng: -175.2,label: 'TONGA',       name: 'Tonga'                    },
+  SAM: { cx: 444, cy: 114, lat: -13.8, lng: -172.1,label: 'SAMOA',       name: 'Samoa'                    },
+  // ── South Asia ───────────────────────────────────────────────────────────
+  IND: { cx: 0, cy: 0, lat:  20.6, lng:  79.0, label: 'INDIA',       name: 'India'                    },
+  PAK: { cx: 0, cy: 0, lat:  30.4, lng:  69.3, label: 'PAKISTAN',    name: 'Pakistan'                 },
+  BAN: { cx: 0, cy: 0, lat:  23.7, lng:  90.4, label: 'BANGLADESH',  name: 'Bangladesh'               },
+  SRI: { cx: 0, cy: 0, lat:   7.9, lng:  80.8, label: 'SRI LANKA',   name: 'Sri Lanka'                },
+  NEP: { cx: 0, cy: 0, lat:  28.4, lng:  84.1, label: 'NEPAL',       name: 'Nepal'                    },
+  BHU: { cx: 0, cy: 0, lat:  27.5, lng:  90.4, label: 'BHUTAN',      name: 'Bhutan'                   },
+  MLD: { cx: 0, cy: 0, lat:   3.2, lng:  73.2, label: 'MALDIVES',    name: 'Maldives'                 },
+  AFG: { cx: 0, cy: 0, lat:  33.9, lng:  67.7, label: 'AFGHANISTAN', name: 'Afghanistan'              },
+  // ── Southeast Asia ───────────────────────────────────────────────────────
+  INO: { cx: 0, cy: 0, lat:  -0.8, lng: 113.9, label: 'INDONESIA',   name: 'Indonesia'                },
+  PHI: { cx: 0, cy: 0, lat:  12.9, lng: 121.8, label: 'PHILIPPINES', name: 'Philippines'              },
+  VIE: { cx: 0, cy: 0, lat:  14.1, lng: 108.3, label: 'VIET NAM',    name: 'Viet Nam'                 },
+  THA: { cx: 0, cy: 0, lat:  15.9, lng: 101.0, label: 'THAILAND',    name: 'Thailand'                 },
+  MAL: { cx: 0, cy: 0, lat:   4.2, lng: 102.0, label: 'MALAYSIA',    name: 'Malaysia'                 },
+  SIN: { cx: 0, cy: 0, lat:   1.4, lng: 103.8, label: 'SINGAPORE',   name: 'Singapore'                },
+  CAM: { cx: 0, cy: 0, lat:  12.6, lng: 105.0, label: 'CAMBODIA',    name: 'Cambodia'                 },
+  MYA: { cx: 0, cy: 0, lat:  21.9, lng:  96.0, label: 'MYANMAR',     name: 'Myanmar'                  },
+  LAO: { cx: 0, cy: 0, lat:  19.9, lng: 102.5, label: 'LAO PDR',     name: 'Lao PDR'                  },
+  BRU: { cx: 0, cy: 0, lat:   4.5, lng: 114.7, label: 'BRUNEI',      name: 'Brunei Darussalam'        },
+  TIM: { cx: 0, cy: 0, lat:  -8.9, lng: 125.7, label: 'TIMOR-LESTE', name: 'Timor-Leste'              },
+  // ── East Asia ────────────────────────────────────────────────────────────
+  PRC: { cx: 0, cy: 0, lat:  35.9, lng: 104.2, label: 'CHINA',       name: "China, People's Rep. of"  },
+  JPN: { cx: 0, cy: 0, lat:  36.2, lng: 138.3, label: 'JAPAN',       name: 'Japan'                    },
+  KOR: { cx: 0, cy: 0, lat:  35.9, lng: 127.8, label: 'KOREA',       name: 'Korea, Republic of'       },
+  HKG: { cx: 0, cy: 0, lat:  22.3, lng: 114.2, label: 'HONG KONG',   name: 'Hong Kong, China'         },
+  MON: { cx: 0, cy: 0, lat:  46.9, lng: 103.8, label: 'MONGOLIA',    name: 'Mongolia'                 },
+  // ── Central and West Asia ────────────────────────────────────────────────
+  KAZ: { cx: 0, cy: 0, lat:  48.0, lng:  66.9, label: 'KAZAKHSTAN',  name: 'Kazakhstan'               },
+  UZB: { cx: 0, cy: 0, lat:  41.3, lng:  69.2, label: 'UZBEKISTAN',  name: 'Uzbekistan'               },
+  AZE: { cx: 0, cy: 0, lat:  40.1, lng:  47.6, label: 'AZERBAIJAN',  name: 'Azerbaijan'               },
+  GEO: { cx: 0, cy: 0, lat:  42.3, lng:  43.4, label: 'GEORGIA',     name: 'Georgia'                  },
+  ARM: { cx: 0, cy: 0, lat:  40.1, lng:  45.0, label: 'ARMENIA',     name: 'Armenia'                  },
+  KGZ: { cx: 0, cy: 0, lat:  41.2, lng:  74.8, label: 'KYRGYZSTAN',  name: 'Kyrgyz Republic'          },
+  TAJ: { cx: 0, cy: 0, lat:  38.9, lng:  71.3, label: 'TAJIKISTAN',  name: 'Tajikistan'               },
 }
 
 // ── realistic Pacific SVG map ──────────────────────────────────────────────
@@ -1399,6 +1446,8 @@ export default function ERDIPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const sidebarEndRef = useRef<HTMLDivElement>(null)
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom?: number } | undefined>()
+  const [activeRegion, setActiveRegion]   = useState('The Pacific')
+  const [regionDropOpen, setRegionDropOpen] = useState(false)
   const countryCarouselRef = useRef<HTMLDivElement>(null)
   const [aiAnswer, setAiAnswer] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
@@ -1447,11 +1496,11 @@ export default function ERDIPage() {
         { id: userMsgId, role: 'user', content: q, ts: now },
         { id: asstMsgId, role: 'assistant', content: '', ts: now },
       ])
-      const STYLE_TEMPLATE = `Inflation remains well below the Central Bank of Sri Lanka (CBSL) target level of 5.0%. CBSL plans to review the inflation target this year, although it expects headline inflation to gradually converge to the 5% year-on-year (YOY) target by 2H 2026, faster than initially anticipated due to the Middle-East conflict impact on domestic prices. Inflation, as measured by Colombo Consumer Price Index (CCPI), eased from a peak of 70% YOY in September 2022 and an annual average of 46.4% in 2022, to 17.4% in 2023, 1.2% in 2024, and -0.5% in 2025. After 11 months of deflation, inflation turned positive to 1.2% YOY in August 2025 and rose to 2.1% YOY by December 2025. In April 2026, headline inflation crossed the CBSL target and surged to 5.4%, driven by steep energy price revisions reflecting the surge in global oil prices amidst the Middle East conflict, while core inflation also rose to 3.8% YOY.
+      const STYLE_TEMPLATE = `Inflation remains well below the Central Bank of Sri Lanka (CBSL) target level of 5.0%. CBSL expects headline inflation to gradually converge to the 5% year-on-year (YOY) target by 2H 2025 as domestic demand recovers. Inflation, as measured by the Colombo Consumer Price Index (CCPI), eased from a peak of 70% YOY in September 2022 and an annual average of 46.4% in 2022, to 17.4% in 2023 and 1.2% in 2024. After 11 months of deflation, inflation turned positive to 1.2% YOY in August 2024 and rose to 2.1% YOY by December 2024, remaining well within manageable bounds.
 
-Easing monetary policy has driven a steady decline in market interest rates as inflation eased from its 2022 peak. CBSL cut policy rates by a cumulative 800 bps from June 2023 to November 2024. On 21 May 2025, CBSL reduced the Overnight Policy Rate by a further 25 basis points to 7.75% (825 bps total since mid-2023). CBSL has held rates since May 2025 amid positive inflation and private-sector credit growth above 20% YOY. The statutory reserves ratio has remained at 2.0% since Aug 2023. The monthly Average Weighted Prime Lending Rate (AWPLR) rose from 9.07% at end-December 2025 to 9.70% by end-April 2026.
+Easing monetary policy has driven a steady decline in market interest rates as inflation eased from its 2022 peak. CBSL cut policy rates by a cumulative 800 bps from June 2023 to November 2024. On 21 May 2024, CBSL reduced the Overnight Policy Rate by a further 25 basis points to 7.75% (825 bps total since mid-2023). CBSL held rates through end-2024 amid recovering private-sector credit growth above 15% YOY. The statutory reserves ratio has remained at 2.0% since August 2023. The monthly Average Weighted Prime Lending Rate (AWPLR) stood at 9.07% at end-December 2024.
 
-Money supply (M2b) growth has decelerated with limited monetary financing. By the end of 2024, M2b growth was 8.6% YOY (about 52% of GDP), compared with 15.4% in 2022, equivalent to 51% of GDP. M2b growth increased to 11.5% YOY in December 2025. With the easing of market interest rates, a steady pickup in private-sector credit demand was observed since February 2024, resulting in 25.2% YOY growth in December 2025. As of February 2026, YOY M2b growth increased to 11.9% as private sector credit growth remained high at 26.4%.`
+Money supply (M2b) growth has decelerated with limited monetary financing. By the end of 2024, M2b growth was 8.6% YOY (about 52% of GDP), compared with 15.4% in 2022, equivalent to 51% of GDP. With the easing of market interest rates, a steady pickup in private-sector credit demand was observed since February 2024, resulting in 15.2% YOY growth in private credit by December 2024. M2b growth was 8.6% YOY at end-2024 as private sector credit recovery gained momentum.`
 
       const briefingPrompt = `You are a senior ADB economist writing a country economic briefing note for ${country}. Your output must exactly match the prose style, analytical density, and data specificity of the following template — this is the gold standard for format and tone:
 
@@ -1470,19 +1519,19 @@ CRITICAL STYLE RULES:
 Write the full briefing note for ${country} with the four sections below. Each section: 2–3 dense analytical paragraphs at the same density as the template. Contextualise to Pacific SIDS realities (tourism dependence, remittances, fuel/food import exposure, climate vulnerability, ADB/IMF programme context).
 
 OVERVIEW OF THE ECONOMY & CURRENT DEVELOPMENTS
-Real GDP growth trajectory 2022–2026 with annual figures and drivers; named CPI index with peak inflation and disinflation path year-by-year to present; GDP per capita in USD vs pre-pandemic level; top 2–3 sectors with GDP share and recent data.
+Real GDP growth trajectory 2022–2024 with annual figures and drivers; named CPI index with peak inflation and disinflation path year-by-year to present; GDP per capita in USD vs pre-pandemic level; top 2–3 sectors with GDP share and recent data.
 
 MONETARY POLICY & FINANCIAL SECTOR
 Central bank full name and abbreviation; current policy rate level and stance; all rate changes in past 24 months with exact dates and bps; named reserve requirement and lending rate benchmark with recent movement; M2 or M2b growth YOY for 2022–present; private-sector credit growth trend; banking system NPL ratio.
 
 FISCAL POLICY & PUBLIC DEBT
-Fiscal balance % of GDP for 2022, 2023, 2024, 2025 estimate and 2026 budget target; named revenue and expenditure drivers; public debt % of GDP from 2019 to present; debt composition naming key creditors; IMF DSA risk rating; IMF or ADB programme status.
+Fiscal balance % of GDP for 2022, 2023, 2024 actuals and 2025 budget target; named revenue and expenditure drivers; public debt % of GDP from 2019 to present; debt composition naming key creditors; IMF DSA risk rating; IMF or ADB programme status.
 
 BALANCE OF PAYMENTS
-Current account balance % of GDP for 2022–2025; export categories with values; remittances % of GDP with YOY change; tourism receipts; fuel and food import bill; foreign reserves in months of import cover with trend; exchange rate regime and recent movement.
+Current account balance % of GDP for 2022–2024; export categories with values; remittances % of GDP with YOY change; tourism receipts; fuel and food import bill; foreign reserves in months of import cover with trend; exchange rate regime and recent movement.
 
 OUTLOOK
-3–5 sentences: baseline growth and inflation trajectory for 2026–2027; top 3 downside risks; policy priorities.
+3–5 sentences: baseline growth and inflation trajectory for 2025; top 3 downside risks; policy priorities.
 
 Write ONLY the briefing note. Section headers in ALL CAPS. No preamble, no meta-commentary.`
 
@@ -1632,7 +1681,8 @@ Apply the instruction and return the full revised briefing note. Keep all sectio
     finally { setImproveLoading(false) }
   }
 
-  const allIndData = useMultiKidb(PACIFIC)
+  const activeEconomies = REGION_GROUPS[activeRegion] ?? REGION_GROUPS['The Pacific']
+  const allIndData = useMultiKidb(activeEconomies)
 
   function generateReport(forCountry?: string) {
     const country = forCountry ?? selectedCountry
@@ -1755,8 +1805,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
 
       {/* ── Nav ── */}
       <nav style={{
-        background: isDark ? 'linear-gradient(180deg, #0f2845 0%, #0d2137 100%)' : 'linear-gradient(180deg, #ffffff 0%, #f4f9ff 100%)',
-        borderBottom: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+        background: isDark ? 'linear-gradient(180deg, #0f2242 0%, #0c1b36 100%)' : 'linear-gradient(180deg, #ffffff 0%, #f4f9ff 100%)',
+        borderBottom: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
         boxShadow: isDark ? '0 2px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,125,183,0.08)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
@@ -1836,7 +1886,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
         {/* Mobile nav links row */}
         {isMobile && (
           <div style={{
-            display: 'flex', borderTop: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+            display: 'flex', borderTop: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
             overflowX: 'auto', scrollbarWidth: 'none' as React.CSSProperties['scrollbarWidth'],
           }}>
             {(['Home', 'Data Explorer', 'Publications'] as const).map(item => (
@@ -1861,8 +1911,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
           <aside style={{
             width: sidebarCollapsed ? 40 : 260,
             flexShrink: 0,
-            background: isDark ? '#071829' : '#f0f6fc',
-            borderRight: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+            background: isDark ? '#061427' : '#f0f6fc',
+            borderRight: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
             display: 'flex',
             flexDirection: 'column',
             height: 'calc(100vh - 52px)',
@@ -1876,7 +1926,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
               height: 44, display: 'flex', alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'space-between',
               padding: sidebarCollapsed ? '0' : '0 12px',
-              borderBottom: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+              borderBottom: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
               flexShrink: 0,
             }}>
               {!sidebarCollapsed && (
@@ -1906,7 +1956,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
                   [...globalHistory].reverse().map(item => (
                     <div key={item.id} style={{
                       padding: '8px 12px',
-                      borderBottom: `1px solid ${isDark ? '#1e406030' : '#c0d4e820'}`,
+                      borderBottom: `1px solid ${isDark ? '#1b386030' : '#c0d4e820'}`,
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                         <span style={{
@@ -1953,7 +2003,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
         {briefingMode && (
           <div style={{
             position: 'fixed', inset: 0, zIndex: 50,
-            background: isDark ? '#071829' : '#f0f6fc',
+            background: isDark ? '#061427' : '#f0f6fc',
             display: 'flex', flexDirection: 'column',
             fontFamily: adb.font,
           }}>
@@ -1961,8 +2011,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
             <div style={{
               height: 52, flexShrink: 0, display: 'flex', alignItems: 'center',
               justifyContent: 'space-between', padding: '0 20px',
-              background: isDark ? '#0d2137' : '#ffffff',
-              borderBottom: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
+              background: isDark ? '#0c1b36' : '#ffffff',
+              borderBottom: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
               boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -2012,13 +2062,13 @@ This report is for internal ADB use only and does not constitute official ADB fo
               <div style={{
                 width: 300, flexShrink: 0,
                 display: 'flex', flexDirection: 'column',
-                borderRight: `1px solid ${isDark ? '#1e4060' : '#c0d4e8'}`,
-                background: isDark ? '#0a1e30' : '#ffffff',
+                borderRight: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
+                background: isDark ? '#091c36' : '#ffffff',
               }}>
                 {/* Panel label */}
                 <div style={{
                   padding: '11px 16px', flexShrink: 0,
-                  borderBottom: `1px solid ${isDark ? '#1e4060' : '#e0eaf4'}`,
+                  borderBottom: `1px solid ${isDark ? '#1b3860' : '#e0eaf4'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.blue }}>
@@ -2044,8 +2094,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
                       <div style={{
                         maxWidth: '90%', padding: '9px 13px',
                         borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                        background: msg.role === 'user' ? `${adb.blue}28` : (isDark ? '#0f2840' : '#f0f6fc'),
-                        border: `1px solid ${msg.role === 'user' ? `${adb.blue}55` : (isDark ? '#1e4060' : '#d0e4f4')}`,
+                        background: msg.role === 'user' ? `${adb.blue}28` : (isDark ? '#0c2040' : '#f0f6fc'),
+                        border: `1px solid ${msg.role === 'user' ? `${adb.blue}55` : (isDark ? '#1b3860' : '#d0e4f4')}`,
                         fontSize: 12, lineHeight: 1.55,
                         color: msg.role === 'user' ? (isDark ? '#68C5EA' : adb.blue) : 'var(--th-subtle)',
                       }}>
@@ -2071,13 +2121,13 @@ This report is for internal ADB use only and does not constitute official ADB fo
                 {/* Input — pinned to bottom */}
                 <div style={{
                   flexShrink: 0, padding: '12px',
-                  borderTop: `1px solid ${isDark ? '#1e4060' : '#e0eaf4'}`,
-                  background: isDark ? '#0d2137' : '#f8fbff',
+                  borderTop: `1px solid ${isDark ? '#1b3860' : '#e0eaf4'}`,
+                  background: isDark ? '#0c1b36' : '#f8fbff',
                 }}>
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    background: isDark ? '#071829' : '#ffffff',
-                    border: `1.5px solid ${improveInput.trim() ? adb.blue : (isDark ? '#1e4060' : '#c0d4e8')}`,
+                    background: isDark ? '#061427' : '#ffffff',
+                    border: `1.5px solid ${improveInput.trim() ? adb.blue : (isDark ? '#1b3860' : '#c0d4e8')}`,
                     borderRadius: 8, padding: '8px 10px',
                     transition: 'border-color 0.15s',
                     boxShadow: improveInput.trim() ? `0 0 0 3px ${adb.blue}18` : 'none',
@@ -2118,8 +2168,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
                 <div style={{
                   height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '0 20px',
-                  borderBottom: `1px solid ${isDark ? '#1e4060' : '#e0eaf4'}`,
-                  background: isDark ? '#071829' : '#f8fbff',
+                  borderBottom: `1px solid ${isDark ? '#1b3860' : '#e0eaf4'}`,
+                  background: isDark ? '#061427' : '#f8fbff',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: adb.green }}>✎ Edit Draft</span>
@@ -2153,7 +2203,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
         <div style={{
           marginBottom: 24, padding: '20px 24px 22px',
           background: isDark
-            ? 'linear-gradient(135deg, #0e2845 0%, #0a1f35 60%, #071829 100%)'
+            ? 'linear-gradient(135deg, #0c2242 0%, #091b33 60%, #061427 100%)'
             : 'linear-gradient(135deg, #e4f0fa 0%, #eef5fb 60%, #f4f9ff 100%)',
           borderRadius: 10, borderLeft: `4px solid ${isDark ? '#007DB7' : '#007DB7'}`,
           boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,125,183,0.1)',
@@ -2171,7 +2221,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
             <div style={{
               display: 'flex', alignItems: 'stretch', gap: 0,
               background: 'var(--th-input)',
-              border: `1px solid ${aiAnswer || aiLoading ? adb.blue : isDark ? '#1e4060' : '#b0c8de'}`,
+              border: `1px solid ${aiAnswer || aiLoading ? adb.blue : isDark ? '#1b3860' : '#b0c8de'}`,
               borderRadius: 8, overflow: 'hidden', transition: 'all 0.2s',
               boxShadow: aiAnswer || aiLoading
                 ? '0 0 0 3px rgba(0,125,183,0.15), 0 4px 20px rgba(0,0,0,0.25)'
@@ -2243,7 +2293,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
                   <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--th-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6, padding: '0 4px' }}>
                     Select country
                   </div>
-                  {PACIFIC.map(code => (
+                  {activeEconomies.map(code => (
                     <button
                       key={code}
                       onClick={() => {
@@ -2346,13 +2396,62 @@ This report is for internal ADB use only and does not constitute official ADB fo
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ display: 'inline-block', width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #007DB7 0%, #00A5D2 100%)' }} />
-                Pacific Portfolio Map
-              </h2>
+                  <span style={{ display: 'inline-block', width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #007DB7 0%, #00A5D2 100%)' }} />
+                  {/* Region dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setRegionDropOpen(o => !o)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        fontSize: 16, fontWeight: 600, fontFamily: adb.font,
+                        color: 'var(--th-text)', background: 'none', border: 'none',
+                        cursor: 'pointer', padding: 0,
+                      }}
+                    >
+                      {activeRegion} Portfolio Map
+                      <span style={{
+                        fontSize: 11, color: adb.blue, border: `1px solid ${adb.blue}55`,
+                        borderRadius: 3, padding: '1px 5px', fontWeight: 400,
+                        display: 'flex', alignItems: 'center', gap: 3, letterSpacing: 0,
+                      }}>▾</span>
+                    </button>
+                    {regionDropOpen && (
+                      <div style={{
+                        position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 300,
+                        background: 'var(--th-card)', border: '1px solid var(--th-border)',
+                        borderRadius: 6, boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
+                        minWidth: 220, overflow: 'hidden',
+                      }}>
+                        {Object.keys(REGION_GROUPS).map(region => (
+                          <button
+                            key={region}
+                            onClick={() => {
+                              setActiveRegion(region)
+                              setRegionDropOpen(false)
+                              setSelectedCountry(REGION_GROUPS[region][0])
+                              setExpandedReasons(new Set())
+                              setMapFlyTarget(undefined)
+                            }}
+                            style={{
+                              display: 'block', width: '100%', textAlign: 'left',
+                              padding: '9px 14px', fontSize: 12, background: 'none', border: 'none',
+                              color: region === activeRegion ? adb.blue : 'var(--th-text)',
+                              fontWeight: region === activeRegion ? 600 : 400,
+                              cursor: 'pointer', fontFamily: adb.font,
+                              borderLeft: `2px solid ${region === activeRegion ? adb.blue : 'transparent'}`,
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--th-chart)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                          >{region}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </h2>
                 {allIndData[activeInd]?.source && <SourceBadge source={allIndData[activeInd].source} />}
               </div>
               <div style={{ fontSize: 11, color: 'var(--th-muted)', marginTop: 2 }}>
-                ADB Data · ADO indicators · Click a country to explore · Hover for details
+                ADB Data · ADO indicators · {activeRegion === 'The Pacific' ? 'Click a country to explore · Hover for details' : `${activeEconomies.length} economies`}
               </div>
             </div>
             {/* + Track Indicator button */}
@@ -2482,16 +2581,16 @@ This report is for internal ADB use only and does not constitute official ADB fo
           {/* Map card */}
           <div style={{
             background: 'var(--th-card)',
-            border: isDark ? '1px solid #1e4060' : '1px solid #b8cfdf',
+            border: isDark ? '1px solid #1b3860' : '1px solid #b8cfdf',
             borderRadius: 8,
             boxShadow: isDark ? '0 4px 32px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,125,183,0.08)',
           }}>
             {/* Horizontal country carousel — above map */}
             <div style={{
-              borderBottom: isDark ? '1px solid #1e4060' : '1px solid #b8cfdf',
+              borderBottom: isDark ? '1px solid #1b3860' : '1px solid #b8cfdf',
               padding: '12px 14px 14px', position: 'relative',
               background: isDark
-                ? 'linear-gradient(180deg, #0e2845 0%, #0d2137 100%)'
+                ? 'linear-gradient(180deg, #0c2242 0%, #0c1b36 100%)'
                 : 'linear-gradient(180deg, #f0f7ff 0%, #e8f2fb 100%)',
             }}>
               {/* Carousel header */}
@@ -2505,7 +2604,9 @@ This report is for internal ADB use only and does not constitute official ADB fo
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {!isMobile && <span style={{ fontSize: 9, color: 'var(--th-muted)' }}>Click a card to focus on map</span>}
+                  {!isMobile && activeRegion === 'The Pacific' && (
+                    <span style={{ fontSize: 9, color: 'var(--th-muted)' }}>Click a card to focus on map</span>
+                  )}
                   <button
                     onClick={() => countryCarouselRef.current?.scrollBy({ left: -510, behavior: 'smooth' })}
                     style={{ width: 26, height: 26, borderRadius: 4, border: '1px solid var(--th-border)', background: 'var(--th-card)', color: 'var(--th-text)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -2525,7 +2626,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
                 {(() => {
                   const riskRank: Record<string, number> = { [adb.red]: 0, [adb.amber]: 1, [adb.teal]: 2, [adb.green]: 3, [adb.muted]: 4 }
                   const obs = allIndData[activeInd]?.obs ?? []
-                  return [...PACIFIC].sort((a, b) => {
+                  return [...activeEconomies].sort((a, b) => {
                     const ra = riskRank[indicatorColor(activeInd, latest(obs, a)?.value ?? null).color] ?? 5
                     const rb = riskRank[indicatorColor(activeInd, latest(obs, b)?.value ?? null).color] ?? 5
                     return ra - rb
@@ -2577,7 +2678,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
               </div>
 
               <div style={{ marginTop: 8, fontSize: 9, color: 'var(--th-muted)' }}>
-                Source: ADB Data · adb.org · ADO 2026
+                Source: ADB Data · adb.org · ADO 2024
               </div>
             </div>
 
@@ -2629,11 +2730,12 @@ This report is for internal ADB use only and does not constitute official ADB fo
               )
             })()}
 
-            {/* Map — full width */}
+            {/* Map — all regions */}
             <PacificMapLeaflet
-              dots={buildIndicatorDots(activeInd, allIndData[activeInd]?.obs ?? [])}
+              dots={buildIndicatorDots(activeInd, allIndData[activeInd]?.obs ?? [], activeEconomies)}
               isDark={isDark}
               flyTarget={mapFlyTarget}
+              activeRegion={activeRegion}
             />
 
             {/* Legend — shows threshold explanation for the active indicator */}

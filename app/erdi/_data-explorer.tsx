@@ -6,7 +6,6 @@ import type { ChartConfigType } from '@/app/api/kidb/explore/route'
 import { ECONOMIES } from '@/app/api/kidb/route'
 import { D3LineChart, D3BarChart, ChartLegend, type ChartData, type KidbObs } from './_d3-charts'
 import { useIsMobile } from './_use-mobile'
-import { ScenarioPanel, EPISODES, computeProjections } from './_scenario-panel'
 
 const adb = {
   navy: 'var(--th-bg)', navyCard: 'var(--th-card)', navyBorder: 'var(--th-border)',
@@ -17,12 +16,12 @@ const adb = {
 }
 
 const SUGGESTIONS = [
-  'GDP growth for India, China, and Indonesia since 2019',
+  'GDP growth for India, China, and Indonesia since 2010',
   'Compare debt-to-GDP across Pacific SIDS',
   'Inflation trends in Tonga, Fiji, and Samoa',
   'Remittance inflows for Philippines, Bangladesh, and Pakistan',
   'Which Pacific country has the highest unemployment rate?',
-  'FDI inflows for Southeast Asia since 2019',
+  'FDI inflows for Southeast Asia since 2010',
   'GDP per capita for South Asian economies',
   'Current account balance for Korea and Malaysia over time',
   'Exchange rate trends for Indonesia and Vietnam',
@@ -30,17 +29,17 @@ const SUGGESTIONS = [
 ]
 
 const FOLLOW_UP_MAP: Record<string, (ecos: string[], yr?: number) => string[]> = {
-  NGDP_R_PTX_PS:     (e, yr) => [`Why is GDP growth changing in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare inflation over the same period`, `Government debt trajectory for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `FDI inflows for ${ECO_LABELS[e[0]] ?? e[0]} since ${yr ?? 2019}`, `Household consumption growth across the same economies`],
-  PCPI_PC_PP_PT:      (e, yr) => [`What drives inflation in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Exchange rate trends for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2019}`, `Compare GDP growth over the same period`, `M2 money supply growth for ${ECO_LABELS[e[0]] ?? e[0]}`, `Remittance inflows for ${ECO_LABELS[e[0]] ?? e[0]}`],
-  GC_DOD_TOTL_GD_ZS:  (e, yr) => [`Why is government debt rising in ${ECO_LABELS[e[0]] ?? e[0]}?`, `GDP growth for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2019}`, `Current account balance for the same economies`, `FDI inflows for ${ECO_LABELS[e[0]] ?? e[0]}`, `Compare inflation over the same period`],
-  BX_TRF_PWKR_CD_DT:  (e, yr) => [`How do remittances affect GDP in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare FDI inflows for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `Household consumption growth for the same economies`, `GDP per capita for ${ECO_LABELS[e[0]] ?? e[0]} since ${yr ?? 2019}`, `Current account balance for ${ECO_LABELS[e[0]] ?? e[0]}`],
-  BX_KLT_DINV_CD_WD:  (e, yr) => [`Why is FDI changing in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare GDP growth for the same economies`, `Exchange rate trends for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2019}`, `Current account balance for ${ECO_LABELS[e[0]] ?? e[0]}`, `Remittances vs FDI for the Pacific`],
+  NGDP_R_PTX_PS:     (e, yr) => [`Why is GDP growth changing in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare inflation over the same period`, `Government debt trajectory for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `FDI inflows for ${ECO_LABELS[e[0]] ?? e[0]} since ${yr ?? 2010}`, `Household consumption growth across the same economies`],
+  PCPI_PC_PP_PT:      (e, yr) => [`What drives inflation in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Exchange rate trends for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2010}`, `Compare GDP growth over the same period`, `M2 money supply growth for ${ECO_LABELS[e[0]] ?? e[0]}`, `Remittance inflows for ${ECO_LABELS[e[0]] ?? e[0]}`],
+  GC_DOD_TOTL_GD_ZS:  (e, yr) => [`Why is government debt rising in ${ECO_LABELS[e[0]] ?? e[0]}?`, `GDP growth for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2010}`, `Current account balance for the same economies`, `FDI inflows for ${ECO_LABELS[e[0]] ?? e[0]}`, `Compare inflation over the same period`],
+  BX_TRF_PWKR_CD_DT:  (e, yr) => [`How do remittances affect GDP in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare FDI inflows for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `Household consumption growth for the same economies`, `GDP per capita for ${ECO_LABELS[e[0]] ?? e[0]} since ${yr ?? 2010}`, `Current account balance for ${ECO_LABELS[e[0]] ?? e[0]}`],
+  BX_KLT_DINV_CD_WD:  (e, yr) => [`Why is FDI changing in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare GDP growth for the same economies`, `Exchange rate trends for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2010}`, `Current account balance for ${ECO_LABELS[e[0]] ?? e[0]}`, `Remittances vs FDI for the Pacific`],
   LUR_PT:             (e)     => [`What's driving unemployment in ${ECO_LABELS[e[0]] ?? e[0]}?`, `GDP growth vs unemployment for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `Household consumption growth for the same economies`, `Compare remittance inflows`],
-  BN_CAB_XOKA_GD_ZS:  (e, yr) => [`What explains the current account deficit in ${ECO_LABELS[e[0]] ?? e[0]}?`, `FDI inflows for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2019}`, `Exchange rate trends for the same economies`, `Government debt as % of GDP for ${ECO_LABELS[e[0]] ?? e[0]}`],
-  NC_HFC_PTX_PS:      (e, yr) => [`What's driving consumption growth in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare inflation for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2019}`, `Remittance inflows for ${ECO_LABELS[e[0]] ?? e[0]}`, `GDP growth for the same economies`],
-  ENDE_XDC_USD_RATE:   (e, yr) => [`How does exchange rate affect inflation in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Current account balance for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `FDI inflows for ${ECO_LABELS[e[0]] ?? e[0]} since ${yr ?? 2019}`, `M2 money supply growth for the same economies`],
+  BN_CAB_XOKA_GD_ZS:  (e, yr) => [`What explains the current account deficit in ${ECO_LABELS[e[0]] ?? e[0]}?`, `FDI inflows for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2010}`, `Exchange rate trends for the same economies`, `Government debt as % of GDP for ${ECO_LABELS[e[0]] ?? e[0]}`],
+  NC_HFC_PTX_PS:      (e, yr) => [`What's driving consumption growth in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare inflation for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')} since ${yr ?? 2010}`, `Remittance inflows for ${ECO_LABELS[e[0]] ?? e[0]}`, `GDP growth for the same economies`],
+  ENDE_XDC_USD_RATE:   (e, yr) => [`How does exchange rate affect inflation in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Current account balance for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `FDI inflows for ${ECO_LABELS[e[0]] ?? e[0]} since ${yr ?? 2010}`, `M2 money supply growth for the same economies`],
   FM_LBL_MONY_GD_ZS:  (e)     => [`How does money supply growth affect inflation in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare CPI inflation for the same economies`, `Exchange rate trends for ${ECO_LABELS[e[0]] ?? e[0]}`, `GDP growth for the same economies`],
-  NGDPPC_XDC:         (e, yr) => [`What's driving GDP per capita growth in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare real GDP growth for the same economies since ${yr ?? 2019}`, `Household consumption growth for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `FDI inflows for ${ECO_LABELS[e[0]] ?? e[0]}`],
+  NGDPPC_XDC:         (e, yr) => [`What's driving GDP per capita growth in ${ECO_LABELS[e[0]] ?? e[0]}?`, `Compare real GDP growth for the same economies since ${yr ?? 2010}`, `Household consumption growth for ${(e.slice(0,2).map(c => ECO_LABELS[c] ?? c)).join(' and ')}`, `FDI inflows for ${ECO_LABELS[e[0]] ?? e[0]}`],
 }
 
 function getFollowUps(cfg: ChartConfigType): string[] {
@@ -385,15 +384,7 @@ export function DataExplorer({ initialQuery = '', onConversation }: { initialQue
   const [explainAnswer, setExplainAnswer] = useState<string>('')
   const [explainLoading, setExplainLoading] = useState(false)
   const [explainCitations, setExplainCitations] = useState<string[]>([])
-  const [scenarioId, setScenarioId]         = useState<string | null>(null)
-
-  const activeEpisode = EPISODES.find(e => e.id === scenarioId) ?? null
-  const projections = useMemo(
-    () => activeEpisode && config && chartData
-      ? computeProjections(chartData, config.indicator, config.economies, activeEpisode)
-      : [],
-    [activeEpisode, config, chartData],
-  )
+  const [yearOverride, setYearOverride]     = useState<number | null>(null)
 
   function exportAsPng() {
     const container = chartRef.current
@@ -411,7 +402,7 @@ export function DataExplorer({ initialQuery = '', onConversation }: { initialQue
       canvas.height = (svg.clientHeight || 320) * scale
       const ctx = canvas.getContext('2d')!
       ctx.scale(scale, scale)
-      ctx.fillStyle = '#0f2033'
+      ctx.fillStyle = '#0a1a38'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(img, 0, 0)
       URL.revokeObjectURL(url)
@@ -443,6 +434,24 @@ export function DataExplorer({ initialQuery = '', onConversation }: { initialQue
     a.click()
   }
 
+  async function changeStartYear(year: number) {
+    if (!config) return
+    setYearOverride(year)
+    setLoading(true)
+    try {
+      const dataRes = await fetch(
+        `/api/kidb?flow=${config.flow}&indicator=${config.indicator}&economies=${config.economies.join('+')}&start=${year}&end=${config.endPeriod}`
+      )
+      const { series, source } = await dataRes.json()
+      setChartData(buildChartData(series))
+      setDataSource(source)
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const runQuery = useCallback(async (q: string) => {
     if (!q.trim()) return
     const intent = detectIntent(q)
@@ -452,7 +461,7 @@ export function DataExplorer({ initialQuery = '', onConversation }: { initialQue
     setChartData(null)
     setExplainAnswer('')
     setExplainCitations([])
-    setScenarioId(null)
+    setYearOverride(null)
     if (intent === 'explain') {
       setExplainLoading(true)
       try {
@@ -715,13 +724,27 @@ export function DataExplorer({ initialQuery = '', onConversation }: { initialQue
               <div style={{ fontSize: 12, color: adb.muted, marginTop: 3 }}>{config.description}</div>
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
-              <span style={{
-                fontSize: 9, padding: '2px 7px', borderRadius: 2, fontWeight: 600,
-                letterSpacing: '0.05em', textTransform: 'uppercase',
-                background: configSource === 'ai' ? `${adb.blue}22` : `${adb.teal}22`,
-                color: configSource === 'ai' ? adb.blueLight : adb.teal,
-                border: `1px solid ${configSource === 'ai' ? adb.blue : adb.teal}44`,
-              }}>{configSource === 'ai' ? '✦ Claude' : '⚙ Rules'}</span>
+              {/* Start-year dropdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: 9, color: adb.muted, letterSpacing: '0.05em', textTransform: 'uppercase' }}>From</span>
+                <select
+                  value={yearOverride ?? config.startPeriod}
+                  onChange={e => changeStartYear(Number(e.target.value))}
+                  style={{
+                    fontSize: 11, padding: '2px 20px 2px 7px', borderRadius: 3, fontWeight: 600,
+                    background: 'var(--th-card)', color: adb.blueLight,
+                    border: `1px solid ${adb.blue}55`, cursor: 'pointer',
+                    outline: 'none', fontFamily: adb.font,
+                    appearance: 'none', WebkitAppearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2368C5EA'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center',
+                  }}
+                >
+                  {Array.from({ length: 14 }, (_, i) => 2010 + i).map(yr => (
+                    <option key={yr} value={yr} style={{ background: '#0a1a38', color: '#fff' }}>{yr}</option>
+                  ))}
+                </select>
+              </div>
               <span style={{
                 fontSize: 9, padding: '2px 7px', borderRadius: 2, fontWeight: 600,
                 letterSpacing: '0.05em', textTransform: 'uppercase',
@@ -751,22 +774,15 @@ export function DataExplorer({ initialQuery = '', onConversation }: { initialQue
             </div>
           </div>
 
-          {/* D3 Chart + Scenario Analysis embedded below it */}
+          {/* D3 Chart */}
           <div ref={chartRef} style={{ background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 6, overflow: 'hidden' }}>
             <div style={{ padding: '16px 12px 12px' }}>
               {config.chartType === 'line'
-                ? <D3LineChart data={chartData} unit={config.unit} projections={projections} />
+                ? <D3LineChart data={chartData} unit={config.unit} />
                 : <D3BarChart  data={chartData} unit={config.unit} />
               }
               <ChartLegend economies={chartData.economies} />
             </div>
-            <ScenarioPanel
-              config={config}
-              chartData={chartData}
-              activeId={scenarioId}
-              setActiveId={setScenarioId}
-              projections={projections}
-            />
           </div>
 
           {/* Natural language insight + citations */}

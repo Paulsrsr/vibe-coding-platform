@@ -13,6 +13,7 @@ interface Props {
   dots: MapDot[]
   isDark: boolean
   flyTarget?: { lat: number; lng: number; zoom?: number }
+  activeRegion?: string
 }
 
 const DARK_TILE  = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
@@ -20,7 +21,17 @@ const LIGHT_TILE = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}
 const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/" target="_blank">CARTO</a>'
 
 const FLAG_ISO: Record<string, string> = {
+  // Pacific
   PNG: 'pg', FIJ: 'fj', VAN: 'vu', SOL: 'sb', TON: 'to', SAM: 'ws', KIR: 'ki', TUV: 'tv',
+  // South Asia
+  IND: 'in', PAK: 'pk', BAN: 'bd', SRI: 'lk', NEP: 'np', BHU: 'bt', MLD: 'mv', AFG: 'af',
+  // Southeast Asia
+  INO: 'id', PHI: 'ph', VIE: 'vn', THA: 'th', MAL: 'my', SIN: 'sg', CAM: 'kh',
+  MYA: 'mm', LAO: 'la', BRU: 'bn', TIM: 'tl',
+  // East Asia
+  PRC: 'cn', JPN: 'jp', KOR: 'kr', HKG: 'hk', MON: 'mn',
+  // Central and West Asia
+  KAZ: 'kz', UZB: 'uz', AZE: 'az', GEO: 'ge', ARM: 'am', KGZ: 'kg', TAJ: 'tj',
 }
 function tooltipFlagUrl(code: string | undefined): string {
   if (!code) return ''
@@ -30,14 +41,50 @@ function tooltipFlagUrl(code: string | undefined): string {
 
 // Key country statistics for tooltip enrichment
 const COUNTRY_STATS: Record<string, { pop: string; area: string; capital: string; currency: string }> = {
-  PNG: { pop: '10.3M',  area: '462,840 km²', capital: 'Port Moresby', currency: 'PGK' },
-  FIJ: { pop: '930K',   area: '18,270 km²',  capital: 'Suva',          currency: 'FJD' },
-  VAN: { pop: '335K',   area: '12,190 km²',  capital: 'Port Vila',     currency: 'VUV' },
-  SOL: { pop: '760K',   area: '28,400 km²',  capital: 'Honiara',       currency: 'SBD' },
-  TON: { pop: '100K',   area: '720 km²',     capital: 'Nukuʻalofa',    currency: 'TOP' },
-  SAM: { pop: '225K',   area: '2,830 km²',   capital: 'Apia',          currency: 'WST' },
-  KIR: { pop: '120K',   area: '811 km²',     capital: 'South Tarawa',  currency: 'AUD' },
-  TUV: { pop: '11K',    area: '26 km²',      capital: 'Funafuti',      currency: 'AUD' },
+  // Pacific
+  PNG: { pop: '10.3M',  area: '462,840 km²',    capital: 'Port Moresby',       currency: 'PGK' },
+  FIJ: { pop: '930K',   area: '18,270 km²',     capital: 'Suva',               currency: 'FJD' },
+  VAN: { pop: '335K',   area: '12,190 km²',     capital: 'Port Vila',          currency: 'VUV' },
+  SOL: { pop: '760K',   area: '28,400 km²',     capital: 'Honiara',            currency: 'SBD' },
+  TON: { pop: '100K',   area: '720 km²',        capital: 'Nukuʻalofa',         currency: 'TOP' },
+  SAM: { pop: '225K',   area: '2,830 km²',      capital: 'Apia',               currency: 'WST' },
+  KIR: { pop: '120K',   area: '811 km²',        capital: 'South Tarawa',       currency: 'AUD' },
+  TUV: { pop: '11K',    area: '26 km²',         capital: 'Funafuti',           currency: 'AUD' },
+  // South Asia
+  IND: { pop: '1.43B',  area: '3,287,263 km²',  capital: 'New Delhi',          currency: 'INR' },
+  PAK: { pop: '231M',   area: '881,913 km²',    capital: 'Islamabad',          currency: 'PKR' },
+  BAN: { pop: '173M',   area: '147,570 km²',    capital: 'Dhaka',              currency: 'BDT' },
+  SRI: { pop: '22M',    area: '65,610 km²',     capital: 'Colombo',            currency: 'LKR' },
+  NEP: { pop: '30M',    area: '147,181 km²',    capital: 'Kathmandu',          currency: 'NPR' },
+  BHU: { pop: '771K',   area: '38,394 km²',     capital: 'Thimphu',            currency: 'BTN' },
+  MLD: { pop: '521K',   area: '298 km²',        capital: 'Malé',               currency: 'MVR' },
+  AFG: { pop: '41M',    area: '652,230 km²',    capital: 'Kabul',              currency: 'AFN' },
+  // Southeast Asia
+  INO: { pop: '277M',   area: '1,904,569 km²',  capital: 'Jakarta',            currency: 'IDR' },
+  PHI: { pop: '117M',   area: '300,000 km²',    capital: 'Manila',             currency: 'PHP' },
+  VIE: { pop: '97M',    area: '331,212 km²',    capital: 'Hanoi',              currency: 'VND' },
+  THA: { pop: '71M',    area: '513,120 km²',    capital: 'Bangkok',            currency: 'THB' },
+  MAL: { pop: '33M',    area: '329,847 km²',    capital: 'Kuala Lumpur',       currency: 'MYR' },
+  SIN: { pop: '5.9M',   area: '728 km²',        capital: 'Singapore',          currency: 'SGD' },
+  CAM: { pop: '17M',    area: '181,035 km²',    capital: 'Phnom Penh',         currency: 'KHR' },
+  MYA: { pop: '54M',    area: '676,578 km²',    capital: 'Naypyidaw',          currency: 'MMK' },
+  LAO: { pop: '7.4M',   area: '236,800 km²',    capital: 'Vientiane',          currency: 'LAK' },
+  BRU: { pop: '445K',   area: '5,765 km²',      capital: 'Bandar Seri Begawan',currency: 'BND' },
+  TIM: { pop: '1.3M',   area: '14,874 km²',     capital: 'Dili',               currency: 'USD' },
+  // East Asia
+  PRC: { pop: '1.41B',  area: '9,596,960 km²',  capital: 'Beijing',            currency: 'CNY' },
+  JPN: { pop: '125M',   area: '377,975 km²',    capital: 'Tokyo',              currency: 'JPY' },
+  KOR: { pop: '51M',    area: '100,410 km²',    capital: 'Seoul',              currency: 'KRW' },
+  HKG: { pop: '7.5M',   area: '1,114 km²',      capital: 'Hong Kong',          currency: 'HKD' },
+  MON: { pop: '3.3M',   area: '1,564,116 km²',  capital: 'Ulaanbaatar',        currency: 'MNT' },
+  // Central and West Asia
+  KAZ: { pop: '19M',    area: '2,724,900 km²',  capital: 'Astana',             currency: 'KZT' },
+  UZB: { pop: '36M',    area: '448,978 km²',    capital: 'Tashkent',           currency: 'UZS' },
+  AZE: { pop: '10M',    area: '86,600 km²',     capital: 'Baku',               currency: 'AZN' },
+  GEO: { pop: '3.7M',   area: '69,700 km²',     capital: 'Tbilisi',            currency: 'GEL' },
+  ARM: { pop: '3M',     area: '29,743 km²',     capital: 'Yerevan',            currency: 'AMD' },
+  KGZ: { pop: '6.7M',   area: '199,951 km²',    capital: 'Bishkek',            currency: 'KGS' },
+  TAJ: { pop: '9.7M',   area: '143,100 km²',    capital: 'Dushanbe',           currency: 'TJS' },
 }
 
 const PULSE_CSS = `
@@ -80,24 +127,24 @@ function dotIconHtml(dot: MapDot, index: number): string {
   `
 }
 
-export default function PacificMapLeaflet({ dots, isDark, flyTarget }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef       = useRef<LMap | null>(null)
-  const tileRef      = useRef<LTileLayer | null>(null)
-  const markersRef   = useRef<LMarker[]>([])
-  const dotsRef      = useRef<MapDot[]>(dots)
-  dotsRef.current    = dots
+export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegion }: Props) {
+  const containerRef    = useRef<HTMLDivElement>(null)
+  const mapRef          = useRef<LMap | null>(null)
+  const tileRef         = useRef<LTileLayer | null>(null)
+  const markersRef      = useRef<LMarker[]>([])
+  const dotsRef         = useRef<MapDot[]>(dots)
+  dotsRef.current       = dots
 
-  const pacificBoundsRef = useRef<[number, number][]>([])
+  const regionBoundsRef   = useRef<[number, number][]>([])
+  const boundsSigRef      = useRef<string>('')   // detect position changes (region switch)
   const isMobile = useIsMobile()
   const [tooltip, setTooltip] = useState<{ dot: MapDot; x: number; y: number } | null>(null)
 
   function resetView() {
     const map = mapRef.current
-    if (!map || pacificBoundsRef.current.length === 0) return
+    if (!map || regionBoundsRef.current.length === 0) return
     import('leaflet').then(({ default: L }) => {
-      const bounds = L.latLngBounds(pacificBoundsRef.current as [number, number][])
-      map.fitBounds(bounds, { padding: [44, 44], maxZoom: 6, animate: true })
+      map.fitBounds(L.latLngBounds(regionBoundsRef.current), { padding: [44, 44], maxZoom: 6, animate: true })
     })
   }
 
@@ -135,7 +182,8 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget }: Props) {
       })
       if (current.length > 0) {
         const pairs = current.map(d => [d.lat, d.lng] as [number, number])
-        pacificBoundsRef.current = pairs
+        regionBoundsRef.current = pairs
+        boundsSigRef.current = pairs.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).sort().join('|')
         map.fitBounds(L.latLngBounds(pairs), { padding: [44, 44], maxZoom: 6 })
       }
     })
@@ -154,7 +202,7 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget }: Props) {
     })
   }, [isDark])
 
-  /* ── Refresh markers when dots change ───────────────────────────────── */
+  /* ── Refresh markers when dots change; re-fit if region positions changed ── */
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -169,6 +217,16 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget }: Props) {
         m.addTo(map)
         markersRef.current.push(m)
       })
+      // Re-fit bounds only when the set of positions changes (i.e. region switch)
+      if (dots.length > 0) {
+        const pairs = dots.map(d => [d.lat, d.lng] as [number, number])
+        const sig = pairs.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).sort().join('|')
+        if (sig !== boundsSigRef.current) {
+          boundsSigRef.current = sig
+          regionBoundsRef.current = pairs
+          map.fitBounds(L.latLngBounds(pairs), { padding: [44, 44], maxZoom: 6, animate: true })
+        }
+      }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dots])
@@ -186,7 +244,7 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget }: Props) {
       <div ref={containerRef} style={{ height: 350, borderRadius: 6, overflow: 'hidden', background: isDark ? '#071828' : '#e8ecf0' }} />
 
       {/* Reset to Pacific view */}
-      <button onClick={resetView} title="Reset view to Pacific Islands" style={{
+      <button onClick={resetView} title={`Reset view to ${activeRegion ?? 'region'}`} style={{
         position: 'absolute', bottom: 28, left: 10, zIndex: 500,
         background: 'var(--th-card)', border: '1px solid var(--th-border)',
         borderRadius: 4, padding: '5px 11px', fontSize: 11, fontWeight: 500,
@@ -197,7 +255,7 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget }: Props) {
         onMouseEnter={e => (e.currentTarget.style.background = '#007DB722')}
         onMouseLeave={e => (e.currentTarget.style.background = 'var(--th-card)')}
       >
-        <span style={{ fontSize: 13 }}>⌂</span> Pacific Islands
+        <span style={{ fontSize: 13 }}>⌂</span> {activeRegion ?? 'Reset view'}
       </button>
 
       {/* Hover tooltip */}

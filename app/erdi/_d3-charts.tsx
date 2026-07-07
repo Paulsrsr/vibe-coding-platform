@@ -10,10 +10,15 @@ const adb = {
 }
 export const SERIES_COLORS = [adb.blue, adb.green, adb.amber, adb.red, adb.teal, adb.blueLight]
 
-export type KidbObs       = { economy: string; period: string; value: number | null }
-export type ChartData     = { economies: string[]; periods: string[]; series: KidbObs[] }
-export type ProjectionBand = { year: string; base: number; pessimistic: number; optimistic: number }
-export type EcoProjection  = { eco: string; lastActual: number; lastPeriod: string; trend: number; bands: ProjectionBand[] }
+export type KidbObs   = { economy: string; period: string; value: number | null }
+export type ChartData = { economies: string[]; periods: string[]; series: KidbObs[] }
+
+export type EpisodeHighlight = {
+  startYear: string
+  endYear: string
+  color: string
+  label: string
+}
 
 const ECO_LABELS: Record<string, string> = {
   PNG: 'Papua New Guinea', FIJ: 'Fiji',   VAN: 'Vanuatu',
@@ -40,11 +45,11 @@ type Tip    = { x: number; y: number; period: string; rows: TipRow[] }
 
 // ── D3 Line Chart ──────────────────────────────────────────────────────────
 export function D3LineChart({
-  data, unit, projections = [],
+  data, unit, episode,
 }: {
   data: ChartData
   unit: string
-  projections?: EcoProjection[]
+  episode?: EpisodeHighlight
 }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [tip, setTip] = useState<Tip | null>(null)
@@ -53,14 +58,8 @@ export function D3LineChart({
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
 
-    // Extend x-domain with projected years when a scenario is active
-    const projYears   = projections.length ? projections[0].bands.map(b => b.year) : []
-    const allPeriods  = [...data.periods, ...projYears]
-
     const histVals = data.series.map(d => d.value).filter((v): v is number => v !== null)
-    const projVals = projections.flatMap(p => p.bands.flatMap(b => [b.base, b.pessimistic, b.optimistic]))
-    const allVals  = [...histVals, ...projVals]
-    if (!allVals.length || !data.periods.length) return
+    if (!histVals.length || !data.periods.length) return
 
     const defs = svg.append('defs')
     data.economies.forEach((_, i) => {
@@ -72,20 +71,43 @@ export function D3LineChart({
 
     const root = svg.append('g').attr('transform', `translate(${M.left},${M.top})`)
 
-    // Scales — allPeriods extends x-axis into the forecast zone
-    const xScale = d3.scalePoint<string>().domain(allPeriods).range([0, IW]).padding(0.15)
-    const minV = d3.min(allVals)!, maxV = d3.max(allVals)!
+    const xScale = d3.scalePoint<string>().domain(data.periods).range([0, IW]).padding(0.15)
+    const minV = d3.min(histVals)!, maxV = d3.max(histVals)!
     const yPad = (maxV - minV) * 0.15 || 1
     const yScale = d3.scaleLinear().domain([minV - yPad, maxV + yPad]).range([IH, 0]).nice()
+
+    // Episode period shading — rendered before data lines so lines appear on top
+    if (episode) {
+      const x1 = xScale(episode.startYear)
+      const x2 = xScale(episode.endYear)
+      if (x1 !== undefined || x2 !== undefined) {
+        const step = IW / Math.max(data.periods.length - 1, 1)
+        const ex1 = x1 ?? x2!
+        const ex2 = x2 ?? x1!
+        root.append('rect')
+          .attr('x', Math.min(ex1, ex2) - step / 2)
+          .attr('width', Math.max(Math.abs(ex2 - ex1) + step, step))
+          .attr('y', 0).attr('height', IH)
+          .attr('fill', episode.color).attr('fill-opacity', 0.13)
+          .attr('pointer-events', 'none')
+        root.append('text')
+          .attr('x', Math.min(ex1, ex2) - step / 2 + 4).attr('y', 13)
+          .attr('fill', episode.color).attr('font-size', 8)
+          .attr('font-family', '"Helvetica Neue",Arial,sans-serif')
+          .text(episode.label)
+      }
+    }
 
     // Grid
     root.append('g')
       .call(d3.axisLeft(yScale).ticks(5).tickSize(-IW).tickFormat(() => ''))
       .call(s => { s.select('.domain').remove(); s.selectAll('.tick line').attr('stroke','#1a3550').attr('stroke-dasharray','3,3') })
 
-    // X axis
+    // X axis — thin out ticks when many years are shown
     root.append('g').attr('transform', `translate(0,${IH})`)
-      .call(d3.axisBottom(xScale).tickSize(4))
+      .call(d3.axisBottom(xScale).tickValues(
+        data.periods.filter((_, i) => data.periods.length <= 10 || i % 2 === 0)
+      ).tickSize(4))
       .call(s => {
         s.select('.domain').attr('stroke','#2a4a6a')
         s.selectAll('.tick line').attr('stroke','#2a4a6a')
@@ -107,7 +129,6 @@ export function D3LineChart({
       .attr('text-anchor','middle').attr('fill', adb.muted).attr('font-size',9)
       .attr('font-family','"Helvetica Neue",Arial,sans-serif').text(unit)
 
-    // Shared line generator (reused for historical + projections)
     const lineGen = d3.line<{ p: string; v: number }>()
       .x(d => xScale(d.p)!).y(d => yScale(d.v))
       .curve(d3.curveMonotoneX)
@@ -139,82 +160,19 @@ export function D3LineChart({
       root.selectAll(`.dot-${i}`)
         .data(pts).join('circle').attr('class', `dot-${i}`)
         .attr('cx', d => xScale(d.p)!).attr('cy', d => yScale(d.v))
-        .attr('r', 4.5).attr('fill', color)
+        .attr('r', data.periods.length > 12 ? 3.5 : 4.5)
+        .attr('fill', color)
         .attr('stroke', adb.navyCard).attr('stroke-width', 1.5)
         .attr('opacity', 0).transition().duration(200).delay(500 + i * 80).attr('opacity', 1)
     })
 
-    // Scenario projection overlay
-    if (projections.length) {
-      // Vertical divider: last historical period → forecast zone
-      const divX = xScale(data.periods[data.periods.length - 1])
-      if (divX !== undefined) {
-        root.append('line')
-          .attr('x1', divX).attr('x2', divX).attr('y1', 0).attr('y2', IH)
-          .attr('stroke','#3a5a78').attr('stroke-dasharray','4,3').attr('stroke-width', 1.5)
-        root.append('text')
-          .attr('x', divX + 5).attr('y', 13)
-          .attr('fill','#3a5a78').attr('font-size', 8)
-          .attr('font-family','"Helvetica Neue",Arial,sans-serif')
-          .text('forecast →')
-      }
-
-      projections.forEach((proj, i) => {
-        const color = SERIES_COLORS[i % SERIES_COLORS.length]
-
-        // Last historical point for this economy
-        const histPts = data.periods.map(p => {
-          const obs = data.series.find(d => d.economy === proj.eco && d.period === p)
-          return obs?.value != null ? { p, v: obs.value } : null
-        }).filter((x): x is { p: string; v: number } => x !== null)
-
-        // Bridge: solid → dashed at the divider
-        if (histPts.length && proj.bands.length) {
-          root.append('path')
-            .datum([histPts[histPts.length - 1], { p: proj.bands[0].year, v: proj.bands[0].base }])
-            .attr('fill','none').attr('stroke', color)
-            .attr('stroke-width', 1.5).attr('stroke-dasharray','5,3')
-            .attr('d', lineGen)
-        }
-
-        // Shaded band (pessimistic → optimistic)
-        root.append('path')
-          .datum(proj.bands)
-          .attr('fill', color).attr('fill-opacity', 0.14)
-          .attr('d', d3.area<ProjectionBand>()
-            .x(d => xScale(d.year)!).y0(d => yScale(d.pessimistic)).y1(d => yScale(d.optimistic))
-            .curve(d3.curveMonotoneX))
-
-        // Base projection (dashed, prominent)
-        root.append('path')
-          .datum(proj.bands.map(b => ({ p: b.year, v: b.base })))
-          .attr('fill','none').attr('stroke', color)
-          .attr('stroke-width', 2).attr('stroke-dasharray','6,3')
-          .attr('d', lineGen)
-
-        // Pessimistic boundary (thin dotted)
-        root.append('path')
-          .datum(proj.bands.map(b => ({ p: b.year, v: b.pessimistic })))
-          .attr('fill','none').attr('stroke', color)
-          .attr('stroke-width', 1).attr('stroke-dasharray','2,4').attr('stroke-opacity', 0.5)
-          .attr('d', lineGen)
-
-        // Optimistic boundary (thin dotted)
-        root.append('path')
-          .datum(proj.bands.map(b => ({ p: b.year, v: b.optimistic })))
-          .attr('fill','none').attr('stroke', color)
-          .attr('stroke-width', 1).attr('stroke-dasharray','2,4').attr('stroke-opacity', 0.5)
-          .attr('d', lineGen)
-      })
-    }
-
-    // Hover overlay — tooltip shows only historical data points
+    // Hover overlay
     root.append('rect')
       .attr('width', IW).attr('height', IH)
       .attr('fill','none').attr('pointer-events','all')
       .on('mousemove', (event) => {
         const [mx] = d3.pointer(event)
-        const step = IW / Math.max(1, allPeriods.length - 1)
+        const step = IW / Math.max(1, data.periods.length - 1)
         const idx  = Math.min(data.periods.length - 1, Math.max(0, Math.round(mx / step)))
         const period = data.periods[idx]
         if (!period) return
@@ -227,7 +185,7 @@ export function D3LineChart({
       })
       .on('mouseleave', () => setTip(null))
 
-  }, [data, unit, projections])
+  }, [data, unit, episode])
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
