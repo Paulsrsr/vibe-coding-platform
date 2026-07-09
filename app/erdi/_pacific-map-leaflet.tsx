@@ -23,6 +23,7 @@ const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" ta
 const FLAG_ISO: Record<string, string> = {
   // Pacific
   PNG: 'pg', FIJ: 'fj', VAN: 'vu', SOL: 'sb', TON: 'to', SAM: 'ws', KIR: 'ki', TUV: 'tv',
+  MHL: 'mh', FSM: 'fm', NAU: 'nr', PAL: 'pw', COO: 'ck',
   // South Asia
   IND: 'in', PAK: 'pk', BAN: 'bd', SRI: 'lk', NEP: 'np', BHU: 'bt', MLD: 'mv', AFG: 'af',
   // Southeast Asia
@@ -50,6 +51,11 @@ const COUNTRY_STATS: Record<string, { pop: string; area: string; capital: string
   SAM: { pop: '225K',   area: '2,830 km²',      capital: 'Apia',               currency: 'WST' },
   KIR: { pop: '120K',   area: '811 km²',        capital: 'South Tarawa',       currency: 'AUD' },
   TUV: { pop: '11K',    area: '26 km²',         capital: 'Funafuti',           currency: 'AUD' },
+  MHL: { pop: '42K',    area: '181 km²',        capital: 'Majuro',             currency: 'USD' },
+  FSM: { pop: '115K',   area: '702 km²',        capital: 'Palikir',            currency: 'USD' },
+  NAU: { pop: '10K',    area: '21 km²',         capital: 'Yaren (de facto)',    currency: 'AUD' },
+  PAL: { pop: '18K',    area: '459 km²',        capital: 'Ngerulmud',          currency: 'USD' },
+  COO: { pop: '17K',    area: '236 km²',        capital: 'Avarua',             currency: 'NZD' },
   // South Asia
   IND: { pop: '1.43B',  area: '3,287,263 km²',  capital: 'New Delhi',          currency: 'INR' },
   PAK: { pop: '231M',   area: '881,913 km²',    capital: 'Islamabad',          currency: 'PKR' },
@@ -85,6 +91,22 @@ const COUNTRY_STATS: Record<string, { pop: string; area: string; capital: string
   ARM: { pop: '3M',     area: '29,743 km²',     capital: 'Yerevan',            currency: 'AMD' },
   KGZ: { pop: '6.7M',   area: '199,951 km²',    capital: 'Bishkek',            currency: 'KGS' },
   TAJ: { pop: '9.7M',   area: '143,100 km²',    capital: 'Dushanbe',           currency: 'TJS' },
+}
+
+const ECONOMIST_CONTACTS: Record<string, { name: string; email: string }> = {
+  PNG: { name: 'Rommel Rabanal',       email: 'rrabanal@adb.org' },
+  FIJ: { name: 'Priyanthi Fernando',   email: 'pfernando@adb.org' },
+  VAN: { name: 'Christopher Edmonds',  email: 'cedmonds@adb.org' },
+  SOL: { name: 'Craig Sugden',         email: 'csugden@adb.org' },
+  TON: { name: 'Marilen Fontanilla',   email: 'mfontanilla@adb.org' },
+  SAM: { name: 'David Thomas',         email: 'dthomas@adb.org' },
+  KIR: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  TUV: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  MHL: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  FSM: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  NAU: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  PAL: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  COO: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
 }
 
 const PULSE_CSS = `
@@ -175,7 +197,7 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
       current.forEach((dot, i) => {
         const icon = L.divIcon({ className: '', iconSize: [70, 80], iconAnchor: [35, 40], html: dotIconHtml(dot, i) })
         const m = L.marker([dot.lat, dot.lng], { icon, zIndexOffset: 100 })
-        m.on('mouseover', () => { const pt = map.latLngToContainerPoint([dot.lat, dot.lng]); setTooltip({ dot, x: pt.x, y: pt.y }) })
+        m.on('mouseover', () => { const pt = map.latLngToContainerPoint([dot.lat, dot.lng]); const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 }; setTooltip({ dot, x: pt.x + rect.left, y: pt.y + rect.top }) })
         m.on('mouseout', () => setTooltip(null))
         m.addTo(map)
         markersRef.current.push(m)
@@ -184,7 +206,10 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
         const pairs = current.map(d => [d.lat, d.lng] as [number, number])
         regionBoundsRef.current = pairs
         boundsSigRef.current = pairs.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).sort().join('|')
-        map.fitBounds(L.latLngBounds(pairs), { padding: [44, 44], maxZoom: 6 })
+        // Exclude cross-dateline dots (lng < 0, e.g. Cook Islands) from bounds so
+        // the Pacific view doesn't zoom out to span the entire ocean
+        const boundsPairs = pairs.filter((_, i) => current[i].lng >= 0)
+        if (boundsPairs.length > 0) map.fitBounds(L.latLngBounds(boundsPairs), { padding: [44, 44], maxZoom: 6 })
       }
     })
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
@@ -212,7 +237,7 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
       dots.forEach((dot, i) => {
         const icon = L.divIcon({ className: '', iconSize: [70, 80], iconAnchor: [35, 40], html: dotIconHtml(dot, i) })
         const m = L.marker([dot.lat, dot.lng], { icon, zIndexOffset: 100 })
-        m.on('mouseover', () => { const pt = map.latLngToContainerPoint([dot.lat, dot.lng]); setTooltip({ dot, x: pt.x, y: pt.y }) })
+        m.on('mouseover', () => { const pt = map.latLngToContainerPoint([dot.lat, dot.lng]); const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 }; setTooltip({ dot, x: pt.x + rect.left, y: pt.y + rect.top }) })
         m.on('mouseout', () => setTooltip(null))
         m.addTo(map)
         markersRef.current.push(m)
@@ -224,7 +249,9 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
         if (sig !== boundsSigRef.current) {
           boundsSigRef.current = sig
           regionBoundsRef.current = pairs
-          map.fitBounds(L.latLngBounds(pairs), { padding: [44, 44], maxZoom: 6, animate: true })
+          // Exclude cross-dateline dots (lng < 0) from bounds to keep Pacific view centred
+          const boundsPairs = pairs.filter((_, i) => dots[i].lng >= 0)
+          if (boundsPairs.length > 0) map.fitBounds(L.latLngBounds(boundsPairs), { padding: [44, 44], maxZoom: 6, animate: true })
         }
       }
     })
@@ -237,7 +264,8 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
     mapRef.current.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom ?? 7, { animate: true, duration: 0.9 })
   }, [flyTarget])
 
-  const stats = tooltip?.dot.code ? COUNTRY_STATS[tooltip.dot.code] : undefined
+  const stats     = tooltip?.dot.code ? COUNTRY_STATS[tooltip.dot.code]     : undefined
+  const economist = tooltip?.dot.code ? ECONOMIST_CONTACTS[tooltip.dot.code] : undefined
 
   return (
     <div style={{ position: 'relative', lineHeight: 0, isolation: 'isolate' }}>
@@ -258,47 +286,79 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
         <span style={{ fontSize: 13 }}>⌂</span> {activeRegion ?? 'Reset view'}
       </button>
 
-      {/* Hover tooltip */}
-      {tooltip && (
-        <div style={{
-          position: 'absolute',
-          left: isMobile ? 4 : Math.min(tooltip.x + 20, 220),
-          top: Math.max(tooltip.y - 120, 4),
-          pointerEvents: 'none', zIndex: 1000,
-          background: 'var(--th-card)',
-          border: `1px solid var(--th-border)`,
-          borderLeft: `4px solid ${tooltip.dot.color}`,
-          borderRadius: 8, padding: '12px 16px',
-          minWidth: 200, maxWidth: isMobile ? 'calc(100vw - 40px)' : 280,
-          boxShadow: '0 6px 24px rgba(0,0,0,0.45)',
-          fontFamily: '"Helvetica Neue",Arial,sans-serif',
-        }}>
-          {/* Country name + flag */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: stats ? 10 : 0 }}>
-            {tooltipFlagUrl(tooltip.dot.code) && (
-              <div style={{ width: 26, height: 19, flexShrink: 0, borderRadius: 2, backgroundImage: `url('${tooltipFlagUrl(tooltip.dot.code)}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-            )}
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--th-text)' }}>{tooltip.dot.name}</span>
-          </div>
-
-          {/* Country stats */}
-          {stats && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 7, columnGap: 14 }}>
-              {[
-                { label: 'Population', value: stats.pop },
-                { label: 'Area',       value: stats.area },
-                { label: 'Capital',    value: stats.capital },
-                { label: 'Currency',   value: stats.currency },
-              ].map(({ label, value }) => (
-                <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <div style={{ fontSize: 9, color: 'var(--th-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1 }}>{label}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--th-text)', lineHeight: 1 }}>{value}</div>
-                </div>
-              ))}
+      {/* Hover tooltip — position: fixed so it escapes any parent overflow: hidden */}
+      {tooltip && (() => {
+        const CARD_H    = economist ? 295 : 240
+        const vh        = typeof window !== 'undefined' ? window.innerHeight : 800
+        const vw        = typeof window !== 'undefined' ? window.innerWidth  : 1200
+        const clampedTop = Math.max(8, Math.min(tooltip.y - CARD_H / 2, vh - CARD_H - 8))
+        const flipLeft   = tooltip.x > vw / 2
+        const cardLeft   = isMobile ? 8 : (flipLeft ? Math.max(tooltip.x - 330, 8) : Math.min(tooltip.x + 18, vw - 320))
+        return (
+          <div style={{
+            position: 'fixed',
+            left: cardLeft,
+            top: clampedTop,
+            pointerEvents: 'none', zIndex: 9999,
+            background: 'var(--th-card)',
+            border: `1px solid var(--th-border)`,
+            borderTop: `3px solid ${tooltip.dot.color}`,
+            borderRadius: 10,
+            width: isMobile ? 'calc(100vw - 32px)' : 308,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
+            fontFamily: '"Helvetica Neue",Arial,sans-serif',
+          }}>
+            {/* Header: flag + name + status badge */}
+            <div style={{ padding: '11px 14px 10px', borderBottom: '1px solid var(--th-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                {tooltipFlagUrl(tooltip.dot.code) && (
+                  <div style={{ width: 28, height: 20, flexShrink: 0, borderRadius: 2, backgroundImage: `url('${tooltipFlagUrl(tooltip.dot.code)}')`, backgroundSize: 'cover', backgroundPosition: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
+                )}
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--th-text)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tooltip.dot.name}</span>
+              </div>
+              <span style={{
+                fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 3, flexShrink: 0,
+                background: `${tooltip.dot.color}22`, color: tooltip.dot.color,
+                letterSpacing: '0.07em', textTransform: 'uppercase',
+              }}>{tooltip.dot.status}</span>
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Indicator value */}
+            <div style={{ padding: '9px 14px', borderBottom: '1px solid var(--th-border)' }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: tooltip.dot.color, lineHeight: 1, letterSpacing: '-0.5px', marginBottom: 3 }}>
+                {tooltip.dot.value}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.3 }}>{tooltip.dot.detail}</div>
+            </div>
+
+            {/* Country stats grid */}
+            {stats && (
+              <div style={{ padding: '9px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 8, columnGap: 14, borderBottom: economist ? '1px solid var(--th-border)' : 'none' }}>
+                {([
+                  { label: 'Population', value: stats.pop },
+                  { label: 'Area',       value: stats.area },
+                  { label: 'Capital',    value: stats.capital },
+                  { label: 'Currency',   value: stats.currency },
+                ] as { label: string; value: string }[]).map(({ label, value }) => (
+                  <div key={label}>
+                    <div style={{ fontSize: 9, color: 'var(--th-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 2, lineHeight: 1 }}>{label}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--th-text)', lineHeight: 1 }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Economist */}
+            {economist && (
+              <div style={{ padding: '10px 14px 12px', borderTop: '1px solid #1b3860', background: 'rgba(0,125,183,0.10)', borderRadius: '0 0 10px 10px', lineHeight: 1.4 }}>
+                <div style={{ fontSize: 9, color: '#5a9fd4', letterSpacing: '0.07em', textTransform: 'uppercase', fontWeight: 600, lineHeight: 1, marginBottom: 6 }}>Country Economist</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f0f8', lineHeight: 1.3, marginBottom: 4 }}>{economist.name}</div>
+                <div style={{ fontSize: 11, color: '#4db3e8', lineHeight: 1 }}>{economist.email}</div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }

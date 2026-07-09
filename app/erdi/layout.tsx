@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
 export const metadata: Metadata = {
-  title: 'ERDI Data Portal',
+  title: 'ERDI Intelligence Hub',
 }
 
 // ADB Branding: Ideal Sans (primary typeface) is specified in the CSS font stack.

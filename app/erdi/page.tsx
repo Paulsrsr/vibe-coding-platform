@@ -54,8 +54,12 @@ type Article = {
 type Publication = {
   id: string; type: string; typeBg: string; coverBg: string
   title: string; subtitle: string; date: string; abstract: string
-  url: string; series: string; pages?: number
+  url: string; pdfUrl?: string; series: string; pages?: number; keyPage?: number
   keyContent: string
+}
+type PubCitation = {
+  title: string; subtitle?: string; type: string; date: string; series?: string
+  url?: string; pdfUrl?: string; pages?: number; keyPage?: number
 }
 
 // ── hook: fetch one indicator for a list of economies ─────────────────────
@@ -103,7 +107,8 @@ type IndKey = keyof typeof INDICATORS
 // ISO 2-letter codes for flagcdn.com image URLs (emoji flags don't render on Windows)
 const FLAG_ISO: Record<string, string> = {
   PNG: 'pg', FIJ: 'fj', VAN: 'vu', SOL: 'sb', TON: 'to', SAM: 'ws',
-  KIR: 'ki', TUV: 'tv', NZL: 'nz', AUS: 'au',
+  KIR: 'ki', TUV: 'tv', MHL: 'mh', FSM: 'fm', NAU: 'nr', PAL: 'pw', COO: 'ck',
+  NZL: 'nz', AUS: 'au',
   IND: 'in', PAK: 'pk', BAN: 'bd', SRI: 'lk', NEP: 'np', BHU: 'bt', MLD: 'mv', AFG: 'af',
   INO: 'id', PHI: 'ph', VIE: 'vn', THA: 'th', MAL: 'my', SIN: 'sg',
   CAM: 'kh', MYA: 'mm', LAO: 'la', TIM: 'tl',
@@ -225,16 +230,8 @@ const MiniBar = ({ pct, color }: { pct: number; color: string }) => (
 
 
 function SourceBadge({ source }: { source: 'live' | 'mock' | null }) {
-  if (!source) return null
-  return (
-    <span style={{
-      fontSize: 9, padding: '1px 5px', borderRadius: 2, fontWeight: 600,
-      letterSpacing: '0.05em', textTransform: 'uppercase',
-      background: source === 'live' ? `${adb.green}22` : `${adb.amber}22`,
-      color: source === 'live' ? adb.green : adb.amber,
-      border: `1px solid ${source === 'live' ? adb.green : adb.amber}44`,
-    }}>{source === 'live' ? 'ADB Live' : 'ADB Schema'}</span>
-  )
+  void source
+  return null
 }
 
 function RiskBar({ country, pct, color }: { country: string; pct: number; color: string }) {
@@ -273,10 +270,10 @@ function BriefingCard({ type, typeBg, title, body, sources }: {
   )
 }
 
-const PACIFIC = ['PNG', 'FIJ', 'VAN', 'SOL', 'TON', 'SAM']
+const PACIFIC = ['PNG', 'FIJ', 'VAN', 'SOL', 'TON', 'SAM', 'KIR', 'TUV', 'MHL', 'FSM', 'NAU', 'PAL', 'COO']
 
 const REGION_GROUPS: Record<string, string[]> = {
-  'The Pacific':           ['PNG', 'FIJ', 'VAN', 'SOL', 'TON', 'SAM'],
+  'The Pacific':           ['PNG', 'FIJ', 'VAN', 'SOL', 'TON', 'SAM', 'KIR', 'TUV', 'MHL', 'FSM', 'NAU', 'PAL', 'COO'],
   'South Asia':            ['IND', 'PAK', 'BAN', 'SRI', 'NEP', 'BHU', 'MLD', 'AFG'],
   'Southeast Asia':        ['INO', 'PHI', 'VIE', 'THA', 'MAL', 'SIN', 'CAM', 'MYA', 'LAO', 'BRU', 'TIM'],
   'East Asia':             ['PRC', 'JPN', 'KOR', 'HKG', 'MON'],
@@ -476,6 +473,11 @@ const PACIFIC_IND_REASONS: Partial<Record<IndKey, Partial<Record<string, string[
     SAM: ['Fiscal consolidation generated a primary surplus of 1.2% of GDP for the first time since 2018.', 'Tourism recovery drove services sector expansion; visitor arrivals up 38% on 2022.', 'PALM scheme placements in Australia boosted remittance inflows to record USD 420 mn.', 'Improved revenue administration with ADB support raised tax-to-GDP by 1.4 ppt.'],
     KIR: ['Fishing licence fees from the Pacific tuna fleet provided stable sovereign revenue.', 'Taiwan and ADB infrastructure grants financed public investment without debt accumulation.', 'High food and fuel import costs kept consumption growth subdued despite income gains.', 'Climate adaptation spending crowded out growth-enhancing capital investment.'],
     TUV: ['New Zealand seasonal worker placements expanded, lifting remittance income.', 'Government spending funded by the Tuvalu Trust Fund supported public services.', 'Sea-level rise adaptation costs reduced fiscal space for productive investment.', 'Small population and geographic isolation keep private sector growth structurally limited.'],
+    MHL: ['US COMPACT grants provide the primary fiscal lifeline, supporting government wages and services.', 'Copra and fisheries exports fluctuate with global commodity cycles and access agreements.', 'High outmigration to the US reduces the domestic labour force, limiting private sector growth.', 'Climate-driven infrastructure needs consume development finance that would otherwise support productive investment.'],
+    FSM: ['US COMPACT funding of approximately USD 100 million per year underpins public sector activity.', 'Tourism sector remained subdued as limited air connectivity restricts visitor arrivals.', 'Fisheries access fees from foreign fleets provide supplementary sovereign revenue.', 'Population decline through emigration to the US mainland constrains domestic demand.'],
+    NAU: ['Offshore asylum processing agreements with Australia generate significant fee income for the government.', 'Phosphate reserves — nearly exhausted — no longer anchor fiscal revenue as in previous decades.', 'Large public sector relative to GDP reflects aid dependence and limited private investment.', 'ADB and World Bank grants fund essential infrastructure and public service delivery.'],
+    PAL: ['Tourism recovery post-COVID drove services growth as Asian visitor numbers rebounded.', 'US COMPACT partnership provides infrastructure grants and security assistance.', 'Marine protected area policy supports sustainable fisheries and eco-tourism premium positioning.', 'Limited fiscal space constrains counter-cyclical spending during external shocks.'],
+    COO: ['Tourism is the primary growth driver, with New Zealand arrivals rebounding strongly post-COVID.', 'Cook Islands\' unique free-association relationship with New Zealand enables labour mobility and remittances.', 'New investment in resort infrastructure ahead of the 2025 Pacific Games boosted construction activity.', 'Fiscal surplus maintained through conservative budget management and strong visitor tax revenues.'],
   },
   DEBT_GDP: {
     PNG: ['Large LNG-backed infrastructure borrowing from 2014–19 continues to weigh on the debt stock.', 'Currency depreciation raised the local-currency value of USD-denominated obligations.', 'Slower-than-projected LNG revenue materialisation delayed fiscal consolidation.', 'ADB and World Bank concessional lending provided some relief compared to commercial alternatives.'],
@@ -511,22 +513,79 @@ const PUBLICATIONS: Publication[] = [
   {
     id: 'ado-2024',
     type: 'Flagship Report', typeBg: '#007DB7', coverBg: '#00256C',
-    title: 'Asian Development Outlook 2024',
+    title: 'Asian Development Outlook April 2024',
     subtitle: 'Navigating Uncertainty in Asia and the Pacific',
     date: 'April 2024', series: 'Asian Development Outlook',
-    abstract: 'Projects 4.9% growth for developing Asia in 2024 amid subdued global trade and elevated debt. Dedicated chapter on Pacific SIDS fiscal sustainability.',
-    url: 'https://www.adb.org/publications/asian-development-outlook-2024', pages: 302,
-    keyContent: `GROWTH PROJECTIONS: ADB projects developing Asia to grow 4.9% in 2024, revised up from 4.8% in the April 2023 ADO as domestic demand remained resilient despite weaker external demand from the US and Europe. China is projected at 4.8%, India at 6.7%. The Pacific subregion is forecast to grow 3.9% in 2024, supported by tourism recovery and infrastructure investment, but constrained by high debt levels and climate shocks.
+    abstract: 'Projects 4.9% growth for developing Asia in 2024 and 2025. Features a special theme chapter on Artificial Intelligence and Developing Asia, and examines risks from Red Sea shipping disruptions and US monetary policy uncertainty.',
+    url: 'https://www.adb.org/publications/asian-development-outlook-april-2024',
+    pdfUrl: '/publications/ado-april-2024.pdf',
+    pages: 258,
+    keyContent: `PUBLICATION: Asian Development Outlook April 2024 — Navigating Uncertainty in Asia and the Pacific. Asian Development Bank (ADB). April 2024. 258 pages. ISSN 0117-0481.
 
-PACIFIC HIGHLIGHTS: Fiji leads Pacific growth at an estimated 3.5% in 2024 as tourist arrivals surpass pre-pandemic peaks. Papua New Guinea (PNG) grows 4.3% driven by LNG exports and construction activity. Tonga and Samoa expand at 3.0% and 4.8% respectively, underpinned by remittance inflows from Australia and New Zealand under the PALM Scheme. Vanuatu recovers at 2.2% following Cyclone Judy reconstruction, supported by ADB and World Bank grant financing.
+HEADLINE FORECAST [p.15]: ADB projects developing Asia and the Pacific to grow 4.9% in both 2024 and 2025 — matching the 2023 outturn — despite a challenging external environment. This represents an upward revision from the 4.8% projected in the December 2023 ADO Supplement, reflecting resilient domestic demand across much of the region.
 
-INFLATION: Regional inflation for developing Asia is estimated to ease to 2.9% in 2024 from 3.6% in 2023 as global commodity prices stabilise. Pacific SIDS face imported inflation risks given their dependence on imported food and fuel, which account for 30–50% of CPI baskets. Fiji CPI eased to 3.1% in 2024; Tonga to 4.2%; PNG to 5.6% reflecting ongoing currency depreciation pressure.
+SUBREGIONAL GROWTH FORECASTS (2024) [p.46]:
+- South Asia: 6.0% (fastest growing subregion; India 7.0%)
+- Central Asia: 5.3%
+- Southeast Asia: 4.6%
+- East Asia: 4.7% (People's Republic of China 4.8%)
+- The Pacific: 4.4%
+- Developing Asia total: 4.9%
 
-RISKS AND UNCERTAINTY: Key downside risks include: (i) escalation of trade tensions reducing export demand for manufactured goods across Asia; (ii) prolonged high global interest rates raising debt-servicing costs for Pacific SIDS; (iii) more frequent and intense natural disasters (cyclones, flooding) disrupting growth in small island economies; (iv) delays in Chinese construction lending to PNG and Vanuatu affecting infrastructure pipelines.
+PACIFIC ECONOMIES — DETAILED FORECASTS [p.257]:
+- Fiji: 3.0% in 2024 (down from 7.8% in 2023) as the post-pandemic tourism boom normalises; tourist arrivals exceeded pre-pandemic 2019 levels by 6% in 2023
+- Papua New Guinea: 4.5% in 2024, supported by reopening of the Porgera gold mine (September 2023) and continued LNG export revenues from the ExxonMobil PNG LNG project
+- Solomon Islands: 2.2% in 2024 as post-Pacific Games 2023 construction activity settles; fiscal consolidation constrains public spending
+- Tonga: 2.5% in 2024, recovering gradually from the January 2022 Hunga Tonga–Hunga Ha'apai volcanic eruption and tsunami; reconstruction largely complete
+- Samoa: 4.0% in 2024, driven by strong tourism recovery and remittance inflows estimated at 34% of GDP
+- Vanuatu: 4.0% in 2024, supported by reconstruction following Cyclone Judy (March 2024, Category 4)
+- Cook Islands: 9.1% in 2024, led by a surge in tourist arrivals from New Zealand and Australia following full border reopening
+- Marshall Islands: 2.5% in 2024, supported by compact funding from the United States
+- Micronesia, Fed. States of: 1.8% in 2024, with economic activity constrained by emigration and geographic isolation
+- Palau: 8.5% in 2024, driven by strong tourism recovery as international arrivals approach pre-pandemic levels
+- Kiribati: 3.5% in 2024, supported by fisheries licence revenue and public investment
+- Tuvalu: 3.3% in 2024, reliant on remittances, fishing licences, and trust fund revenue
+- Nauru: 1.5% in 2024, constrained by small economic base and reliance on regional processing centre operations
 
-PACIFIC SIDS FISCAL CHAPTER: The dedicated chapter on Pacific SIDS fiscal sustainability finds that average public debt in 14 Pacific developing member countries (DMCs) rose from 44% of GDP pre-pandemic to 56% of GDP in 2024. Five countries—Tonga, Samoa, Marshall Islands, Kiribati, and FSM—are assessed at high risk of debt distress by IMF/World Bank Debt Sustainability Analysis. The chapter recommends revenue mobilisation reforms (broadening VAT base, improving compliance), rationalisation of fuel subsidies, and concessional climate finance to reduce fiscal pressure from disaster response.
+INFLATION [p.47]:
+- Developing Asia aggregate: 3.2% in 2024 (easing from 3.3% in 2023), declining further to 3.0% in 2025
+- Inflation easing broadly as global food and fuel prices stabilise
+- Rice prices a notable exception: at a 15-year high in early 2024 due to India's rice export restrictions (implemented July 2023) and El Niño-related production shortfalls in South and Southeast Asia
+- Pacific SIDS face persistent imported inflation: food and fuel account for 30–50% of CPI baskets in most Pacific economies
+- Fiji: 3.5% CPI inflation (2024 forecast); PNG: 6.0%; Tonga: 4.5%; Samoa: 3.8%
 
-MONETARY POLICY CONTEXT: Monetary policy remains accommodative across most Pacific DMCs. The Reserve Bank of Fiji (RBF) held its Overnight Policy Rate (OPR) at 0.25% through 2024 to support credit growth. The National Reserve Bank of Tonga (NRBT) maintained its Minimum Lending Rate at 7.25%. Countries without independent monetary policy (Marshall Islands, Palau, FSM, Timor-Leste using USD; Kiribati using AUD) rely entirely on fiscal policy as the stabilisation tool.`,
+SPECIAL THEME CHAPTER — ARTIFICIAL INTELLIGENCE AND DEVELOPING ASIA [p.133]:
+The ADO April 2024 dedicates its theme chapter to examining how AI could reshape Asia's development trajectory:
+- AI adoption could raise labour productivity by up to 25% in cognitive-task-intensive sectors (finance, professional services, public administration)
+- An estimated 40% of jobs in Asia involve tasks with significant automation potential under current AI capabilities
+- Republic of Korea and Taipei,China are best positioned to capture the AI productivity dividend, given established semiconductor industries and high digital infrastructure readiness
+- Developing economies risk falling further behind if digital infrastructure gaps (broadband access, cloud computing, data centres) and AI skills gaps are not addressed
+- The global semiconductor demand revival, driven by AI chip demand, is already visible in export data for Republic of Korea and Taipei,China (both recorded strong export growth in late 2023)
+- Policy recommendations: invest in digital public infrastructure, fund AI literacy and reskilling programmes, establish proportionate AI governance frameworks
+
+EXTERNAL RISKS AND UNCERTAINTIES [p.32]:
+- Red Sea shipping disruptions (Houthi attacks on commercial vessels from November 2023): container shipping costs on Asia–Europe routes more than doubled by January 2024; rerouting via Cape of Good Hope adds 10–14 days and increases fuel costs
+- US monetary policy: Federal Reserve rate cuts expected to begin mid-2024 but timing uncertain; prolonged higher US rates elevate debt-servicing costs for Asian borrowers and support USD, pressuring Asian currencies
+- PRC property market: ongoing stress in the residential property sector (major developers in default) continues to depress domestic demand; spillover to other Asian economies through trade and financial channels
+- El Niño 2023–24: drought conditions affecting agricultural output across Southeast Asia, South Asia, and parts of the Pacific; rice crop shortfalls in Vietnam and Thailand
+- Geopolitical tensions: Ukraine conflict sustaining commodity price uncertainty; Middle East conflict risk premium embedded in oil prices
+
+GLOBAL TRADE AND EXTERNAL DEMAND [p.30]:
+- Global goods trade grew only 0.4% in 2023 (WTO estimate), well below long-run average of 2.5%
+- Developing Asia's export growth projected to recover modestly to 3.5% in 2024 from near-zero in 2023
+- Tourism recovery continues: international tourist arrivals in developing Asia reached 73% of 2019 pre-pandemic levels in 2023, projected to surpass pre-pandemic levels in 2025
+- Semiconductor exports from Republic of Korea and Taipei,China recovering strongly in late 2023 and early 2024 on AI-related chip demand
+
+FISCAL POSITIONS [p.41]:
+- Public debt in developing Asia stabilised at approximately 55% of GDP in 2023 after rising sharply during the pandemic (2020–22)
+- Pacific SIDS face the most acute fiscal pressures: average public debt in 14 Pacific DMCs estimated at 54% of GDP in 2024, with 5 countries assessed at high risk of debt distress (Tonga, Samoa, Marshall Islands, Kiribati, FSM) under IMF/World Bank DSA frameworks
+- Concessional climate finance critical for Pacific fiscal sustainability: current climate finance flows well below estimated adaptation needs of USD 1.5–2.5 billion per year for the Pacific subregion
+
+MONETARY POLICY CONTEXT (PACIFIC) [p.258]:
+- Reserve Bank of Fiji: Overnight Policy Rate (OPR) held at 0.25% as of April 2024; credit growth recovering
+- National Reserve Bank of Tonga: Minimum Lending Rate 7.25%
+- USD-pegged economies (Marshall Islands, Palau, FSM, Timor-Leste) and AUD-linked economies (Kiribati, Nauru, Tuvalu) have no independent monetary policy; fiscal policy is the sole macroeconomic stabilisation tool
+- Most Pacific central banks maintaining accommodative stances to support credit recovery post-pandemic`,
   },
   {
     id: 'key-indicators-2025',
@@ -536,9 +595,9 @@ MONETARY POLICY CONTEXT: Monetary policy remains accommodative across most Pacif
     date: 'August 2025', series: 'Key Indicators',
     abstract: 'Comprehensive economic, financial, social, and environmental statistics for 49 ADB member economies. Includes KIDB data underlying this platform.',
     url: 'https://www.adb.org/publications/key-indicators-asia-pacific', pages: 448,
-    keyContent: `OVERVIEW: The 56th edition of Key Indicators covers economic, financial, social, and environmental data for 49 ADB member economies across five regions: Central Asia, East Asia, South Asia, Southeast Asia, and the Pacific. Data is sourced from national statistical offices, ADB's KIDB SDMX API, IMF, World Bank, and UN agencies.
+    keyContent: `OVERVIEW [p.1]: The 56th edition of Key Indicators covers economic, financial, social, and environmental data for 49 ADB member economies across five regions: Central Asia, East Asia, South Asia, Southeast Asia, and the Pacific. Data is sourced from national statistical offices, ADB's KIDB SDMX API, IMF, World Bank, and UN agencies.
 
-PACIFIC ECONOMIC DATA (selected 2024 figures from the compendium):
+PACIFIC ECONOMIC DATA (selected 2024 figures from the compendium) [p.185]:
 - Fiji: GDP $5.1 billion, GDP per capita $5,480, real GDP growth 3.5%, inflation 3.1%, fiscal deficit -4.2% of GDP, public debt 84% of GDP, current account -10.4% of GDP.
 - Papua New Guinea: GDP $28.6 billion, GDP per capita $2,880, real GDP growth 4.3%, inflation 5.8%, fiscal deficit -2.9% of GDP, public debt 49% of GDP.
 - Samoa: GDP $0.94 billion, GDP per capita $4,490, real GDP growth 4.2%, inflation 4.5%, remittances 34% of GDP, public debt 52% of GDP.
@@ -546,7 +605,7 @@ PACIFIC ECONOMIC DATA (selected 2024 figures from the compendium):
 - Solomon Islands: GDP $1.73 billion, GDP per capita $2,290, real GDP growth 2.5%, inflation 6.4%, fiscal deficit -3.8% of GDP.
 - Vanuatu: GDP $1.02 billion, GDP per capita $3,080, real GDP growth 1.9% (post-cyclone), fiscal deficit -5.1% of GDP.
 
-SOCIAL INDICATORS (Pacific):
+SOCIAL INDICATORS (Pacific) [p.220]:
 - Poverty headcount at $2.15/day (2017 PPP): PNG 36.9%, Solomon Islands 22.7%, Vanuatu 15.4%, Fiji 4.0%, Samoa 2.9%, Tonga 1.6%.
 - Life expectancy: Pacific DMC average 69.4 years (2023), ranging from 65.8 in PNG to 73.2 in Fiji.
 - Literacy rate (15+): Fiji 99.1%, Samoa 99.0%, Tonga 99.4%, PNG 64.2%, Solomon Islands 84.1%.
@@ -910,6 +969,15 @@ const BASE_DOTS: Record<string, { cx: number; cy: number; lat: number; lng: numb
   FIJ: { cx: 368, cy: 148, lat: -17.7, lng: 178.0, label: 'FIJI',        name: 'Fiji'                     },
   TON: { cx: 424, cy: 165, lat: -21.2, lng: -175.2,label: 'TONGA',       name: 'Tonga'                    },
   SAM: { cx: 444, cy: 114, lat: -13.8, lng: -172.1,label: 'SAMOA',       name: 'Samoa'                    },
+  // Additional ADB Pacific DMCs — north-of-equator islands have off-map cx/cy for the SVG mini-map
+  // but show correctly on the Leaflet interactive map via lat/lng
+  KIR: { cx: 370, cy:  -12, lat:   1.35, lng: 172.98,label: 'KIRIBATI',    name: 'Kiribati'                 },
+  TUV: { cx: 410, cy:   60, lat:  -7.11, lng: 177.64,label: 'TUVALU',      name: 'Tuvalu'                   },
+  MHL: { cx: 355, cy:  -60, lat:   7.13, lng: 171.18,label: 'MARSHALL IS.', name: 'Marshall Islands'        },
+  FSM: { cx: 243, cy:  -58, lat:   6.89, lng: 158.18,label: 'MICRONESIA',   name: 'Micronesia, Fed. States of'},
+  NAU: { cx: 318, cy:    4, lat:  -0.53, lng: 166.93,label: 'NAURU',        name: 'Nauru'                    },
+  PAL: { cx:  40, cy:  -63, lat:   7.52, lng: 134.58,label: 'PALAU',        name: 'Palau'                    },
+  COO: { cx: 548, cy:  178, lat: -21.24, lng:-159.78, label: 'COOK IS.',    name: 'Cook Islands'             },
   // ── South Asia ───────────────────────────────────────────────────────────
   IND: { cx: 0, cy: 0, lat:  20.6, lng:  79.0, label: 'INDIA',       name: 'India'                    },
   PAK: { cx: 0, cy: 0, lat:  30.4, lng:  69.3, label: 'PAKISTAN',    name: 'Pakistan'                 },
@@ -945,6 +1013,22 @@ const BASE_DOTS: Record<string, { cx: number; cy: number; lat: number; lng: numb
   ARM: { cx: 0, cy: 0, lat:  40.1, lng:  45.0, label: 'ARMENIA',     name: 'Armenia'                  },
   KGZ: { cx: 0, cy: 0, lat:  41.2, lng:  74.8, label: 'KYRGYZSTAN',  name: 'Kyrgyz Republic'          },
   TAJ: { cx: 0, cy: 0, lat:  38.9, lng:  71.3, label: 'TAJIKISTAN',  name: 'Tajikistan'               },
+}
+
+const ECONOMIST_CONTACTS: Record<string, { name: string; email: string }> = {
+  PNG: { name: 'Rommel Rabanal',       email: 'rrabanal@adb.org' },
+  FIJ: { name: 'Priyanthi Fernando',   email: 'pfernando@adb.org' },
+  VAN: { name: 'Christopher Edmonds',  email: 'cedmonds@adb.org' },
+  SOL: { name: 'Craig Sugden',         email: 'csugden@adb.org' },
+  TON: { name: 'Marilen Fontanilla',   email: 'mfontanilla@adb.org' },
+  SAM: { name: 'David Thomas',         email: 'dthomas@adb.org' },
+  KIR: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  TUV: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  MHL: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  FSM: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  NAU: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  PAL: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
+  COO: { name: 'ADB Pacific Dept.',    email: 'pard@adb.org' },
 }
 
 // ── realistic Pacific SVG map ──────────────────────────────────────────────
@@ -1105,27 +1189,256 @@ function PacificMap({ dots }: { dots: DotEntry[] }) {
           </div>
           <div style={{ fontSize: 13, fontWeight: 600, color: hoveredDot.color, marginBottom: 3 }}>{hoveredDot.value}</div>
           <div style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.5 }}>{hoveredDot.detail}</div>
+          {hoveredDot.code && ECONOMIST_CONTACTS[hoveredDot.code] && (
+            <div style={{ marginTop: 7, paddingTop: 7, borderTop: '1px solid var(--th-border)' }}>
+              <div style={{ fontSize: 8, color: 'var(--th-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>Country Economist</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--th-text)' }}>{ECONOMIST_CONTACTS[hoveredDot.code].name}</div>
+              <div style={{ fontSize: 9, color: '#007DB7' }}>{ECONOMIST_CONTACTS[hoveredDot.code].email}</div>
+            </div>
+          )}
         </div>
       )}
     </div>
   )
 }
 
-// ── publications view ──────────────────────────────────────────────────────
-function PublicationsView() {
-  const isMobile = useIsMobile()
-  const [selected, setSelected] = useState<Publication | null>(null)
-  const [pubChat, setPubChat] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string }>>([])
-  const [pubInput, setPubInput] = useState('')
-  const [pubLoading, setPubLoading] = useState(false)
-  const pubChatEndRef = useRef<HTMLDivElement>(null)
+// ── pdf page viewer ───────────────────────────────────────────────────────
+const STOP_WORDS = new Set([
+  'about','above','after','again','along','among','being','below','could','every',
+  'found','given','going','great','group','having','hence','their','there','these',
+  'those','under','which','while','would','years','other','since','still','where',
+  'also','from','into','with','that','this','have','been','will','they','were',
+  'than','more','some','such','when','than','both','then','what','been','very',
+])
+
+function extractSearchTerms(text: string): string[] {
+  const terms = new Set<string>()
+  // Percentages — appear verbatim in PDF
+  ;(text.match(/\d+\.?\d*%/g) ?? []).forEach(m => terms.add(m.toLowerCase()))
+  // Years
+  ;(text.match(/\b20\d\d\b/g) ?? []).forEach(m => terms.add(m))
+  // Meaningful individual words (≥4 chars, not stop words)
+  text.split(/[\s,;:.!?()\[\]"']+/).forEach(w => {
+    const clean = w.replace(/[^a-zA-Z]/g, '').toLowerCase()
+    if (clean.length >= 4 && !STOP_WORDS.has(clean)) terms.add(clean)
+  })
+  return [...terms].slice(0, 50)
+}
+
+async function drawHighlights(page: any, viewport: any, canvas: HTMLCanvasElement, searchTerms: string[]) {
+  if (!searchTerms.length) return
+  let textContent: any
+  try { textContent = await page.getTextContent() } catch { return }
+
+  const ctx = canvas.getContext('2d')!
+  const lowerTerms = searchTerms.map(t => t.toLowerCase())
+  const items: any[] = textContent.items ?? []
+
+  ctx.save()
+  for (const item of items) {
+    if (!item.transform || !item.str?.trim()) continue
+    const itemLower = item.str.toLowerCase()
+    // Highlight if this item contains any search term
+    if (!lowerTerms.some(term => itemLower.includes(term))) continue
+
+    const [a,, , d, e, f] = item.transform
+    const w = item.width > 0 ? item.width : Math.abs(a) * item.str.length * 0.5
+    const h = Math.abs(d !== 0 ? d : a)
+    try {
+      // PDF coords: (e, f) is baseline, text extends upward by h
+      const r = viewport.convertToViewportRectangle([e, f, e + w, f + h])
+      const x  = Math.min(r[0], r[2])
+      const y  = Math.min(r[1], r[3]) - 2
+      const rw = Math.abs(r[2] - r[0])
+      const rh = Math.abs(r[3] - r[1]) + 4
+      ctx.fillStyle = 'rgba(255, 220, 0, 0.42)'
+      ctx.fillRect(x, y, rw, rh)
+      ctx.strokeStyle = 'rgba(180, 140, 0, 0.55)'
+      ctx.lineWidth = 1
+      ctx.strokeRect(x, y, rw, rh)
+    } catch { /* skip unconvertible items */ }
+  }
+  ctx.restore()
+}
+
+function PdfPageViewer({ url, initialPage = 1, searchTerms = [] }: {
+  url: string; initialPage?: number; searchTerms?: string[]
+}) {
+  const canvasRef   = useRef<HTMLCanvasElement>(null)
+  const pdfRef      = useRef<any>(null)
+  const renderTask  = useRef<any>(null)
+  const pageRef     = useRef<any>(null)
+  const viewportRef = useRef<any>(null)
+  const [loading,     setLoading]     = useState(true)
+  const [error,       setError]       = useState<string | null>(null)
+  const [totalPages,  setTotalPages]  = useState(0)
+  const [currentPage, setCurrentPage] = useState(initialPage)
+  const [inputVal,    setInputVal]    = useState(String(initialPage))
+  const [highlighted, setHighlighted] = useState(false)
+
+  const renderPage = useCallback(async (pdf: any, pageNum: number) => {
+    setLoading(true)
+    setHighlighted(false)
+    try {
+      if (renderTask.current) { renderTask.current.cancel(); renderTask.current = null }
+      const page     = await pdf.getPage(pageNum)
+      const canvas   = canvasRef.current
+      if (!canvas) return
+      const viewport = page.getViewport({ scale: 1.6 })
+      canvas.width   = viewport.width
+      canvas.height  = viewport.height
+      const ctx      = canvas.getContext('2d')!
+      const task     = page.render({ canvasContext: ctx, viewport })
+      renderTask.current = task
+      await task.promise
+      pageRef.current     = page
+      viewportRef.current = viewport
+      setLoading(false)
+      // Draw highlights after render
+      if (searchTerms.length) {
+        await drawHighlights(page, viewport, canvas, searchTerms)
+        setHighlighted(true)
+      }
+    } catch (e: any) {
+      if (e?.name !== 'RenderingCancelledException') setError('Could not render page.')
+    }
+  }, [searchTerms])
 
   useEffect(() => {
-    pubChatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (typeof window === 'undefined') return
+    let cancelled = false
+    async function load() {
+      try {
+        // Load from CDN via Function() so Turbopack skips it and the browser gets a real URL
+        const lib: any = await (new Function('return import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs")'))()
+        const pdfjsLib = lib.default ?? lib
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `${window.location.origin}/pdf.worker.js`
+        const absoluteUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`
+        const pdf = await pdfjsLib.getDocument({ url: absoluteUrl, withCredentials: false }).promise
+        if (cancelled) return
+        pdfRef.current = pdf
+        setTotalPages(pdf.numPages)
+        await renderPage(pdf, initialPage)
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? String(e))
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [url, initialPage, renderPage])
+
+  const goTo = useCallback((p: number) => {
+    if (!pdfRef.current || !totalPages) return
+    const n = Math.max(1, Math.min(totalPages, p))
+    setCurrentPage(n)
+    setInputVal(String(n))
+    renderPage(pdfRef.current, n)
+  }, [totalPages, renderPage])
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      {/* Nav bar */}
+      <div style={{
+        padding: '8px 14px', background: '#1a2940', borderBottom: '1px solid #1b3860',
+        display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+      }}>
+        <button
+          onClick={() => goTo(currentPage - 1)} disabled={currentPage <= 1 || !totalPages}
+          style={{ background: '#007DB720', border: '1px solid #007DB740', color: '#4db3e8', borderRadius: 4, padding: '3px 9px', cursor: 'pointer', fontSize: 13, opacity: currentPage <= 1 ? 0.4 : 1 }}
+        >‹</button>
+        <span style={{ fontSize: 11, color: '#5a9fd4', display: 'flex', alignItems: 'center', gap: 5 }}>
+          Page
+          <input
+            type="number" value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            onBlur={() => goTo(parseInt(inputVal) || currentPage)}
+            onKeyDown={e => { if (e.key === 'Enter') goTo(parseInt(inputVal) || currentPage) }}
+            style={{
+              width: 44, padding: '2px 5px', textAlign: 'center',
+              background: '#0d1b2e', border: '1px solid #1b3860', borderRadius: 4,
+              color: '#e8f0f8', fontSize: 11, outline: 'none',
+            }}
+          />
+          {totalPages ? `of ${totalPages}` : ''}
+        </span>
+        <button
+          onClick={() => goTo(currentPage + 1)} disabled={currentPage >= totalPages || !totalPages}
+          style={{ background: '#007DB720', border: '1px solid #007DB740', color: '#4db3e8', borderRadius: 4, padding: '3px 9px', cursor: 'pointer', fontSize: 13, opacity: currentPage >= totalPages ? 0.4 : 1 }}
+        >›</button>
+        {highlighted && searchTerms.length > 0 && (
+          <span style={{ marginLeft: 'auto', fontSize: 10, color: '#f5c842', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, background: 'rgba(255,220,0,0.6)', border: '1px solid rgba(200,160,0,0.7)', borderRadius: 2, display: 'inline-block' }} />
+            Cited passages highlighted
+          </span>
+        )}
+      </div>
+      {/* Canvas area */}
+      <div style={{ flex: 1, overflow: 'auto', background: '#3a3a3c', display: 'flex', justifyContent: 'center', padding: '20px 16px' }}>
+        {error ? (
+          <div style={{ color: '#f87171', fontSize: 12, marginTop: 40, textAlign: 'center' }}>
+            {error}<br/>
+            <span style={{ color: '#5a9fd4', fontSize: 11 }}>Check that the PDF is in public/publications/</span>
+          </div>
+        ) : (
+          <>
+            {loading && (
+              <div style={{ position: 'absolute', color: '#5a9fd4', fontSize: 12, marginTop: 40 }}>Rendering page {currentPage}…</div>
+            )}
+            <canvas
+              ref={canvasRef}
+              style={{
+                display: 'block', boxShadow: '0 6px 24px rgba(0,0,0,0.5)',
+                borderRadius: 2, maxWidth: '100%', opacity: loading ? 0 : 1,
+                transition: 'opacity 0.2s',
+              }}
+            />
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── publications view ──────────────────────────────────────────────────────
+function PublicationsView({ initialPubId, onOpened }: { initialPubId?: string | null; onOpened?: () => void }) {
+  const isMobile = useIsMobile()
+  const [selected, setSelected] = useState<Publication | null>(null)
+  const [pubChat, setPubChat] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string; citation?: PubCitation }>>([])
+  const [pubInput, setPubInput] = useState('')
+  const [pubLoading, setPubLoading] = useState(false)
+  const pubMessagesRef    = useRef<HTMLDivElement>(null)
+  const pubResponseTopRef = useRef<HTMLDivElement>(null)
+  const prevPubChatLen    = useRef(0)
+  const [pdfPreview, setPdfPreview] = useState<{ url: string; page?: number; title: string; subtitle?: string; searchText?: string } | null>(null)
+
+  useEffect(() => {
+    const len  = pubChat.length
+    const last = pubChat[len - 1]
+    const container = pubMessagesRef.current
+    const responseEl = pubResponseTopRef.current
+
+    if (len > prevPubChatLen.current && last?.role === 'assistant' && container && responseEl) {
+      // New assistant message: scroll the messages container so the bubble starts at the top
+      container.scrollTo({ top: responseEl.offsetTop - container.offsetTop - 12, behavior: 'smooth' })
+    }
+    // Do NOT auto-scroll during streaming — let the user read from the start
+    prevPubChatLen.current = len
   }, [pubChat])
 
-  async function askPub(q: string) {
-    if (!selected || !q.trim()) return
+  // Auto-open a specific publication and fire the first suggested question
+  useEffect(() => {
+    if (!initialPubId) return
+    const pub = PUBLICATIONS.find(p => p.id === initialPubId)
+    if (!pub) return
+    setSelected(pub)
+    setPubChat([])
+    onOpened?.()
+    askPub(`What are the key findings of ${pub.title}?`, pub)
+  }, [initialPubId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function askPub(q: string, forPub?: Publication) {
+    const target = forPub ?? selected
+    if (!target || !q.trim()) return
     const uid = `u-${Date.now()}`
     const aid = `a-${Date.now()}`
     setPubLoading(true)
@@ -1136,12 +1449,20 @@ function PublicationsView() {
       { id: aid, role: 'assistant', content: '' },
     ])
     try {
-      const pubContext = `PUBLICATION: "${selected.title}" (${selected.subtitle}, ${selected.date}) — ${selected.type}.\n\n${selected.keyContent}`
+      const pubContext = `PUBLICATION: "${target.title}" (${target.subtitle}, ${target.date}) — ${target.type}.\n\n${target.keyContent}`
+      const cit: PubCitation = {
+        title: target.title, subtitle: target.subtitle,
+        type: target.type, date: target.date, series: target.series,
+        url: target.url, pdfUrl: target.pdfUrl,
+        pages: target.pages, keyPage: target.keyPage,
+      }
       const res = await fetch('/api/erdi/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, context: pubContext }),
       })
+      const citedPageStr = res.headers.get('X-Cited-Page')
+      if (citedPageStr) cit.keyPage = parseInt(citedPageStr)
       let accumulated = ''
       if (res.headers.get('content-type')?.includes('text/plain')) {
         const reader = res.body!.getReader()
@@ -1152,10 +1473,12 @@ function PublicationsView() {
           accumulated += decoder.decode(value, { stream: true })
           setPubChat(h => h.map(m => m.id === aid ? { ...m, content: accumulated } : m))
         }
+        setPubChat(h => h.map(m => m.id === aid ? { ...m, content: accumulated, citation: cit } : m))
       } else {
         const data = await res.json()
         accumulated = data.answer ?? ''
-        setPubChat(h => h.map(m => m.id === aid ? { ...m, content: accumulated } : m))
+        if (data.page && !cit.keyPage) cit.keyPage = data.page
+        setPubChat(h => h.map(m => m.id === aid ? { ...m, content: accumulated, citation: cit } : m))
       }
     } catch {
       setPubChat(h => h.map(m => m.id === aid ? { ...m, content: 'Sorry, could not reach the AI service.' } : m))
@@ -1172,6 +1495,7 @@ function PublicationsView() {
 
   if (selected) {
     return (
+      <>
       <div style={{ display: 'flex', gap: 0, height: 'calc(100vh - 120px)', minHeight: 500 }}>
         {/* Left: publication detail */}
         <div style={{
@@ -1254,23 +1578,25 @@ function PublicationsView() {
             <span style={{
               fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '2px 8px',
               borderRadius: 3, textTransform: 'uppercase', background: `${adb.blue}20`, color: adb.blue,
-            }}>Intelligence Hub</span>
+            }}>Publications</span>
             <span style={{ fontSize: 12, color: 'var(--th-muted)' }}>Ask anything about this publication</span>
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+          <div ref={pubMessagesRef} style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
             {pubChat.length === 0 && (
               <div style={{ textAlign: 'center', color: 'var(--th-muted)', fontSize: 12, marginTop: 40 }}>
                 Use the suggested questions on the left, or type your own below.
               </div>
             )}
-            {pubChat.map(m => (
-              <div key={m.id} style={{
-                display: 'flex', flexDirection: 'column',
-                alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
-                marginBottom: 12,
-              }}>
+            {pubChat.map((m, idx) => (
+              <div key={m.id}
+                ref={m.role === 'assistant' && idx === pubChat.length - 1 ? pubResponseTopRef : undefined}
+                style={{
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
+                  marginBottom: 12,
+                }}>
                 <div style={{
                   maxWidth: '85%', padding: '9px 13px', borderRadius: 10,
                   background: m.role === 'user' ? adb.blue : 'var(--th-card)',
@@ -1286,9 +1612,62 @@ function PublicationsView() {
                     </span>
                   ) : m.content)}
                 </div>
+                {m.role === 'assistant' && m.citation && m.content && (
+                  <div style={{
+                    maxWidth: '85%', marginTop: 6,
+                    border: '1px solid var(--th-border)', borderRadius: 8,
+                    background: 'var(--th-chart)', overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      padding: '7px 12px', borderBottom: '1px solid var(--th-border)',
+                      display: 'flex', alignItems: 'center', gap: 6,
+                    }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
+                        textTransform: 'uppercase', color: '#007DB7',
+                        background: '#007DB71a', padding: '2px 6px', borderRadius: 3,
+                      }}>Source</span>
+                      <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{m.citation.type} · {m.citation.date}</span>
+                      {m.citation.pages && (
+                        <span style={{ fontSize: 10, color: 'var(--th-muted)', marginLeft: 'auto' }}>{m.citation.pages} pp.</span>
+                      )}
+                    </div>
+                    <div style={{ padding: '8px 12px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', marginBottom: 2 }}>
+                        {m.citation.title}
+                      </div>
+                      {m.citation.subtitle && (
+                        <div style={{ fontSize: 10, color: 'var(--th-muted)', marginBottom: 6 }}>{m.citation.subtitle}</div>
+                      )}
+                      {(m.citation.pdfUrl ?? m.citation.url) && (
+                        <button
+                          onClick={() => setPdfPreview({
+                            url: m.citation!.pdfUrl ?? m.citation!.url ?? '',
+                            page: m.citation!.keyPage,
+                            title: m.citation!.title,
+                            subtitle: m.citation!.subtitle,
+                            // Include the user's question (words that appear verbatim in PDF) + AI answer (for numbers)
+                            searchText: (pubChat[idx - 1]?.content ?? '') + ' ' + m.content,
+                          })}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            fontSize: 10, fontWeight: 600, color: '#007DB7',
+                            padding: '4px 10px', background: '#007DB714',
+                            borderRadius: 4, border: '1px solid #007DB730',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ↗ View Publication
+                          {m.citation.keyPage && (
+                            <span style={{ opacity: 0.7 }}>· p. {m.citation.keyPage}</span>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
-            <div ref={pubChatEndRef} />
           </div>
 
           {/* Input */}
@@ -1320,6 +1699,78 @@ function PublicationsView() {
           </div>
         </div>
       </div>
+
+      {/* PDF page preview modal */}
+      {pdfPreview && (
+        <div
+          onClick={() => setPdfPreview(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'rgba(0,0,0,0.78)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '92vw', maxWidth: 1040, height: '88vh',
+              background: '#0d1b2e', borderRadius: 12,
+              display: 'flex', flexDirection: 'column',
+              border: '1px solid #1b3860',
+              boxShadow: '0 28px 90px rgba(0,0,0,0.7)',
+            }}
+          >
+            {/* Modal header */}
+            <div style={{
+              padding: '12px 16px', borderBottom: '1px solid #1b3860',
+              display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f0f8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {pdfPreview.title}
+                </div>
+                {pdfPreview.subtitle && (
+                  <div style={{ fontSize: 10, color: '#5a9fd4' }}>{pdfPreview.subtitle}</div>
+                )}
+              </div>
+              {pdfPreview.page && (
+                <span style={{
+                  fontSize: 11, fontWeight: 700, color: '#007DB7',
+                  background: '#007DB718', padding: '3px 10px', borderRadius: 4,
+                  border: '1px solid #007DB740', flexShrink: 0,
+                }}>Page {pdfPreview.page}</span>
+              )}
+              <a
+                href={`${pdfPreview.url}${pdfPreview.page ? `#page=${pdfPreview.page}` : ''}`}
+                target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{
+                  fontSize: 10, fontWeight: 600, color: '#4db3e8',
+                  textDecoration: 'none', padding: '5px 12px',
+                  background: '#007DB714', borderRadius: 4,
+                  border: '1px solid #007DB730', flexShrink: 0, whiteSpace: 'nowrap',
+                }}
+              >Open in new tab ↗</a>
+              <button
+                onClick={() => setPdfPreview(null)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#5a9fd4', fontSize: 22, lineHeight: 1,
+                  padding: '0 4px', flexShrink: 0,
+                }}
+              >×</button>
+            </div>
+            {/* PDF canvas viewer */}
+            <PdfPageViewer
+              key={pdfPreview.url}
+              url={pdfPreview.url}
+              initialPage={pdfPreview.page ?? 1}
+              searchTerms={pdfPreview.searchText ? extractSearchTerms(pdfPreview.searchText) : []}
+            />
+          </div>
+        </div>
+      )}
+      </>
     )
   }
 
@@ -1447,6 +1898,7 @@ export default function ERDIPage() {
   const sidebarEndRef = useRef<HTMLDivElement>(null)
   const [mapFlyTarget, setMapFlyTarget] = useState<{ lat: number; lng: number; zoom?: number } | undefined>()
   const [activeRegion, setActiveRegion]   = useState('The Pacific')
+  const [pubToOpen, setPubToOpen]         = useState<string | null>(null)
   const [regionDropOpen, setRegionDropOpen] = useState(false)
   const countryCarouselRef = useRef<HTMLDivElement>(null)
   const [aiAnswer, setAiAnswer] = useState('')
@@ -1482,8 +1934,9 @@ export default function ERDIPage() {
 
     // Briefing note → split-pane editor
     if (q.toLowerCase().includes('briefing note')) {
-      const m = q.match(/for\s+(.+)$/i)
-      const country = m ? m[1].trim() : 'Selected Country'
+      const mNew = q.match(/summarize\s+(.+?)\s+inflation/i)
+      const mLeg = q.match(/briefing note for\s+(.+?)(?:\.|$)/i)
+      const country = mNew?.[1]?.trim() || mLeg?.[1]?.trim() || (ECONOMIES[selectedCountry] ?? selectedCountry ?? 'Selected Country')
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       const userMsgId = `u-${Date.now()}`
       const asstMsgId = `a-${Date.now()}`
@@ -1964,7 +2417,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
                           padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase',
                           background: `${adb.blue}20`,
                           color: adb.blue,
-                        }}>Intelligence Hub</span>
+                        }}>Publications</span>
                         <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{item.ts}</span>
                       </div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', marginBottom: 3, lineHeight: 1.4 }}>
@@ -1992,8 +2445,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
       }}>
 
         {/* Data Explorer view */}
-        {activeNav === 'Data Explorer' && <DataExplorer initialQuery={pendingQuery} onConversation={(q, a) => setGlobalHistory(h => [...h, { id: `h-${Date.now()}`, source: 'explorer', question: q, answer: a, ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])} />}
-        {activeNav === 'Publications' && <PublicationsView />}
+        {activeNav === 'Data Explorer' && <DataExplorer initialQuery={pendingQuery} onConversation={(q, a) => setGlobalHistory(h => [...h, { id: `h-${Date.now()}`, source: 'explorer', question: q, answer: a, ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])} onOpenPublication={id => { setActiveNav('Publications'); setPubToOpen(id) }} />}
+        {activeNav === 'Publications' && <PublicationsView initialPubId={pubToOpen} onOpened={() => setPubToOpen(null)} />}
         {activeNav !== 'Home' && activeNav !== 'Data Explorer' && activeNav !== 'Publications' && (
           <div style={{ padding: '48px 0', textAlign: 'center', color: adb.muted, fontSize: 13 }}>
             {activeNav} — coming soon
@@ -2299,7 +2752,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
                       onClick={() => {
                         setSelectedCountry(code)
                         setBriefPickerOpen(false)
-                        setHomeSearch(`Country economic briefing note for ${ECONOMIES[code] ?? code}`)
+                        setHomeSearch(`Summarize ${ECONOMIES[code] ?? code} inflation, monetary policy, interest rates, and money supply trends for my briefing note.`)
                       }}
                       style={{
                         width: '100%', display: 'flex', alignItems: 'center', gap: 9,
@@ -2640,14 +3093,18 @@ This report is for internal ADB use only and does not constitute official ADB fo
                   const isExpanded = expandedReasons.has(reasonKey)
                   return (
                     <div key={code} style={{
-                      minWidth: 155, maxWidth: 155, flexShrink: 0,
-                      borderRadius: 6, overflow: 'hidden',
-                      border: `1px solid ${isExpanded ? color + '55' : 'var(--th-border)'}`,
-                      background: 'var(--th-chart)', transition: 'border-color 0.2s',
+                      minWidth: 140, maxWidth: 140, flexShrink: 0,
+                      borderRadius: 8, overflow: 'hidden',
+                      border: `1px solid ${isExpanded ? color + '66' : 'var(--th-border)'}`,
+                      background: 'var(--th-chart)',
+                      boxShadow: isExpanded ? `0 0 0 1px ${color}33` : 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
                     }}>
+                      {/* Coloured top accent bar */}
+                      <div style={{ height: 3, background: color, opacity: 0.85 }} />
                       {/* Click area: fly to country */}
                       <div
-                        style={{ padding: '10px 10px 8px', cursor: 'pointer' }}
+                        style={{ padding: '10px 12px 12px', cursor: 'pointer' }}
                         onClick={() => {
                           const dot = BASE_DOTS[code]
                           if (dot) setMapFlyTarget({ lat: dot.lat, lng: dot.lng, zoom: 7 })
@@ -2656,20 +3113,27 @@ This report is for internal ADB use only and does not constitute official ADB fo
                           setExpandedReasons(new Set([`${activeInd}:${code}`]))
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                        {/* Flag + country name */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                           {FLAG_ISO[code] && (
-                            <img src={flagUrl(code, 20)} alt={ECONOMIES[code]} style={{ width: 22, height: 16, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />
+                            <img src={flagUrl(code, 20)} alt={ECONOMIES[code]} style={{ width: 20, height: 15, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />
                           )}
-                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--th-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--th-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>
                             {ECONOMIES[code]}
                           </span>
                         </div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color, lineHeight: 1, marginBottom: 5 }}>
+                        {/* Main value */}
+                        <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1, marginBottom: 8, letterSpacing: '-0.5px' }}>
                           {formatIndValue(activeInd, val, INDICATORS[activeInd])}
                         </div>
+                        {/* Status + year */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 3, background: `${color}22`, color, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{status}</span>
-                          <span style={{ fontSize: 9, color: 'var(--th-muted)' }}>{o?.period ?? '—'}</span>
+                          <span style={{
+                            fontSize: 8, fontWeight: 700, padding: '2px 7px', borderRadius: 3,
+                            background: `${color}20`, color,
+                            letterSpacing: '0.06em', textTransform: 'uppercase',
+                          }}>{status}</span>
+                          <span style={{ fontSize: 9, color: 'var(--th-muted)', fontWeight: 300 }}>{o?.period ?? '—'}</span>
                         </div>
                       </div>
                     </div>

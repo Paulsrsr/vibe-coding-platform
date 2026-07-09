@@ -96,7 +96,8 @@ type EcoStat = {
   pts:    { economy: string; period: string; value: number }[]
   values: number[]
 }
-type InsightResult = { lead: string; paragraphs: string[]; bullets: { label: string; value: string }[]; citations: string[] }
+type CitationEntry = { text: string; path: string; href: string | null; pubId?: string; linkLabel: string }
+type InsightResult = { lead: string; paragraphs: string[]; bullets: { label: string; value: string }[]; citations: CitationEntry[] }
 
 // ── Natural language insight generator ────────────────────────────────────────
 function generateInsight(config: ChartConfigType, chartData: ChartData): InsightResult {
@@ -119,7 +120,7 @@ function generateInsight(config: ChartConfigType, chartData: ChartData): Insight
   })
 
   if (!stats.length) {
-    return { lead: 'No data available for the selected query.', paragraphs: [], bullets: [], citations: [] }
+    return { lead: 'No data available for the selected query.', paragraphs: [], bullets: [], citations: [] as CitationEntry[] }
   }
 
   // Sort by latest value
@@ -201,8 +202,20 @@ function generateInsight(config: ChartConfigType, chartData: ChartData): Insight
   const sdmxPath = `A.${indicator}.${economies.join('+')}?startPeriod=${startPeriod}&endPeriod=${endPeriod}`
   const ecoList = economies.map(ecoName).join(', ')
   const citations = [
-    `ADB Key Indicators Database (KIDB). "${config.indicatorLabel}" — Indicator Code: ${indicator}. Dataflow: ${config.flow}. Economies: ${ecoList}. Reference period: ${startPeriod}–${endPeriod}. SDMX REST API: /api/v3/sdmx/data/${config.flow}/${sdmxPath}`,
-    `Asian Development Bank. Asian Development Outlook ${endPeriod} — Statistical Appendix, Table A1 (Selected Economic Indicators for ADB Member Economies). Manila: ADB. adb.org/publications/series/asian-development-outlook`,
+    {
+      text: `ADB Key Indicators Database (KIDB). "${config.indicatorLabel}" — Indicator Code: ${indicator}. Dataflow: ${config.flow}. Economies: ${ecoList}. Reference period: ${startPeriod}–${endPeriod}.`,
+      path: `/api/v3/sdmx/data/${config.flow}/${sdmxPath}`,
+      href: `https://kidb.adb.org/api/v3/sdmx/data/${config.flow}/${sdmxPath}`,
+      pubId: undefined,
+      linkLabel: 'kidb.adb.org',
+    },
+    {
+      text: `Asian Development Bank. Asian Development Outlook ${endPeriod} — Statistical Appendix, Table A1 (Selected Economic Indicators). Manila: ADB.`,
+      path: '',
+      href: null,
+      pubId: 'ado-2024',
+      linkLabel: 'Open publication →',
+    },
   ]
 
   return { lead, paragraphs, bullets, citations }
@@ -211,7 +224,7 @@ function generateInsight(config: ChartConfigType, chartData: ChartData): Insight
 function first_period(s: { pts: { period: string }[] }) { return s.pts[0]?.period ?? '' }
 
 // ── Insight panel ─────────────────────────────────────────────────────────────
-function InsightPanel({ config, chartData }: { config: ChartConfigType; chartData: ChartData }) {
+function InsightPanel({ config, chartData, onOpenPublication }: { config: ChartConfigType; chartData: ChartData; onOpenPublication?: (pubId: string) => void }) {
   const [expanded, setExpanded] = useState(true)
   const isMobile = useIsMobile()
   const { lead, paragraphs, bullets, citations } = generateInsight(config, chartData)
@@ -249,11 +262,34 @@ function InsightPanel({ config, chartData }: { config: ChartConfigType; chartDat
             borderBottom: `1px solid ${adb.navyBorder}`, paddingBottom: 12,
           }}>{lead}</p>
 
-          {/* Analysis paragraphs */}
+          {/* Analysis paragraphs — inline [n] markers rendered as clickable superscripts */}
           {paragraphs.map((p, i) => (
-            <p key={i} style={{
-              margin: 0, fontSize: 12, color: adb.muted, lineHeight: 1.75, fontWeight: 300,
-            }}>{p}</p>
+            <p key={i} style={{ margin: 0, fontSize: 12, color: adb.muted, lineHeight: 1.75, fontWeight: 300 }}>
+              {p.split(/(\[\d+\])/).map((part, j) => {
+                const match = part.match(/^\[(\d+)\]$/)
+                if (!match) return part
+                const idx = parseInt(match[1]) - 1
+                const cit = citations[idx]
+                if (!cit) return part
+                const handleClick = cit.pubId
+                  ? () => onOpenPublication?.(cit.pubId!)
+                  : () => window.open(cit.href!, '_blank', 'noopener,noreferrer')
+                return (
+                  <sup key={j}>
+                    <button
+                      onClick={handleClick}
+                      title={cit.text}
+                      style={{
+                        background: 'none', border: 'none', padding: '0 1px',
+                        cursor: 'pointer', color: adb.blueLight,
+                        fontSize: 9, fontWeight: 700, lineHeight: 1,
+                        textDecoration: 'underline', fontFamily: 'inherit',
+                      }}
+                    >{match[1]}</button>
+                  </sup>
+                )
+              })}
+            </p>
           ))}
 
           {/* Key observations */}
@@ -281,25 +317,39 @@ function InsightPanel({ config, chartData }: { config: ChartConfigType; chartDat
               References
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {citations.map((c, i) => {
-                // Split at the SDMX API path (starts with /api/) to highlight it
-                const sdmxIdx = c.indexOf('/api/v3/')
-                const pre  = sdmxIdx >= 0 ? c.slice(0, sdmxIdx) : c
-                const path = sdmxIdx >= 0 ? c.slice(sdmxIdx) : ''
-                return (
-                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 9, color: adb.blue, fontWeight: 700, flexShrink: 0, minWidth: 18, marginTop: 1 }}>[{i + 1}]</span>
-                    <span style={{ fontSize: 10, color: '#4a7a98', lineHeight: 1.65 }}>
-                      {pre}
-                      {path && (
-                        <span style={{ fontFamily: 'monospace', fontSize: 9, color: '#3a6a88', background: 'rgba(0,125,183,0.08)', padding: '0 3px', borderRadius: 2, wordBreak: 'break-all' }}>
-                          {path}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                )
-              })}
+              {citations.map((c, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 9, color: adb.blue, fontWeight: 700, flexShrink: 0, minWidth: 18, marginTop: 1 }}>[{i + 1}]</span>
+                  <span style={{ fontSize: 10, color: '#4a7a98', lineHeight: 1.65 }}>
+                    {c.text}{' '}
+                    {c.pubId ? (
+                      <button
+                        onClick={() => onOpenPublication?.(c.pubId!)}
+                        style={{
+                          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                          color: adb.blueLight, fontSize: 10, fontWeight: 600,
+                          textDecoration: 'none', fontFamily: 'inherit',
+                        }}
+                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                      >
+                        {c.linkLabel}
+                      </button>
+                    ) : (
+                      <a
+                        href={c.href!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: adb.blueLight, textDecoration: 'none', wordBreak: 'break-all' }}
+                        onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+                        onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+                      >
+                        {c.linkLabel}
+                      </a>
+                    )}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -369,7 +419,7 @@ function detectIntent(q: string): 'explain' | 'chart' {
 }
 
 // ── Main DataExplorer ──────────────────────────────────────────────────────
-export function DataExplorer({ initialQuery = '', onConversation }: { initialQuery?: string; onConversation?: (q: string, a: string) => void }) {
+export function DataExplorer({ initialQuery = '', onConversation, onOpenPublication }: { initialQuery?: string; onConversation?: (q: string, a: string) => void; onOpenPublication?: (pubId: string) => void }) {
   const isMobile = useIsMobile()
   const [query, setQuery]           = useState(initialQuery)
   const [loading, setLoading]       = useState(false)
@@ -745,13 +795,6 @@ export function DataExplorer({ initialQuery = '', onConversation }: { initialQue
                   ))}
                 </select>
               </div>
-              <span style={{
-                fontSize: 9, padding: '2px 7px', borderRadius: 2, fontWeight: 600,
-                letterSpacing: '0.05em', textTransform: 'uppercase',
-                background: dataSource === 'live' ? `${adb.green}22` : `${adb.amber}22`,
-                color: dataSource === 'live' ? adb.green : adb.amber,
-                border: `1px solid ${dataSource === 'live' ? adb.green : adb.amber}44`,
-              }}>{dataSource === 'live' ? 'ADB Live' : 'ADB Schema'}</span>
               <button
                 onClick={exportAsPng}
                 title="Export chart as PNG"
@@ -786,7 +829,7 @@ export function DataExplorer({ initialQuery = '', onConversation }: { initialQue
           </div>
 
           {/* Natural language insight + citations */}
-          <InsightPanel config={config} chartData={chartData} />
+          <InsightPanel config={config} chartData={chartData} onOpenPublication={onOpenPublication} />
 
           {/* Technical meta */}
           <QueryMeta config={config} />
