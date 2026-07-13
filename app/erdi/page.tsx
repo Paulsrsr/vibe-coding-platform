@@ -37,9 +37,9 @@ const DARK: Theme = {
   chartBg: '#09162f', navBg: '#0a1a38',
 }
 const LIGHT: Theme = {
-  bg: '#EEF4FA', card: '#FFFFFF', border: '#C8D8E8', text: '#002569',
-  muted: '#456484', subtle: '#456484', inputBg: '#FFFFFF',
-  chartBg: '#F2F7FB', navBg: '#FFFFFF',
+  bg: '#F0F5FA', card: '#FFFFFF', border: '#DCE8F0', text: '#002569',
+  muted: '#5A7A96', subtle: '#3A5A78', inputBg: '#FFFFFF',
+  chartBg: '#F7FAFD', navBg: '#FFFFFF',
 }
 
 // ── types ──────────────────────────────────────────────────────────────────
@@ -1873,7 +1873,7 @@ export default function ERDIPage() {
   const [homeSearch, setHomeSearch]     = useState('')
   const [pendingQuery, setPendingQuery] = useState('')
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
-  const [isDark, setIsDark] = useState(true)
+  const [isDark, setIsDark] = useState(false)
   const [expandedReasons, setExpandedReasons] = useState<Set<string>>(new Set())
   const [selectedCountry, setSelectedCountry] = useState<string>('PNG')
   const [reportTemplate, setReportTemplate] = useState<'brief' | 'monitor' | 'situation'>('brief')
@@ -2258,9 +2258,9 @@ This report is for internal ADB use only and does not constitute official ADB fo
 
       {/* ── Nav ── */}
       <nav style={{
-        background: isDark ? 'linear-gradient(180deg, #0f2242 0%, #0c1b36 100%)' : 'linear-gradient(180deg, #ffffff 0%, #f4f9ff 100%)',
-        borderBottom: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
-        boxShadow: isDark ? '0 2px 20px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,125,183,0.08)',
+        background: isDark ? 'linear-gradient(180deg, #0f2242 0%, #0c1b36 100%)' : '#FFFFFF',
+        borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
+        boxShadow: isDark ? '0 2px 20px rgba(0,0,0,0.4)' : '0 1px 8px rgba(0,60,120,0.07)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
         {/* Main nav row */}
@@ -2339,7 +2339,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
         {/* Mobile nav links row */}
         {isMobile && (
           <div style={{
-            display: 'flex', borderTop: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
+            display: 'flex', borderTop: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
             overflowX: 'auto', scrollbarWidth: 'none' as React.CSSProperties['scrollbarWidth'],
           }}>
             {(['Home', 'Data Explorer', 'Publications'] as const).map(item => (
@@ -2364,8 +2364,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
           <aside style={{
             width: sidebarCollapsed ? 40 : 260,
             flexShrink: 0,
-            background: isDark ? '#061427' : '#f0f6fc',
-            borderRight: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
+            background: isDark ? '#061427' : '#F7FAFD',
+            borderRight: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
             display: 'flex',
             flexDirection: 'column',
             height: 'calc(100vh - 52px)',
@@ -2379,7 +2379,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
               height: 44, display: 'flex', alignItems: 'center',
               justifyContent: sidebarCollapsed ? 'center' : 'space-between',
               padding: sidebarCollapsed ? '0' : '0 12px',
-              borderBottom: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
+              borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
               flexShrink: 0,
             }}>
               {!sidebarCollapsed && (
@@ -2456,7 +2456,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
         {briefingMode && (
           <div style={{
             position: 'fixed', inset: 0, zIndex: 50,
-            background: isDark ? '#061427' : '#f0f6fc',
+            background: isDark ? '#061427' : '#F0F5FA',
             display: 'flex', flexDirection: 'column',
             fontFamily: adb.font,
           }}>
@@ -2464,8 +2464,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
             <div style={{
               height: 52, flexShrink: 0, display: 'flex', alignItems: 'center',
               justifyContent: 'space-between', padding: '0 20px',
-              background: isDark ? '#0c1b36' : '#ffffff',
-              borderBottom: `1px solid ${isDark ? '#1b3860' : '#c0d4e8'}`,
+              background: isDark ? '#0c1b36' : '#FFFFFF',
+              borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
               boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -2654,17 +2654,21 @@ This report is for internal ADB use only and does not constitute official ADB fo
 
         {/* Hero */}
         <div style={{
-          marginBottom: 24, padding: '20px 24px 22px',
+          marginBottom: 24, padding: '22px 24px 20px',
           background: isDark
             ? 'linear-gradient(135deg, #0c2242 0%, #091b33 60%, #061427 100%)'
-            : 'linear-gradient(135deg, #e4f0fa 0%, #eef5fb 60%, #f4f9ff 100%)',
-          borderRadius: 10, borderLeft: `4px solid ${isDark ? '#007DB7' : '#007DB7'}`,
-          boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,125,183,0.1)',
+            : '#FFFFFF',
+          borderRadius: 10,
+          borderLeft: isDark ? `4px solid ${adb.blue}` : `4px solid ${adb.green}`,
+          boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.35)' : '0 1px 10px rgba(0,60,120,0.08)',
         }}>
-          <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 300, margin: 0, lineHeight: 1.2, color: 'var(--th-text)' }}>Good morning, Cara.</h1>
+          <h1 style={{
+            fontSize: isMobile ? 20 : 26, fontWeight: 300, margin: 0, lineHeight: 1.2,
+            color: isDark ? '#FFFFFF' : adb.green,
+          }}>Good morning, Paul.</h1>
           <div style={{ fontSize: 12, color: 'var(--th-muted)', fontWeight: 300, marginTop: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#8DC63F' }} />
-            Associate Economics Officer · Pacific Department
+            <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: adb.green }} />
+            Economist · Economic Research and Development Impact Division
           </div>
         </div>
 
@@ -2674,11 +2678,11 @@ This report is for internal ADB use only and does not constitute official ADB fo
             <div style={{
               display: 'flex', alignItems: 'stretch', gap: 0,
               background: 'var(--th-input)',
-              border: `1px solid ${aiAnswer || aiLoading ? adb.blue : isDark ? '#1b3860' : '#b0c8de'}`,
+              border: `1.5px solid ${aiAnswer || aiLoading ? adb.blue : isDark ? '#1b3860' : '#C0D6E8'}`,
               borderRadius: 8, overflow: 'hidden', transition: 'all 0.2s',
               boxShadow: aiAnswer || aiLoading
-                ? '0 0 0 3px rgba(0,125,183,0.15), 0 4px 20px rgba(0,0,0,0.25)'
-                : isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 14px rgba(0,125,183,0.1)',
+                ? '0 0 0 3px rgba(0,125,183,0.15), 0 4px 20px rgba(0,0,0,0.12)'
+                : isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 16px rgba(0,80,160,0.08)',
             }}>
               <span style={{ padding: '0 16px', display: 'flex', alignItems: 'center', color: adb.blue, fontSize: 18, flexShrink: 0 }}>✦</span>
               <input
@@ -2721,7 +2725,8 @@ This report is for internal ADB use only and does not constitute official ADB fo
               ]).map(({ label, query }) => (
                 <button key={label} onClick={() => { setPendingQuery(query); setActiveNav('Data Explorer') }} style={{
                   fontSize: 11, color: 'var(--th-muted)', padding: '3px 10px', borderRadius: 12, flexShrink: 0,
-                  border: '1px solid #1e3f5c', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                  border: '1px solid var(--th-border)', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'border-color 0.15s, color 0.15s',
                 }}>{label}</button>
               ))}
             </div>
@@ -3034,17 +3039,17 @@ This report is for internal ADB use only and does not constitute official ADB fo
           {/* Map card */}
           <div style={{
             background: 'var(--th-card)',
-            border: isDark ? '1px solid #1b3860' : '1px solid #b8cfdf',
+            border: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
             borderRadius: 8,
-            boxShadow: isDark ? '0 4px 32px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,125,183,0.08)',
+            boxShadow: isDark ? '0 4px 32px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,60,120,0.06)',
           }}>
             {/* Horizontal country carousel — above map */}
             <div style={{
-              borderBottom: isDark ? '1px solid #1b3860' : '1px solid #b8cfdf',
+              borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
               padding: '12px 14px 14px', position: 'relative',
               background: isDark
                 ? 'linear-gradient(180deg, #0c2242 0%, #0c1b36 100%)'
-                : 'linear-gradient(180deg, #f0f7ff 0%, #e8f2fb 100%)',
+                : '#F7FAFD',
             }}>
               {/* Carousel header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -3282,31 +3287,32 @@ This report is for internal ADB use only and does not constitute official ADB fo
                       onClick={() => setSelectedArticle(article)}
                       style={{
                         background: 'var(--th-card)',
-                        borderTop: isDark ? '1px solid #1a3550' : '1px solid #c8d8e8',
-                        borderRight: isDark ? '1px solid #1a3550' : '1px solid #c8d8e8',
-                        borderBottom: isDark ? '1px solid #1a3550' : '1px solid #c8d8e8',
-                        borderLeft: `3px solid ${article.typeBg}`,
-                        borderRadius: 6,
-                        padding: 16, display: 'flex', flexDirection: 'column', gap: 10,
-                        cursor: 'pointer', transition: 'all 0.15s', height: '100%', boxSizing: 'border-box',
-                        boxShadow: isDark ? '0 2px 12px rgba(0,0,0,0.2)' : '0 1px 8px rgba(0,0,0,0.06)',
+                        border: `1px solid ${isDark ? '#1a3550' : '#dce8f0'}`,
+                        borderRadius: 8, overflow: 'hidden',
+                        display: 'flex', flexDirection: 'column',
+                        cursor: 'pointer', transition: 'box-shadow 0.15s, border-color 0.15s', height: '100%', boxSizing: 'border-box',
+                        boxShadow: isDark ? '0 2px 12px rgba(0,0,0,0.2)' : '0 1px 6px rgba(0,60,120,0.06)',
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = article.typeBg)}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--th-border)')}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,125,183,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = article.typeBg }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = isDark ? '0 2px 12px rgba(0,0,0,0.2)' : '0 1px 6px rgba(0,60,120,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = isDark ? '#1a3550' : '#dce8f0' }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', color: article.typeBg, textTransform: 'uppercase', background: `${article.typeBg}18`, border: `1px solid ${article.typeBg}44`, borderRadius: 20, padding: '2px 10px' }}>{article.type}</span>
-                        <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{article.date}</span>
-                      </div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--th-text)', lineHeight: 1.4 }}>{article.title}</div>
-                      <div style={{ fontSize: 11, color: 'var(--th-muted)', lineHeight: 1.6, flex: 1 }}>{article.body}</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                          {article.sources.map(s => (
-                            <span key={s} style={{ fontSize: 9, color: adb.blueLight, padding: '2px 6px', border: '1px solid var(--th-border)', borderRadius: 3 }}>{s}</span>
-                          ))}
+                      {/* Top accent bar */}
+                      <div style={{ height: 4, background: article.typeBg, flexShrink: 0 }} />
+                      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', color: article.typeBg, textTransform: 'uppercase', background: `${article.typeBg}18`, border: `1px solid ${article.typeBg}44`, borderRadius: 20, padding: '2px 10px' }}>{article.type}</span>
+                          <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{article.date}</span>
                         </div>
-                        <span style={{ fontSize: 11, color: article.typeBg, flexShrink: 0 }}>Read more →</span>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--th-text)', lineHeight: 1.4 }}>{article.title}</div>
+                        <div style={{ fontSize: 11, color: 'var(--th-muted)', lineHeight: 1.6, flex: 1 }}>{article.body}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 8, borderTop: `1px solid ${isDark ? '#1a355020' : '#dce8f060'}` }}>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                            {article.sources.map(s => (
+                              <span key={s} style={{ fontSize: 9, color: isDark ? adb.blueLight : adb.blue, padding: '2px 6px', border: '1px solid var(--th-border)', borderRadius: 3 }}>{s}</span>
+                            ))}
+                          </div>
+                          <span style={{ fontSize: 11, color: adb.blue, flexShrink: 0, fontWeight: 500 }}>Open in Data Explorer →</span>
+                        </div>
                       </div>
                     </div>
                   ))}
