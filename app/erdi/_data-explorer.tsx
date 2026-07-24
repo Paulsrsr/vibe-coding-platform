@@ -936,7 +936,7 @@ export function DataExplorer({ initialQuery = '', onConversation, onOpenPublicat
                   {config.title}
                 </span>
                 <button
-                  onClick={() => { setExplainInPlace(false); setExplainHighlightX(null); setExplainAnswer('') }}
+                  onClick={() => { setExplainInPlace(false); setExplainAnswer('') }}
                   style={{ marginLeft: 'auto', fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: adb.muted, lineHeight: 1 }}
                 >×</button>
               </div>
