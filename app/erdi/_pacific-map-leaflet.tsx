@@ -6,7 +6,7 @@ import { useIsMobile } from './_use-mobile'
 export type MapDot = {
   lat: number; lng: number; color: string; label: string
   name: string; value: string; detail: string; status: string
-  flag?: string; code?: string
+  flag?: string; code?: string; whyPoints?: string[]; query?: string
 }
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
   isDark: boolean
   flyTarget?: { lat: number; lng: number; zoom?: number }
   activeRegion?: string
+  onExplore?: (query: string) => void
 }
 
 const DARK_TILE  = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
@@ -149,7 +150,7 @@ function dotIconHtml(dot: MapDot, index: number): string {
   `
 }
 
-export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegion }: Props) {
+export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegion, onExplore }: Props) {
   const containerRef    = useRef<HTMLDivElement>(null)
   const mapRef          = useRef<LMap | null>(null)
   const tileRef         = useRef<LTileLayer | null>(null)
@@ -161,6 +162,9 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
   const boundsSigRef      = useRef<string>('')   // detect position changes (region switch)
   const isMobile = useIsMobile()
   const [tooltip, setTooltip] = useState<{ dot: MapDot; x: number; y: number } | null>(null)
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  function scheduleHide() { hideTimer.current = setTimeout(() => setTooltip(null), 180) }
+  function cancelHide()   { if (hideTimer.current) clearTimeout(hideTimer.current) }
 
   function resetView() {
     const map = mapRef.current
@@ -197,8 +201,8 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
       current.forEach((dot, i) => {
         const icon = L.divIcon({ className: '', iconSize: [70, 80], iconAnchor: [35, 40], html: dotIconHtml(dot, i) })
         const m = L.marker([dot.lat, dot.lng], { icon, zIndexOffset: 100 })
-        m.on('mouseover', () => { const pt = map.latLngToContainerPoint([dot.lat, dot.lng]); const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 }; setTooltip({ dot, x: pt.x + rect.left, y: pt.y + rect.top }) })
-        m.on('mouseout', () => setTooltip(null))
+        m.on('mouseover', () => { cancelHide(); const pt = map.latLngToContainerPoint([dot.lat, dot.lng]); const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 }; setTooltip({ dot, x: pt.x + rect.left, y: pt.y + rect.top }) })
+        m.on('mouseout', scheduleHide)
         m.addTo(map)
         markersRef.current.push(m)
       })
@@ -237,8 +241,8 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
       dots.forEach((dot, i) => {
         const icon = L.divIcon({ className: '', iconSize: [70, 80], iconAnchor: [35, 40], html: dotIconHtml(dot, i) })
         const m = L.marker([dot.lat, dot.lng], { icon, zIndexOffset: 100 })
-        m.on('mouseover', () => { const pt = map.latLngToContainerPoint([dot.lat, dot.lng]); const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 }; setTooltip({ dot, x: pt.x + rect.left, y: pt.y + rect.top }) })
-        m.on('mouseout', () => setTooltip(null))
+        m.on('mouseover', () => { cancelHide(); const pt = map.latLngToContainerPoint([dot.lat, dot.lng]); const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 }; setTooltip({ dot, x: pt.x + rect.left, y: pt.y + rect.top }) })
+        m.on('mouseout', scheduleHide)
         m.addTo(map)
         markersRef.current.push(m)
       })
@@ -269,7 +273,7 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
 
   return (
     <div style={{ position: 'relative', lineHeight: 0, isolation: 'isolate' }}>
-      <div ref={containerRef} style={{ height: 350, borderRadius: 6, overflow: 'hidden', background: isDark ? '#071828' : '#e8ecf0' }} />
+      <div ref={containerRef} style={{ height: 460, borderRadius: 6, overflow: 'hidden', background: isDark ? '#071828' : '#e8ecf0' }} />
 
       {/* Reset to Pacific view */}
       <button onClick={resetView} title={`Reset view to ${activeRegion ?? 'region'}`} style={{
@@ -288,52 +292,57 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
 
       {/* Hover tooltip — position: fixed so it escapes any parent overflow: hidden */}
       {tooltip && (() => {
-        const CARD_H    = economist ? 295 : 240
+        const hasWhy    = (tooltip.dot.whyPoints?.length ?? 0) > 0
+        const CARD_H    = economist ? (hasWhy ? 380 : 295) : (hasWhy ? 330 : 240)
         const vh        = typeof window !== 'undefined' ? window.innerHeight : 800
         const vw        = typeof window !== 'undefined' ? window.innerWidth  : 1200
         const clampedTop = Math.max(8, Math.min(tooltip.y - CARD_H / 2, vh - CARD_H - 8))
         const flipLeft   = tooltip.x > vw / 2
-        const cardLeft   = isMobile ? 8 : (flipLeft ? Math.max(tooltip.x - 330, 8) : Math.min(tooltip.x + 18, vw - 320))
+        const cardWidth  = 340
+        const cardLeft   = isMobile ? 8 : (flipLeft ? Math.max(tooltip.x - cardWidth - 18, 8) : Math.min(tooltip.x + 18, vw - cardWidth - 8))
         return (
-          <div style={{
-            position: 'fixed',
-            left: cardLeft,
-            top: clampedTop,
-            pointerEvents: 'none', zIndex: 9999,
-            background: 'var(--th-card)',
-            border: `1px solid var(--th-border)`,
-            borderTop: `3px solid ${tooltip.dot.color}`,
-            borderRadius: 10,
-            width: isMobile ? 'calc(100vw - 32px)' : 308,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
-            fontFamily: '"Helvetica Neue",Arial,sans-serif',
-          }}>
+          <div
+            onMouseEnter={cancelHide}
+            onMouseLeave={scheduleHide}
+            style={{
+              position: 'fixed',
+              left: cardLeft,
+              top: clampedTop,
+              pointerEvents: 'auto', zIndex: 9999,
+              background: 'var(--th-card)',
+              border: `1px solid var(--th-border)`,
+              borderTop: `3px solid ${tooltip.dot.color}`,
+              borderRadius: 10,
+              width: isMobile ? 'calc(100vw - 32px)' : cardWidth,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
+              fontFamily: '"Helvetica Neue",Arial,sans-serif',
+            }}>
             {/* Header: flag + name + status badge */}
-            <div style={{ padding: '11px 14px 10px', borderBottom: '1px solid var(--th-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--th-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                 {tooltipFlagUrl(tooltip.dot.code) && (
                   <div style={{ width: 28, height: 20, flexShrink: 0, borderRadius: 2, backgroundImage: `url('${tooltipFlagUrl(tooltip.dot.code)}')`, backgroundSize: 'cover', backgroundPosition: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
                 )}
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--th-text)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tooltip.dot.name}</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--th-text)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tooltip.dot.name}</span>
               </div>
               <span style={{
-                fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 3, flexShrink: 0,
+                fontSize: 8, fontWeight: 700, padding: '3px 7px', borderRadius: 3, flexShrink: 0,
                 background: `${tooltip.dot.color}22`, color: tooltip.dot.color,
                 letterSpacing: '0.07em', textTransform: 'uppercase',
               }}>{tooltip.dot.status}</span>
             </div>
 
             {/* Indicator value */}
-            <div style={{ padding: '9px 14px', borderBottom: '1px solid var(--th-border)' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: tooltip.dot.color, lineHeight: 1, letterSpacing: '-0.5px', marginBottom: 3 }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--th-border)' }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: tooltip.dot.color, lineHeight: 1, letterSpacing: '-0.5px', marginBottom: 4 }}>
                 {tooltip.dot.value}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.3 }}>{tooltip.dot.detail}</div>
+              <div style={{ fontSize: 11, color: 'var(--th-muted)', lineHeight: 1.4 }}>{tooltip.dot.detail}</div>
             </div>
 
             {/* Country stats grid */}
             {stats && (
-              <div style={{ padding: '9px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 8, columnGap: 14, borderBottom: economist ? '1px solid var(--th-border)' : 'none' }}>
+              <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 10, columnGap: 16, borderBottom: '1px solid var(--th-border)' }}>
                 {([
                   { label: 'Population', value: stats.pop },
                   { label: 'Area',       value: stats.area },
@@ -341,18 +350,53 @@ export default function PacificMapLeaflet({ dots, isDark, flyTarget, activeRegio
                   { label: 'Currency',   value: stats.currency },
                 ] as { label: string; value: string }[]).map(({ label, value }) => (
                   <div key={label}>
-                    <div style={{ fontSize: 9, color: 'var(--th-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 2, lineHeight: 1 }}>{label}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--th-text)', lineHeight: 1 }}>{value}</div>
+                    <div style={{ fontSize: 9, color: 'var(--th-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 3, lineHeight: 1 }}>{label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--th-text)', lineHeight: 1 }}>{value}</div>
                   </div>
                 ))}
               </div>
             )}
 
+            {/* Why this happened */}
+            {tooltip.dot.whyPoints && tooltip.dot.whyPoints.length > 0 && (
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--th-border)' }}>
+                <div style={{ fontSize: 9, color: tooltip.dot.color, letterSpacing: '0.07em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 10 }}>Why this happened</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                  {tooltip.dot.whyPoints.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <span style={{ color: tooltip.dot.color, fontWeight: 700, fontSize: 14, lineHeight: 1.3, flexShrink: 0, marginTop: 1 }}>·</span>
+                      <span style={{ fontSize: 11, color: 'var(--th-text)', lineHeight: 1.6 }}>{p}</span>
+                    </div>
+                  ))}
+                </div>
+                {onExplore && tooltip.dot.query && (
+                  <button
+                    onClick={() => onExplore(tooltip.dot.query!)}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '6px 12px',
+                      background: tooltip.dot.color,
+                      border: 'none', borderRadius: 6,
+                      color: '#fff', fontSize: 11, fontWeight: 600,
+                      cursor: 'pointer', letterSpacing: '0.02em',
+                      boxShadow: `0 2px 8px ${tooltip.dot.color}44`,
+                      transition: 'opacity 0.15s',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Explore in Data Explorer →
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Economist */}
             {economist && (
-              <div style={{ padding: '10px 14px 12px', borderTop: '1px solid #1b3860', background: 'rgba(0,125,183,0.10)', borderRadius: '0 0 10px 10px', lineHeight: 1.4 }}>
-                <div style={{ fontSize: 9, color: '#5a9fd4', letterSpacing: '0.07em', textTransform: 'uppercase', fontWeight: 600, lineHeight: 1, marginBottom: 6 }}>Country Economist</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f0f8', lineHeight: 1.3, marginBottom: 4 }}>{economist.name}</div>
+              <div style={{ padding: '12px 16px 14px', background: 'rgba(0,125,183,0.10)', borderRadius: '0 0 10px 10px', lineHeight: 1.4 }}>
+                <div style={{ fontSize: 9, color: '#5a9fd4', letterSpacing: '0.07em', textTransform: 'uppercase', fontWeight: 600, lineHeight: 1, marginBottom: 7 }}>Country Economist</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f0f8', lineHeight: 1.3, marginBottom: 4 }}>{economist.name}</div>
                 <div style={{ fontSize: 11, color: '#4db3e8', lineHeight: 1 }}>{economist.email}</div>
               </div>
             )}

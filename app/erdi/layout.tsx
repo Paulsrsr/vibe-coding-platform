@@ -1,16 +1,15 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'ERDI Intelligence Hub',
 }
 
-// ADB Branding: Ideal Sans (primary typeface) is specified in the CSS font stack.
-// For ADB-issued machines, it is installed by default.
-// To support non-ADB devices, add the licensed web font here:
-//   <link rel="stylesheet" href="<ADB TypeKit / CDN URL for Ideal Sans>" />
-// Contact ADB IT / Brand Management for the licensed web font URL.
-
 export default function ERDILayout({ children }: { children: ReactNode }) {
-  return <>{children}</>
+  // className makes Inter available as a loaded font; the page-level font stack
+  // keeps "Ideal Sans" first so ADB machines with the licensed font use it.
+  return <div className={inter.className}>{children}</div>
 }

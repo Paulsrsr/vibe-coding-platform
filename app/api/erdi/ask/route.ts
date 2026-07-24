@@ -180,6 +180,88 @@ function answerFromContext(question: string, context: string): { answer: string;
   }
 }
 
+const INDICATOR_CONTEXT: Record<string, { what: string; drivers: string; adb: string }> = {
+  'government debt': {
+    what: 'Government Debt as % of GDP measures the stock of public borrowing relative to economic output.',
+    drivers: 'Rising debt typically reflects fiscal deficits driven by infrastructure spending, post-disaster reconstruction, or revenue shortfalls from commodity price shocks. In Pacific SIDS, grant financing and concessional loans from ADB and bilateral partners keep borrowing costs low, but debt sustainability remains a concern for smaller island economies with narrow revenue bases.',
+    adb: 'ADB monitors debt sustainability through Debt Management Performance Assessments and provides budget support under the Pacific Financial Technical Assistance Programme.',
+  },
+  'gdp growth': {
+    what: 'Real GDP Growth measures the annual percentage change in economic output, adjusted for inflation.',
+    drivers: 'In Pacific economies, growth is driven by tourism receipts, commodity exports (LNG, gold, palm oil), remittance inflows, and donor-funded public investment. Cyclone damage, global commodity price swings, and slowdowns in key remittance-source countries (Australia, New Zealand) are the main downside risks.',
+    adb: 'ADB\'s Asian Development Outlook (ADO) provides twice-yearly GDP growth forecasts for all Asia-Pacific economies. The KIDB tracks real GDP growth under the PPL flow.',
+  },
+  'inflation': {
+    what: 'Consumer Price Inflation (CPI) measures the annual percentage change in the average price level of goods and services.',
+    drivers: 'In small open Pacific economies, inflation is predominantly imported — driven by global food and fuel prices. Domestic supply constraints, post-cyclone rebuilding demand, and elevated freight costs amplify imported inflation. Central banks in larger economies (PNG, Fiji) use reserve money targeting and interest rate policy to anchor expectations.',
+    adb: 'ADB tracks CPI inflation via the KIDB PCPI_PC_PP_PT indicator (MFP flow). ADO supplement tables provide annual inflation forecasts.',
+  },
+  'remittance': {
+    what: 'Remittance inflows measure the personal transfers and compensation sent home by workers abroad.',
+    drivers: 'Pacific SIDS are among the most remittance-dependent economies globally. Tonga and Samoa receive remittances exceeding 20% of GDP, primarily from diaspora communities in Australia and New Zealand. Australia\'s Pacific Labour Scheme and Seasonal Worker Programme have been major drivers of recent growth in remittance receipts.',
+    adb: 'ADB tracks remittances under the KIDB GLB flow (BX_TRF_PWKR_CD_DT). The Pacific Economic Monitor includes dedicated remittance analysis each issue.',
+  },
+  'fdi': {
+    what: 'Foreign Direct Investment (FDI) inflows measure cross-border investment in productive capacity — equity, reinvested earnings, and debt instruments.',
+    drivers: 'Pacific FDI is concentrated in mining (PNG), tourism infrastructure (Fiji, Palau), and telecommunications. Chinese investment has grown significantly in infrastructure. Investment climate constraints include land tenure complexity, small domestic markets, and distance from global supply chains.',
+    adb: 'ADB supports FDI facilitation through the Pacific Private Sector Development Initiative and Public-Private Partnership frameworks. KIDB tracks FDI via BX_KLT_DINV_CD_WD (GLB flow).',
+  },
+  'current account': {
+    what: 'The Current Account Balance measures the net flow of goods, services, income, and transfers between an economy and the rest of the world.',
+    drivers: 'Pacific SIDS typically run current account deficits reflecting import dependence for food, fuel, and manufactured goods. Tourism surpluses (Fiji, Palau) and remittance inflows (Tonga, Samoa) partially offset trade deficits. Post-cyclone years see wider deficits due to import surges for reconstruction materials.',
+    adb: 'KIDB tracks current account balance under BN_CAB_XOKA_GD_ZS (GLB flow). ADB\'s annual Key Indicators publication includes balance of payments tables for all DMCs.',
+  },
+  'exchange rate': {
+    what: 'The exchange rate measures the price of one currency in terms of another (here, domestic currency per USD).',
+    drivers: 'Most Pacific SIDS maintain pegged or tightly managed exchange rates to limit imported inflation and support remittance value. PNG\'s kina and Fiji\'s dollar are managed floats. Currency depreciation raises import costs and can widen fiscal deficits through higher external debt servicing.',
+    adb: 'KIDB tracks exchange rates via ENDE_XDC_USD_RATE (MFP flow). ADB provides foreign exchange technical assistance through the Pacific Financial Technical Assistance Centre.',
+  },
+  'unemployment': {
+    what: 'The unemployment rate measures the share of the labour force actively seeking but unable to find employment.',
+    drivers: 'Pacific labour markets are characterised by large informal sectors, subsistence agriculture, and urban-rural migration. Youth unemployment is structurally elevated. Seasonal labour schemes to Australia and New Zealand provide an important safety valve for surplus labour in Samoa, Tonga, and Vanuatu.',
+    adb: 'KIDB tracks unemployment under LUR_PT (PPL flow). ADB\'s Asia-Pacific labour market analysis is published in the Key Indicators annual flagship.',
+  },
+  'household consumption': {
+    what: 'Household Final Consumption Expenditure Growth measures the annual change in spending by households on goods and services.',
+    drivers: 'Consumption growth in Pacific economies tracks remittance flows, tourism-linked income, and public sector wages. Post-cyclone household spending typically falls sharply before recovering as reconstruction wages circulate. In PNG, resource boom spillovers (LNG royalties, contractor wages) have boosted urban consumption.',
+    adb: 'KIDB tracks household consumption growth via NC_HFC_PTX_PS (PPL flow). ADB\'s country poverty assessments include household consumption and welfare analysis.',
+  },
+  'money supply': {
+    what: 'Broad Money (M2) as % of GDP measures the depth of the financial system and the stock of liquid financial assets relative to economic output.',
+    drivers: 'Rising M2/GDP signals financial deepening and expanding credit. In Pacific SIDS, foreign reserves accumulation (from remittances and aid inflows) and central bank liquidity injections drive money supply growth. Rapid M2 growth without matching output growth typically leads to inflationary pressure.',
+    adb: 'KIDB tracks M2/GDP under FM_LBL_MONY_GD_ZS (MFP flow). ADB supports financial sector development through Pacific financial stability assessments.',
+  },
+  'gdp per capita': {
+    what: 'GDP per capita (in local currency) measures average economic output per person, a basic proxy for living standards.',
+    drivers: 'Pacific per-capita income growth reflects a combination of aggregate output performance and demographic change. Population growth (PNG) can dilute per-capita gains even when headline GDP expands. Fiji and Palau, with stronger tourism sectors, have higher per-capita incomes than resource-rich but populous PNG.',
+    adb: 'KIDB tracks GDP per capita via NGDPPC_XDC (PPL flow). ADB\'s annual Key Indicators flags per-capita milestones for all DMCs.',
+  },
+}
+
+function buildChartExplanation(chartTitle: string): string {
+  const t = chartTitle.toLowerCase()
+  let match: typeof INDICATOR_CONTEXT[string] | undefined
+
+  for (const [key, val] of Object.entries(INDICATOR_CONTEXT)) {
+    if (t.includes(key)) { match = val; break }
+  }
+
+  if (!match) {
+    return `This chart tracks economic performance across the selected Pacific economies using ADB Key Indicators Database (KIDB) data. Trends typically reflect a combination of domestic policy choices, external demand conditions, and structural vulnerabilities common to small open economies. Use the Data Explorer to compare across different time periods or add more economies to the view.`
+  }
+
+  return `${match.what}\n\n${match.drivers}\n\n${match.adb}`
+}
+
+function buildGeneralAnswer(q: string): string | null {
+  for (const [key, val] of Object.entries(INDICATOR_CONTEXT)) {
+    if (q.includes(key)) {
+      return `${val.what}\n\n${val.drivers}`
+    }
+  }
+  return null
+}
+
 export async function POST(req: NextRequest) {
   const { question, context } = await req.json()
   if (!question?.trim()) {
@@ -213,27 +295,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ answer: fallback.answer, page: fallback.page })
   }
 
-  // No AI, no context — keyword-match very short simple questions
-  if (question.length > 200) {
-    return NextResponse.json({
-      answer: 'Briefing notes are available without an API key for Pacific Island countries — try: "generate a briefing note for Papua New Guinea", Fiji, Tonga, Samoa, Solomon Islands, or Vanuatu.'
-    })
-  }
-
+  // No AI, no context — try keyword responses or generate from chart data embedded in the question
   const q = question.toLowerCase().trim()
-  let answer = ''
 
   if (q.match(/^(hi|hello|hey|good morning|good afternoon|howdy|greetings)[\s!?.,]*$/)) {
-    answer = "Hello! I'm the ERDI Intelligence Assistant. I can help with economics concepts, ADB data, Pacific SIDS analysis, and more. What would you like to explore?"
-  } else if (q.match(/what (are|can) you do|who are you|what is erdi/)) {
-    answer = "I'm the ERDI Intelligence Assistant — an AI economist for the ERDI Intelligence Hub. Ask me about economic indicators, country analysis, ADB publications, or use the Data Explorer for live charts."
-  } else if (q.match(/what is gdp|define gdp/)) {
-    answer = "GDP (Gross Domestic Product) measures the total value of goods and services produced in an economy. Real GDP growth — adjusted for inflation — is the primary gauge of economic expansion. View GDP growth trends for any economy in the Data Explorer."
-  } else if (q.match(/what is adb|asian development bank/)) {
-    answer = "The Asian Development Bank (ADB) is a multilateral development bank with 68 member countries, headquartered in Manila. It finances infrastructure, social development, and policy reform across Asia and the Pacific. This portal runs on ADB's Key Indicators Database."
-  } else {
-    answer = "I need the AI service to answer this. Please visit erdi-portal.vercel.app for the fully configured version, or add ANTHROPIC_API_KEY to .env.local for local development."
+    return NextResponse.json({ answer: "Hello! I'm the ERDI Intelligence Assistant. I can help with economics concepts, ADB data, Pacific SIDS analysis, and more. What would you like to explore?" })
+  }
+  if (q.match(/what (are|can) you do|who are you|what is erdi/)) {
+    return NextResponse.json({ answer: "I'm the ERDI Intelligence Assistant — an AI economist for the ERDI Intelligence Hub. Ask me about economic indicators, country analysis, ADB publications, or use the Data Explorer for live charts." })
+  }
+  if (q.match(/what is gdp|define gdp/)) {
+    return NextResponse.json({ answer: "GDP (Gross Domestic Product) measures the total value of goods and services produced in an economy. Real GDP growth — adjusted for inflation — is the primary gauge of economic expansion. View GDP growth trends for any economy in the Data Explorer." })
+  }
+  if (q.match(/what is adb|asian development bank/)) {
+    return NextResponse.json({ answer: "The Asian Development Bank (ADB) is a multilateral development bank with 68 member countries, headquartered in Manila. It finances infrastructure, social development, and policy reform across Asia and the Pacific. This portal runs on ADB's Key Indicators Database." })
   }
 
-  return NextResponse.json({ answer })
+  // Chart explain queries — synthesise an answer from indicator knowledge
+  const explainMatch = question.match(/explain the trends shown in:\s*(.+)/i)
+  if (explainMatch) {
+    const title = explainMatch[1].trim()
+    const answer = buildChartExplanation(title)
+    return NextResponse.json({ answer })
+  }
+
+  // General economics questions — answer from indicator knowledge base
+  const generalAnswer = buildGeneralAnswer(q)
+  if (generalAnswer) return NextResponse.json({ answer: generalAnswer })
+
+  return NextResponse.json({
+    answer: 'For a deeper analysis, add ANTHROPIC_API_KEY to .env.local. The Data Explorer and Portfolio Map work fully without an API key using live ADB Data.'
+  })
 }

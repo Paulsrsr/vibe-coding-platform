@@ -18,13 +18,13 @@ const adb = {
   blue: '#007DB7',       // Pantone 299C
   blueLight: '#68C5EA',
   green: '#8DC63F',      // Pantone 376C
-  amber: '#FDB915',      // Pantone 130C
+  amber: '#FDB515',      // Pantone 130C — R=253 G=181 B=21
   red: '#E9532B',        // Pantone 179C
   teal: '#00A5D2',       // Pantone 639C
   white: '#FFFFFF',
   muted: '#7fa8c4',
   // ADB primary typeface; load via licensed CDN (TypeKit) for non-ADB machines
-  font: '"Ideal Sans", "Helvetica Neue", Arial, sans-serif',
+  font: '"Ideal Sans", Inter, "Helvetica Neue", Arial, sans-serif',
 }
 
 type Theme = {
@@ -115,9 +115,9 @@ const FLAG_ISO: Record<string, string> = {
   PRC: 'cn', JPN: 'jp', KOR: 'kr', MON: 'mn', HKG: 'hk',
   KAZ: 'kz', UZB: 'uz', AZE: 'az', GEO: 'ge', ARM: 'am', KGZ: 'kg', TAJ: 'tj',
 }
-function flagUrl(code: string, w = 20): string {
+function flagUrl(code: string): string {
   const iso = FLAG_ISO[code]
-  return iso ? `https://flagcdn.com/w${w}/${iso}.png` : ''
+  return iso ? `https://flagcdn.com/${iso}.svg` : ''
 }
 
 // Short display labels for compact tabs
@@ -203,20 +203,67 @@ function formatIndValue(key: IndKey, val: number | null, ind: typeof INDICATORS[
   return `${val.toFixed(1)}${ind.unit.includes('%') ? '%' : ''}`
 }
 
+const IND_WHY_RE: Partial<Record<IndKey, RegExp>> = {
+  GDP_GROWTH:   /real gdp growth/i,
+  DEBT_GDP:     /government debt/i,
+  REMITTANCES:  /remittance/i,
+  CPI:          /inflation|cpi/i,
+  FDI:          /fdi|foreign direct/i,
+  CURRENT_ACCT: /current account/i,
+  UNEMPLOYMENT: /unemployment/i,
+  CONSUMPTION:  /consumption/i,
+}
+
+const IND_WHY_FALLBACK: Partial<Record<IndKey, string[]>> = {
+  GDP_GROWTH:   ['Pacific growth reflects domestic consumption, public investment, and trade performance relative to major partners Australia and New Zealand.', 'Key downside risks include climate shocks, commodity price swings, and remittance-source labour market conditions.'],
+  DEBT_GDP:     ['Concessional borrowing from ADB, World Bank, and bilateral partners finances infrastructure and social spending. Debt sustainability is monitored via annual IMF Article IV consultations.', 'Post-cyclone emergency financing and COVID-era fiscal packages have elevated debt ratios across most Pacific SIDS.'],
+  CPI:          ['Inflation in small open Pacific economies is predominantly imported through global food and fuel prices, amplified by high freight costs and thin domestic supply.', 'Reserve banks use reserve money targets and lending rate guidance to anchor inflation expectations without over-tightening.'],
+  REMITTANCES:  ['Remittances flow primarily from diaspora communities in Australia and New Zealand, augmented by the Pacific Australia Labour Mobility (PALM) scheme seasonal placements.', 'High remittance dependence creates exposure to labour market conditions in destination countries and exchange rate movements.'],
+  FDI:          ['FDI in the Pacific concentrates in tourism, mining, and telecommunications, with increasing participation from Asian strategic investors.', 'Investment barriers include small market size, land tenure complexity, high logistics costs, and limited skilled labour availability.'],
+  UNEMPLOYMENT: ['Pacific labour markets have large informal and subsistence sectors that are not captured in official unemployment rates.', 'Seasonal labour programmes to Australia and New Zealand provide an important outlet for surplus labour in island economies.'],
+  CURRENT_ACCT: ['Pacific SIDS run persistent current account deficits reflecting import dependence for food, fuel, and manufactured goods.', 'Tourism receipts (Fiji, Palau) and remittances (Tonga, Samoa) are the primary offsets to structural trade deficits.'],
+  CONSUMPTION:  ['Household consumption tracks remittance flows, public sector wages, and post-cyclone reconstruction spending cycles.', 'ADB consumer credit surveys show urban consumption in PNG and Fiji is increasingly driven by financial inclusion gains and mobile banking growth.'],
+}
+
 function buildIndicatorDots(key: IndKey, obs: KidbObs[], economies: string[]): DotEntry[] {
   const ind = INDICATORS[key]
+  const indRe = IND_WHY_RE[key]
+  const fallback = IND_WHY_FALLBACK[key] ?? []
+
   return economies.filter(code => BASE_DOTS[code]).map(code => {
     const o = latest(obs, code)
     const val = o?.value ?? null
     const { color, status } = indicatorColor(key, val)
+    const countryName = ECONOMIES[code] ?? ''
+
+    // Pull article bullet points that match this indicator AND mention this country
+    let whyPoints: string[] = []
+    if (indRe) {
+      for (const article of ARTICLES) {
+        for (const reason of article.reasons) {
+          if (!indRe.test(reason.indicator)) continue
+          const matched = reason.points
+            .filter(p => p.toLowerCase().includes(countryName.toLowerCase()))
+            .map(p => p.replace(/\s*\[.*?\]/g, '').trim())
+            .filter(Boolean)
+          whyPoints = [...whyPoints, ...matched]
+          if (whyPoints.length >= 2) break
+        }
+        if (whyPoints.length >= 2) break
+      }
+    }
+    // Fall back to indicator-level bullets when no country-specific ones found
+    if (whyPoints.length === 0) whyPoints = fallback
     return {
       ...BASE_DOTS[code],
       color,
       value: formatIndValue(key, val, ind),
       detail: `${ind.label} · ${o?.period ?? 'Latest'} · ${ECONOMIES[code]}`,
       status,
-      flag: flagUrl(code, 32),
+      flag: flagUrl(code),
       code,
+      whyPoints: whyPoints.slice(0, 2),
+      query: `${ind.label} for ${countryName}`,
     }
   })
 }
@@ -957,7 +1004,7 @@ RELEVANCE TO ERDI: FBC News is the most reliable source for real-time Fiji econo
   },
 ]
 
-type DotEntry   = { cx: number; cy: number; lat: number; lng: number; color: string; label: string; name: string; value: string; detail: string; status: string; flag?: string; code?: string }
+type DotEntry   = { cx: number; cy: number; lat: number; lng: number; color: string; label: string; name: string; value: string; detail: string; status: string; flag?: string; code?: string; whyPoints?: string[]; query?: string }
 
 
 // Map dots — lat/lng used by Leaflet; cx/cy legacy (SVG only, unused for non-Pacific)
@@ -1176,7 +1223,7 @@ function PacificMap({ dots }: { dots: DotEntry[] }) {
           border: `1px solid ${hoveredDot.color}55`,
           borderLeft: `3px solid ${hoveredDot.color}`,
           borderRadius: 5, padding: '8px 12px',
-          minWidth: 160, maxWidth: 220,
+          minWidth: 200, maxWidth: 300,
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -1189,6 +1236,16 @@ function PacificMap({ dots }: { dots: DotEntry[] }) {
           </div>
           <div style={{ fontSize: 13, fontWeight: 600, color: hoveredDot.color, marginBottom: 3 }}>{hoveredDot.value}</div>
           <div style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.5 }}>{hoveredDot.detail}</div>
+          {hoveredDot.whyPoints && hoveredDot.whyPoints.length > 0 && (
+            <div style={{ marginTop: 7, paddingTop: 7, borderTop: '1px solid var(--th-border)' }}>
+              <div style={{ fontSize: 8, color: hoveredDot.color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5, fontWeight: 700 }}>Why this happened</div>
+              <ul style={{ margin: 0, padding: '0 0 0 12px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {hoveredDot.whyPoints.map((p, i) => (
+                  <li key={i} style={{ fontSize: 10, color: 'var(--th-text)', lineHeight: 1.5 }}>{p}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {hoveredDot.code && ECONOMIST_CONTACTS[hoveredDot.code] && (
             <div style={{ marginTop: 7, paddingTop: 7, borderTop: '1px solid var(--th-border)' }}>
               <div style={{ fontSize: 8, color: 'var(--th-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>Country Economist</div>
@@ -1400,7 +1457,7 @@ function PdfPageViewer({ url, initialPage = 1, searchTerms = [] }: {
 }
 
 // ── publications view ──────────────────────────────────────────────────────
-function PublicationsView({ initialPubId, onOpened }: { initialPubId?: string | null; onOpened?: () => void }) {
+function PublicationsView({ initialPubId, onOpened, isDark }: { initialPubId?: string | null; onOpened?: () => void; isDark: boolean }) {
   const isMobile = useIsMobile()
   const [selected, setSelected] = useState<Publication | null>(null)
   const [pubChat, setPubChat] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string; citation?: PubCitation }>>([])
@@ -1499,203 +1556,258 @@ function PublicationsView({ initialPubId, onOpened }: { initialPubId?: string | 
       <div style={{ display: 'flex', gap: 0, height: 'calc(100vh - 120px)', minHeight: 500 }}>
         {/* Left: publication detail */}
         <div style={{
-          flex: '0 0 340px', display: 'flex', flexDirection: 'column',
+          flex: '0 0 380px', display: 'flex', flexDirection: 'column',
           borderRight: '1px solid var(--th-border)', overflowY: 'auto',
+          background: 'var(--th-card)',
         }}>
-          {/* Back + header */}
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--th-border)', flexShrink: 0 }}>
+          {/* Back link + section label */}
+          <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
             <button
               onClick={() => { setSelected(null); setPubChat([]) }}
               style={{
-                background: 'none', border: 'none', color: adb.blue, fontSize: 12,
-                cursor: 'pointer', padding: 0, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4,
+                background: 'none', border: 'none', color: adb.blue, fontSize: 11,
+                cursor: 'pointer', padding: 0, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4,
               }}
-            >← All Publications</button>
-            {/* Cover */}
-            <div style={{ ...coverStyle(selected), borderRadius: 6, marginBottom: 12 }}>
+            >‹ Publications</button>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--th-text)', marginBottom: 14 }}>Publication</div>
+          </div>
+
+          {/* Cover — full width, no border-radius */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{ ...coverStyle(selected), height: 230, borderRadius: 0 }}>
               <div style={{
-                position: 'absolute', top: 0, right: 0, width: 70, height: 70,
-                background: `${selected.typeBg}1a`, transform: 'translate(18px,-18px) rotate(45deg)',
+                position: 'absolute', top: 0, right: 0, width: 100, height: 100,
+                background: `${selected.typeBg}22`, transform: 'translate(25px,-25px) rotate(45deg)',
               }}/>
               <div style={{
-                position: 'absolute', top: 10, right: 10, background: '#002569',
-                borderRadius: 3, padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: '0.06em',
-              }}>ADB</div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: `${selected.typeBg}cc`, marginBottom: 4 }}>
+                position: 'absolute', bottom: 0, left: 0, width: 65, height: 65,
+                background: `${selected.typeBg}11`, transform: 'translate(-16px,16px) rotate(45deg)',
+              }}/>
+              <div style={{ position: 'relative', zIndex: 1, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: `${selected.typeBg}dd`, marginBottom: 6 }}>
                 {selected.series}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.35, color: '#fff' }}>{selected.title}</div>
+              <div style={{ position: 'relative', zIndex: 1, fontSize: 15, fontWeight: 700, lineHeight: 1.3, color: '#fff' }}>
+                {selected.subtitle || selected.title}
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
-                color: selected.typeBg, background: `${selected.typeBg}18`, padding: '2px 7px', borderRadius: 2,
-              }}>{selected.type}</span>
-              <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{selected.date}</span>
+            {/* ADB badge — bottom-right of cover */}
+            <div style={{
+              position: 'absolute', bottom: 10, right: 10, background: '#002569',
+              borderRadius: 3, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: '0.05em',
+            }}>ADB</div>
+          </div>
+
+          {/* Details below cover */}
+          <div style={{ padding: '18px 20px', flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--th-text)', marginBottom: 10, lineHeight: 1.35 }}>
+              {selected.title}
             </div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--th-text)', marginBottom: 4 }}>{selected.subtitle}</div>
-            <div style={{ fontSize: 11, color: 'var(--th-muted)', lineHeight: 1.6 }}>{selected.abstract}</div>
+            <div style={{ fontSize: 12, color: 'var(--th-muted)', lineHeight: 1.7, marginBottom: 10 }}>
+              {selected.abstract}
+            </div>
             {selected.pages && (
-              <div style={{ fontSize: 10, color: 'var(--th-muted)', marginTop: 8 }}>{selected.pages} pages</div>
+              <div style={{ fontSize: 11, color: 'var(--th-muted)', marginBottom: 16 }}>{selected.pages} pages</div>
             )}
+            {/* Open PDF — outlined button */}
             <a
               href={selected.url} target="_blank" rel="noopener noreferrer"
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 12,
-                padding: '7px 14px', background: adb.blue, borderRadius: 5,
-                color: '#fff', fontSize: 11, fontWeight: 600, textDecoration: 'none',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 18px', border: `1.5px solid ${adb.blue}`,
+                borderRadius: 6, color: adb.blue, fontSize: 12, fontWeight: 500,
+                textDecoration: 'none', background: 'none',
               }}
-            >Open full PDF ↗</a>
-          </div>
-          {/* Suggested questions */}
-          <div style={{ padding: '12px 16px' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--th-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-              Ask about this publication
-            </div>
-            {[
-              `What are the key findings of ${selected.title}?`,
-              `What policy recommendations does it make?`,
-              `How does this relate to Pacific economies?`,
-              `What methodology was used?`,
-            ].map(q => (
-              <button key={q} onClick={() => askPub(q)} style={{
-                display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px',
-                marginBottom: 6, background: 'var(--th-chart)', border: '1px solid var(--th-border)',
-                borderRadius: 5, fontSize: 10.5, color: 'var(--th-text)', cursor: 'pointer',
-                lineHeight: 1.4,
-              }}>{q}</button>
-            ))}
+            >Open PDF <span style={{ fontSize: 11 }}>↗</span></a>
           </div>
         </div>
 
         {/* Right: AI chat */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          {/* Chat header */}
-          <div style={{
-            padding: '12px 16px', borderBottom: '1px solid var(--th-border)',
-            display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
-          }}>
-            <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '2px 8px',
-              borderRadius: 3, textTransform: 'uppercase', background: `${adb.blue}20`, color: adb.blue,
-            }}>Publications</span>
-            <span style={{ fontSize: 12, color: 'var(--th-muted)' }}>Ask anything about this publication</span>
-          </div>
-
-          {/* Messages */}
-          <div ref={pubMessagesRef} style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-            {pubChat.length === 0 && (
-              <div style={{ textAlign: 'center', color: 'var(--th-muted)', fontSize: 12, marginTop: 40 }}>
-                Use the suggested questions on the left, or type your own below.
-              </div>
-            )}
-            {pubChat.map((m, idx) => (
-              <div key={m.id}
-                ref={m.role === 'assistant' && idx === pubChat.length - 1 ? pubResponseTopRef : undefined}
-                style={{
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
-                  marginBottom: 12,
-                }}>
-                <div style={{
-                  maxWidth: '85%', padding: '9px 13px', borderRadius: 10,
-                  background: m.role === 'user' ? adb.blue : 'var(--th-card)',
-                  color: m.role === 'user' ? '#fff' : 'var(--th-text)',
-                  border: m.role === 'user' ? 'none' : '1px solid var(--th-border)',
-                  fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap',
-                }}>
-                  {m.content || (m.role === 'assistant' && pubLoading ? (
-                    <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                      {[0,1,2].map(i => (
-                        <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: adb.blue, display: 'inline-block', animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />
-                      ))}
-                    </span>
-                  ) : m.content)}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--th-bg)' }}>
+          {/* Messages area */}
+          <div ref={pubMessagesRef} style={{ flex: 1, overflowY: 'auto' }}>
+            {pubChat.length === 0 ? (
+              // Empty state
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                {/* Centered prompt */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 15, color: 'var(--th-muted)', fontWeight: 400 }}>Ask anything about this publication</span>
                 </div>
-                {m.role === 'assistant' && m.citation && m.content && (
-                  <div style={{
-                    maxWidth: '85%', marginTop: 6,
-                    border: '1px solid var(--th-border)', borderRadius: 8,
-                    background: 'var(--th-chart)', overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      padding: '7px 12px', borderBottom: '1px solid var(--th-border)',
-                      display: 'flex', alignItems: 'center', gap: 6,
-                    }}>
-                      <span style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
-                        textTransform: 'uppercase', color: '#007DB7',
-                        background: '#007DB71a', padding: '2px 6px', borderRadius: 3,
-                      }}>Source</span>
-                      <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{m.citation.type} · {m.citation.date}</span>
-                      {m.citation.pages && (
-                        <span style={{ fontSize: 10, color: 'var(--th-muted)', marginLeft: 'auto' }}>{m.citation.pages} pp.</span>
-                      )}
-                    </div>
-                    <div style={{ padding: '8px 12px' }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', marginBottom: 2 }}>
-                        {m.citation.title}
-                      </div>
-                      {m.citation.subtitle && (
-                        <div style={{ fontSize: 10, color: 'var(--th-muted)', marginBottom: 6 }}>{m.citation.subtitle}</div>
-                      )}
-                      {(m.citation.pdfUrl ?? m.citation.url) && (
-                        <button
-                          onClick={() => setPdfPreview({
-                            url: m.citation!.pdfUrl ?? m.citation!.url ?? '',
-                            page: m.citation!.keyPage,
-                            title: m.citation!.title,
-                            subtitle: m.citation!.subtitle,
-                            // Include the user's question (words that appear verbatim in PDF) + AI answer (for numbers)
-                            searchText: (pubChat[idx - 1]?.content ?? '') + ' ' + m.content,
-                          })}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                            fontSize: 10, fontWeight: 600, color: '#007DB7',
-                            padding: '4px 10px', background: '#007DB714',
-                            borderRadius: 4, border: '1px solid #007DB730',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          ↗ View Publication
-                          {m.citation.keyPage && (
-                            <span style={{ opacity: 0.7 }}>· p. {m.citation.keyPage}</span>
+                {/* Suggested question rows */}
+                <div style={{ borderTop: `1px solid ${isDark ? '#1b3860' : '#e8eef4'}` }}>
+                  {[
+                    'What are the key findings of this document?',
+                    'What policy recommendations does it make?',
+                    'How does this relate to Pacific economies?',
+                  ].map((q, i, arr) => (
+                    <button
+                      key={q}
+                      onClick={() => askPub(q)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: '100%', padding: '18px 28px',
+                        borderBottom: i < arr.length - 1 ? `1px solid ${isDark ? '#1b3860' : '#e8eef4'}` : 'none',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--th-text)', fontSize: 13.5, textAlign: 'left',
+                        fontFamily: 'inherit',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = isDark ? '#0a1a38' : '#F5F9FD')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      <span>{q}</span>
+                      <span style={{ fontSize: 20, color: adb.blue, flexShrink: 0, marginLeft: 16, fontWeight: 300 }}>+</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // Chat messages
+              <div style={{ padding: '28px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {pubChat.map((m, idx) => (
+                  <div
+                    key={m.id}
+                    ref={m.role === 'assistant' && idx === pubChat.length - 1 ? pubResponseTopRef : undefined}
+                    style={{
+                      display: 'flex', gap: 12,
+                      flexDirection: m.role === 'user' ? 'row-reverse' : 'row',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    {/* Avatar */}
+                    {m.role === 'user' ? (
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                        background: adb.blue, color: '#fff', fontSize: 11, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>CT</div>
+                    ) : (
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                        background: isDark ? '#1b3860' : '#EBF4FC',
+                        border: `1px solid ${isDark ? '#1b3860' : '#C8DCEA'}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 14, color: adb.blue,
+                      }}>✦</div>
+                    )}
+
+                    {/* Bubble / content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {m.role === 'user' ? (
+                        <div style={{
+                          display: 'inline-block', float: 'right',
+                          background: isDark ? '#1a2d51' : '#EEF3F8',
+                          border: `1px solid ${isDark ? '#1b3860' : '#D8E6F0'}`,
+                          padding: '10px 15px', borderRadius: '14px 14px 4px 14px',
+                          fontSize: 13, color: 'var(--th-text)', lineHeight: 1.55,
+                          maxWidth: '80%',
+                        }}>{m.content}</div>
+                      ) : (
+                        <div style={{ clear: 'both' }}>
+                          {!m.content && pubLoading ? (
+                            // Spinner loading state
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                              <div style={{
+                                width: 22, height: 22, borderRadius: '50%',
+                                border: `2.5px solid ${isDark ? '#1b3860' : '#C8DCEA'}`,
+                                borderTopColor: adb.blue,
+                                animation: 'spin 0.75s linear infinite',
+                              }}/>
+                              <span style={{ fontSize: 12, color: 'var(--th-muted)' }}>Thinking…</span>
+                            </div>
+                          ) : (
+                            <>
+                              {/* Response text */}
+                              <div style={{ fontSize: 13.5, color: 'var(--th-text)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+                                {m.content}
+                              </div>
+
+                              {m.citation && m.content && (
+                                <div style={{ marginTop: 14 }}>
+                                  {/* Inline source pill */}
+                                  <button
+                                    onClick={() => setPdfPreview({
+                                      url: m.citation!.pdfUrl ?? m.citation!.url ?? '',
+                                      page: m.citation!.keyPage,
+                                      title: m.citation!.title,
+                                      subtitle: m.citation!.subtitle,
+                                      searchText: (pubChat[idx - 1]?.content ?? '') + ' ' + m.content,
+                                    })}
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                                      fontSize: 10.5, color: adb.blue,
+                                      background: isDark ? `${adb.blue}15` : `${adb.blue}0E`,
+                                      border: `1px solid ${adb.blue}30`,
+                                      borderRadius: 20, padding: '2px 9px',
+                                      cursor: 'pointer', fontWeight: 400,
+                                    }}
+                                  >adb.org ↗</button>
+
+                                  {/* Used N sources */}
+                                  <div style={{ marginTop: 10, fontSize: 12, color: adb.blue, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    Used {m.citation.pages ? '2' : '1'} sources ▾
+                                  </div>
+
+                                  {/* Action icons */}
+                                  <div style={{ display: 'flex', gap: 18, marginTop: 12 }}>
+                                    {[
+                                      { icon: '⎘', label: 'Copy', action: () => navigator.clipboard?.writeText(m.content) },
+                                      { icon: '👍', label: 'Helpful', action: () => {} },
+                                      { icon: '👎', label: 'Not helpful', action: () => {} },
+                                      { icon: '⬇', label: 'Download', action: () => {} },
+                                    ].map(({ icon, label, action }) => (
+                                      <button key={label} onClick={action} title={label} style={{
+                                        background: 'none', border: 'none', cursor: 'pointer',
+                                        color: 'var(--th-muted)', fontSize: 15, padding: 0,
+                                      }}>{icon}</button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
                           )}
-                        </button>
+                        </div>
                       )}
                     </div>
                   </div>
-                )}
+                ))}
               </div>
-            ))}
+            )}
           </div>
 
-          {/* Input */}
+          {/* Input — "Follow up with a question" */}
           <div style={{
-            padding: '12px 16px', borderTop: '1px solid var(--th-border)',
-            display: 'flex', gap: 8, flexShrink: 0,
+            padding: '12px 20px 16px', borderTop: `1px solid ${isDark ? '#1b3860' : '#e8eef4'}`,
+            flexShrink: 0, background: 'var(--th-card)',
           }}>
-            <input
-              value={pubInput}
-              onChange={e => setPubInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askPub(pubInput) } }}
-              placeholder="Ask a question about this publication…"
-              style={{
-                flex: 1, padding: '9px 12px', borderRadius: 7,
-                border: '1px solid var(--th-border)', background: 'var(--th-chart)',
-                color: 'var(--th-text)', fontSize: 12, outline: 'none',
-              }}
-            />
-            <button
-              onClick={() => askPub(pubInput)}
-              disabled={pubLoading || !pubInput.trim()}
-              style={{
-                padding: '9px 16px', background: adb.blue, border: 'none',
-                borderRadius: 7, color: '#fff', fontSize: 12, fontWeight: 600,
-                cursor: pubLoading || !pubInput.trim() ? 'default' : 'pointer',
-                opacity: pubLoading || !pubInput.trim() ? 0.5 : 1,
-              }}
-            >Ask</button>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--th-bg)',
+              border: `1px solid ${isDark ? '#1b3860' : '#C8DCEA'}`,
+              borderRadius: 10, padding: '6px 6px 6px 16px',
+            }}>
+              <input
+                value={pubInput}
+                onChange={e => setPubInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askPub(pubInput) } }}
+                placeholder="Follow up with a question"
+                style={{
+                  flex: 1, background: 'none', border: 'none', outline: 'none',
+                  color: 'var(--th-text)', fontSize: 13, fontFamily: 'inherit',
+                }}
+              />
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--th-muted)', fontSize: 17, padding: '0 4px', lineHeight: 1 }} title="Attach">📎</button>
+              <button
+                onClick={() => askPub(pubInput)}
+                disabled={pubLoading || !pubInput.trim()}
+                style={{
+                  width: 34, height: 34, borderRadius: '50%', border: 'none',
+                  background: pubInput.trim() ? adb.blue : (isDark ? '#1b3860' : '#C8DCE8'),
+                  color: '#fff', fontSize: 16, fontWeight: 700,
+                  cursor: pubLoading || !pubInput.trim() ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, transition: 'background 0.2s',
+                }}
+              >↑</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1779,84 +1891,91 @@ function PublicationsView({ initialPubId, onOpened }: { initialPubId?: string | 
 
   const PubCard = ({ pub }: { pub: Publication }) => (
     <div
-      key={pub.id}
       onClick={() => { setSelected(pub); setPubChat([]) }}
       style={{
         background: 'var(--th-card)', border: '1px solid var(--th-border)',
-        borderRadius: 6, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        cursor: 'pointer', transition: 'border-color 0.15s, transform 0.15s',
+        borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        cursor: 'pointer', transition: 'box-shadow 0.15s, transform 0.15s',
+        boxShadow: isDark ? 'none' : '0 1px 4px rgba(0,40,100,0.06)',
       }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = pub.typeBg
+        (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,60,120,0.12)'
         ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'var(--th-border)'
+        (e.currentTarget as HTMLElement).style.boxShadow = isDark ? 'none' : '0 1px 4px rgba(0,40,100,0.06)'
         ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
       }}
     >
-      <div style={coverStyle(pub)}>
+      {/* Cover */}
+      <div style={{ ...coverStyle(pub), height: 110, borderRadius: 0, position: 'relative' }}>
         <div style={{
-          position: 'absolute', top: 0, right: 0, width: 80, height: 80,
-          background: `${pub.typeBg}1a`, transform: 'translate(20px,-20px) rotate(45deg)',
+          position: 'absolute', top: 0, right: 0, width: 90, height: 90,
+          background: `${pub.typeBg}22`, transform: 'translate(22px,-22px) rotate(45deg)',
         }}/>
         <div style={{
-          position: 'absolute', top: 10, right: 10, background: '#002569',
-          borderRadius: 3, padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: '0.06em',
+          position: 'absolute', bottom: 0, left: 0, width: 55, height: 55,
+          background: `${pub.typeBg}11`, transform: 'translate(-14px,14px) rotate(45deg)',
+        }}/>
+        {/* ADB badge — bottom right */}
+        <div style={{
+          position: 'absolute', bottom: 10, right: 10, background: '#002569',
+          borderRadius: 3, padding: '3px 7px', fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: '0.05em',
         }}>{mediaPubs.includes(pub) ? 'MEDIA' : 'ADB'}</div>
-        <div style={{ fontSize: 8.5, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: `${pub.typeBg}cc`, marginBottom: 5 }}>{pub.series}</div>
-        <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.35, color: '#fff' }}>{pub.title}</div>
       </div>
-      <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+      {/* Body */}
+      <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+        {/* Badge + date */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
-            color: pub.typeBg, background: `${pub.typeBg}18`, padding: '2px 7px', borderRadius: 2,
+            fontSize: 10, fontWeight: 500,
+            color: pub.typeBg, border: `1px solid ${pub.typeBg}55`,
+            padding: '2px 9px', borderRadius: 20, background: 'none',
           }}>{pub.type}</span>
-          <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.date}</span>
+          <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{pub.date}</span>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--th-muted)', fontStyle: 'italic', lineHeight: 1.4 }}>{pub.subtitle}</div>
-        <div style={{ fontSize: 10.5, color: 'var(--th-muted)', lineHeight: 1.65, flex: 1 }}>{pub.abstract}</div>
+        {/* Title */}
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--th-text)', lineHeight: 1.35 }}>{pub.title}</div>
+        {/* Abstract */}
+        <div style={{ fontSize: 11, color: 'var(--th-muted)', lineHeight: 1.65, flex: 1 }}>{pub.abstract}</div>
+        {/* Footer */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          borderTop: '1px solid var(--th-border)', paddingTop: 8, marginTop: 4,
+          borderTop: '1px solid var(--th-border)', paddingTop: 9, marginTop: 2,
         }}>
-          {pub.pages ? <span style={{ fontSize: 9.5, color: 'var(--th-muted)' }}>{pub.pages} pages</span> : <span />}
-          <span style={{ fontSize: 10.5, color: pub.typeBg }}>Open & Chat →</span>
+          {pub.pages ? <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{pub.pages} pages</span> : <span />}
+          <span style={{ fontSize: 11, color: adb.blue, fontWeight: 500 }}>Explore ›</span>
         </div>
       </div>
     </div>
   )
 
   return (
-    <div style={{ padding: '8px 0 40px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 500 }}>ADB Publications</h2>
-        <div style={{ fontSize: 11, color: 'var(--th-muted)' }}>
-          Click any publication to read and ask questions with AI
-        </div>
+    <div style={{ padding: '8px 0 48px' }}>
+      {/* Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 18, fontSize: 12 }}>
+        <span style={{ color: adb.blue, cursor: 'pointer' }}>Home</span>
+        <span style={{ color: 'var(--th-muted)' }}>›</span>
+        <span style={{ color: 'var(--th-muted)' }}>Publications</span>
       </div>
+      {/* Heading */}
+      <h1 style={{ margin: '0 0 28px', fontSize: 30, fontWeight: 700, color: 'var(--th-text)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>Publications</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+      {/* ADB publications grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
         {adbPubs.map(pub => <PubCard key={pub.id} pub={pub} />)}
       </div>
 
-      <div style={{
-        margin: '32px 0 16px', display: 'flex', alignItems: 'center', gap: 12,
-      }}>
-        <div style={{ flex: 1, height: 1, background: 'var(--th-border)' }} />
-        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--th-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>
-          Pacific Media Sources
-        </span>
+      {/* External sources section */}
+      <div style={{ margin: '40px 0 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--th-text)', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
+          Selected External Sources
+        </h2>
         <div style={{ flex: 1, height: 1, background: 'var(--th-border)' }} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
         {mediaPubs.map(pub => <PubCard key={pub.id} pub={pub} />)}
-      </div>
-
-      <div style={{ marginTop: 20, fontSize: 10.5, color: 'var(--th-muted)' }}>
-        ADB publications at <span style={{ color: adb.blueLight }}>adb.org/publications</span>. Media sources link to their respective homepages.
       </div>
     </div>
   )
@@ -1884,6 +2003,7 @@ export default function ERDIPage() {
   const [briefPickerOpen, setBriefPickerOpen] = useState(false)
   const [briefingFilter, setBriefingFilter] = useState<string>('All')
   const [briefingPage, setBriefingPage] = useState(0)
+  const [hoveredArticle, setHoveredArticle] = useState<string | null>(null)
   const [briefingMode, setBriefingMode] = useState(false)
   const [briefingContent, setBriefingContent] = useState('')
   const [briefingLoading, setBriefingLoading] = useState(false)
@@ -2251,14 +2371,10 @@ This report is for internal ADB use only and does not constitute official ADB fo
       fontFamily: adb.font, minHeight: '100vh',
     } as React.CSSProperties}>
 
-      {/* ── Top brand bar ── */}
-      <div style={{
-        background: adb.blue, height: 3, width: '100%',
-      }} />
-
-      {/* ── Nav ── */}
+      {/* ── Nav (brand stripe as persistent top border) ── */}
       <nav style={{
         background: isDark ? 'linear-gradient(180deg, #0f2242 0%, #0c1b36 100%)' : '#FFFFFF',
+        borderTop: `3px solid ${adb.blue}`,
         borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
         boxShadow: isDark ? '0 2px 20px rgba(0,0,0,0.4)' : '0 1px 8px rgba(0,60,120,0.07)',
         position: 'sticky', top: 0, zIndex: 10,
@@ -2266,11 +2382,15 @@ This report is for internal ADB use only and does not constitute official ADB fo
         {/* Main nav row */}
         <div style={{ padding: `0 ${isMobile ? '16px' : '24px'}`, display: 'flex', alignItems: 'center', height: 52 }}>
           {/* ADB Logo */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            marginRight: isMobile ? 12 : 24, paddingRight: isMobile ? 12 : 24,
-            borderRight: '1px solid var(--th-border)', flexShrink: 0,
-          }}>
+          <div
+            onClick={() => setActiveNav('Home')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              marginRight: isMobile ? 12 : 24, paddingRight: isMobile ? 12 : 24,
+              borderRight: '1px solid var(--th-border)', flexShrink: 0,
+              cursor: 'pointer',
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/adb-logo.svg" alt="Asian Development Bank" style={{ height: isMobile ? 28 : 36, width: 'auto', display: 'block' }} />
           </div>
@@ -2305,34 +2425,32 @@ This report is for internal ADB use only and does not constitute official ADB fo
           {isMobile && <div style={{ flex: 1 }} />}
 
           {/* Right actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
+            {/* Light/dark toggle */}
             <button
               onClick={() => setIsDark(d => !d)}
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               style={{
-                background: 'none', border: '1px solid var(--th-border)',
-                borderRadius: 4, color: 'var(--th-muted)', cursor: 'pointer',
-                width: 30, height: 30, fontSize: 13,
+                background: 'none', border: 'none',
+                color: 'var(--th-muted)', cursor: 'pointer',
+                width: 30, height: 30, fontSize: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
-            >{isDark ? '☀' : '☾'}</button>
-            {!isMobile && <button style={{ background: 'none', border: 'none', color: 'var(--th-muted)', cursor: 'pointer', fontSize: 15 }}>🔔</button>}
-            {!isMobile && <div style={{ width: 1, height: 20, background: 'var(--th-border)' }} />}
+            >{isDark ? '☀' : '☀'}</button>
+            {/* Bell */}
+            {!isMobile && <button style={{ background: 'none', border: 'none', color: 'var(--th-muted)', cursor: 'pointer', fontSize: 15, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🔔</button>}
+            {/* User avatar — click to sign out */}
             <button
               onClick={logout}
               title="Sign out"
               style={{
-                background: 'none', border: '1px solid var(--th-border)',
-                borderRadius: 4, color: 'var(--th-muted)', cursor: 'pointer',
-                padding: '0 10px', height: 30, fontSize: 11, fontWeight: 500,
-                fontFamily: adb.font, display: 'flex', alignItems: 'center', gap: 5,
-                transition: 'color 0.15s, border-color 0.15s',
+                width: 34, height: 34, borderRadius: '50%',
+                background: adb.blue, border: 'none', color: '#FFFFFF',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: adb.font, letterSpacing: '0.02em',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E9532B'; (e.currentTarget as HTMLElement).style.borderColor = '#E9532B55' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--th-muted)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--th-border)' }}
-            >
-              <span style={{ fontSize: 12 }}>↩</span>{!isMobile && ' Sign out'}
-            </button>
+            >CT</button>
           </div>
         </div>
 
@@ -2359,73 +2477,69 @@ This report is for internal ADB use only and does not constitute official ADB fo
       {/* ── Content area: sidebar + main ── */}
       <div style={{ display: 'flex', flex: 1 }}>
 
-        {/* ── Global Conversation Sidebar ── */}
-        {!briefingMode && (activeNav === 'Home' || activeNav === 'Data Explorer') && (
+        {/* ── Data Explorer Sidebar ── */}
+        {!briefingMode && activeNav === 'Data Explorer' && (
           <aside style={{
-            width: sidebarCollapsed ? 40 : 260,
+            width: sidebarCollapsed ? 56 : 220,
             flexShrink: 0,
-            background: isDark ? '#061427' : '#F7FAFD',
+            background: isDark ? '#061427' : '#FFFFFF',
             borderRight: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
             display: 'flex',
             flexDirection: 'column',
-            height: 'calc(100vh - 52px)',
+            height: 'calc(100vh - 55px)',
             position: 'sticky',
-            top: 52,
+            top: 55,
             transition: 'width 0.2s',
             overflow: 'hidden',
           }}>
-            {/* Sidebar header */}
+            {/* Icon row */}
             <div style={{
-              height: 44, display: 'flex', alignItems: 'center',
-              justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-              padding: sidebarCollapsed ? '0' : '0 12px',
+              display: 'flex', flexDirection: 'column', alignItems: sidebarCollapsed ? 'center' : 'flex-start',
+              padding: sidebarCollapsed ? '12px 0' : '12px 8px', gap: 4, flexShrink: 0,
               borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
-              flexShrink: 0,
             }}>
-              {!sidebarCollapsed && (
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--th-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                  History
-                </span>
-              )}
               <button
                 onClick={() => setSidebarCollapsed(c => !c)}
-                title={sidebarCollapsed ? 'Expand history' : 'Collapse history'}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'var(--th-muted)', fontSize: 14, padding: 4,
-                  display: 'flex', alignItems: 'center',
-                }}
+                title={sidebarCollapsed ? 'Expand' : 'Collapse'}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--th-muted)', padding: '6px 8px', borderRadius: 4, fontSize: 13, display: 'flex', alignItems: 'center', width: sidebarCollapsed ? 'auto' : '100%' }}
               >{sidebarCollapsed ? '›' : '‹'}</button>
+              {/* New chat */}
+              <button title="New chat" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--th-muted)', padding: '6px 8px', borderRadius: 4, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, width: sidebarCollapsed ? 'auto' : '100%' }}>
+                ✏
+                {!sidebarCollapsed && <span style={{ fontSize: 12 }}>New chat</span>}
+              </button>
+              {/* Chats */}
+              <button title="Chats" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--th-muted)', padding: '6px 8px', borderRadius: 4, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, width: sidebarCollapsed ? 'auto' : '100%' }}>
+                💬
+                {!sidebarCollapsed && <span style={{ fontSize: 12 }}>Chats</span>}
+              </button>
             </div>
 
-            {/* Conversation list */}
+            {/* Search + Recent Chats */}
             {!sidebarCollapsed && (
-              <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px' }}>
+                <input
+                  placeholder="Search Chats"
+                  style={{
+                    width: '100%', boxSizing: 'border-box', padding: '7px 10px',
+                    border: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
+                    borderRadius: 6, fontSize: 12, background: isDark ? '#0a1a38' : '#F7FAFD',
+                    color: 'var(--th-text)', outline: 'none', fontFamily: adb.font, marginBottom: 14,
+                  }}
+                />
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--th-text)', marginBottom: 8 }}>Recent Chats</div>
                 {globalHistory.length === 0 ? (
-                  <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--th-muted)', fontSize: 11 }}>
-                    Questions you ask will appear here
-                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--th-muted)', padding: '4px 0' }}>No chats yet</div>
                 ) : (
                   [...globalHistory].reverse().map(item => (
-                    <div key={item.id} style={{
-                      padding: '8px 12px',
-                      borderBottom: `1px solid ${isDark ? '#1b386030' : '#c0d4e820'}`,
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
-                          padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase',
-                          background: `${adb.blue}20`,
-                          color: adb.blue,
-                        }}>Publications</span>
-                        <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{item.ts}</span>
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', marginBottom: 3, lineHeight: 1.4 }}>
-                        {item.question.length > 80 ? item.question.slice(0, 80) + '…' : item.question}
-                      </div>
-                      <div style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.4 }}>
-                        {item.answer.length > 120 ? item.answer.slice(0, 120) + '…' : item.answer}
-                      </div>
+                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px', borderRadius: 4, cursor: 'pointer' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = isDark ? '#ffffff10' : '#F0F5FA')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      <span style={{ fontSize: 11, color: 'var(--th-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {item.question.length > 28 ? item.question.slice(0, 28) + '…' : item.question}
+                      </span>
+                      <span style={{ fontSize: 14, color: 'var(--th-muted)', marginLeft: 4, flexShrink: 0 }}>⋯</span>
                     </div>
                   ))
                 )}
@@ -2438,15 +2552,15 @@ This report is for internal ADB use only and does not constitute official ADB fo
       {/* ── Main ── */}
       <main style={{
         flex: 1,
-        maxWidth: briefingMode ? '100%' : (!briefingMode && (activeNav === 'Home' || activeNav === 'Data Explorer') && !sidebarCollapsed) ? 'calc(900px)' : 900,
+        maxWidth: briefingMode ? '100%' : activeNav === 'Home' ? 860 : 900,
         margin: '0 auto',
-        padding: briefingMode ? '0' : '24px 20px',
+        padding: briefingMode ? '0' : activeNav === 'Home' ? '40px 32px 24px' : '24px 20px',
         minWidth: 0,
       }}>
 
         {/* Data Explorer view */}
         {activeNav === 'Data Explorer' && <DataExplorer initialQuery={pendingQuery} onConversation={(q, a) => setGlobalHistory(h => [...h, { id: `h-${Date.now()}`, source: 'explorer', question: q, answer: a, ts: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])} onOpenPublication={id => { setActiveNav('Publications'); setPubToOpen(id) }} />}
-        {activeNav === 'Publications' && <PublicationsView initialPubId={pubToOpen} onOpened={() => setPubToOpen(null)} />}
+        {activeNav === 'Publications' && <PublicationsView initialPubId={pubToOpen} onOpened={() => setPubToOpen(null)} isDark={isDark} />}
         {activeNav !== 'Home' && activeNav !== 'Data Explorer' && activeNav !== 'Publications' && (
           <div style={{ padding: '48px 0', textAlign: 'center', color: adb.muted, fontSize: 13 }}>
             {activeNav} — coming soon
@@ -2653,99 +2767,99 @@ This report is for internal ADB use only and does not constitute official ADB fo
         {activeNav === 'Home' && !briefingMode && (<>
 
         {/* Hero */}
-        <div style={{
-          marginBottom: 24, padding: '22px 24px 20px',
-          background: isDark
-            ? 'linear-gradient(135deg, #0c2242 0%, #091b33 60%, #061427 100%)'
-            : '#FFFFFF',
-          borderRadius: 10,
-          borderLeft: isDark ? `4px solid ${adb.blue}` : `4px solid ${adb.green}`,
-          boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.35)' : '0 1px 10px rgba(0,60,120,0.08)',
-        }}>
+        <div style={{ marginBottom: 28 }}>
           <h1 style={{
-            fontSize: isMobile ? 20 : 26, fontWeight: 300, margin: 0, lineHeight: 1.2,
-            color: isDark ? '#FFFFFF' : adb.green,
-          }}>Good morning, Paul.</h1>
-          <div style={{ fontSize: 12, color: 'var(--th-muted)', fontWeight: 300, marginTop: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: adb.green }} />
-            Economist · Economic Research and Development Impact Division
+            fontSize: isMobile ? 24 : 34, fontWeight: 700, margin: '0 0 6px',
+            color: isDark ? adb.green : adb.green, lineHeight: 1.15,
+          }}>Good morning, Cara</h1>
+          <div style={{ fontSize: 14, color: 'var(--th-text)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            Associate Economics Officer
+            <span style={{ color: 'var(--th-muted)', fontWeight: 400 }}>•</span>
+            Pacific Department
           </div>
         </div>
 
         {/* AI Search */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 28 }}>
           <form onSubmit={handleHomeSearch}>
             <div style={{
-              display: 'flex', alignItems: 'stretch', gap: 0,
-              background: 'var(--th-input)',
-              border: `1.5px solid ${aiAnswer || aiLoading ? adb.blue : isDark ? '#1b3860' : '#C0D6E8'}`,
-              borderRadius: 8, overflow: 'hidden', transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', gap: 0,
+              background: 'var(--th-card)',
+              border: `1.5px solid ${aiAnswer || aiLoading ? adb.blue : isDark ? '#1b3860' : '#D0E0EC'}`,
+              borderRadius: 14, overflow: 'hidden', transition: 'all 0.2s',
               boxShadow: aiAnswer || aiLoading
-                ? '0 0 0 3px rgba(0,125,183,0.15), 0 4px 20px rgba(0,0,0,0.12)'
-                : isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 16px rgba(0,80,160,0.08)',
+                ? '0 0 0 3px rgba(0,125,183,0.12)'
+                : isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,60,120,0.07)',
+              padding: '4px 6px 4px 16px',
             }}>
-              <span style={{ padding: '0 16px', display: 'flex', alignItems: 'center', color: adb.blue, fontSize: 18, flexShrink: 0 }}>✦</span>
               <input
                 value={homeSearch}
                 onChange={e => setHomeSearch(e.target.value)}
-                placeholder="Ask a question or search for data, indicators, or publications…"
+                placeholder="Ask me anything"
                 style={{
                   flex: 1, background: 'none', border: 'none', outline: 'none',
-                  color: 'var(--th-text)', fontSize: 13, fontFamily: adb.font,
-                  padding: '14px 0',
+                  color: 'var(--th-text)', fontSize: 14, fontFamily: adb.font,
+                  padding: '10px 0',
                 }}
               />
+              {/* Paperclip */}
+              <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--th-muted)', fontSize: 18, padding: '0 10px', lineHeight: 1, display: 'flex', alignItems: 'center' }}>📎</button>
+              {/* Circular send button */}
               <button
                 type="submit"
                 disabled={aiLoading}
                 style={{
-                  padding: `0 ${isMobile ? '14px' : '24px'}`, background: homeSearch.trim() ? adb.blue : 'var(--th-border)',
-                  border: 'none', color: homeSearch.trim() ? adb.white : 'var(--th-muted)',
-                  fontSize: 13, fontWeight: 600, cursor: homeSearch.trim() ? 'pointer' : 'default',
-                  flexShrink: 0, transition: 'background 0.2s, color 0.2s',
-                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: 34, height: 34, borderRadius: '50%',
+                  background: homeSearch.trim() ? adb.blue : (isDark ? '#1b3860' : '#C8DCE8'),
+                  border: 'none', color: '#FFFFFF',
+                  fontSize: 14, cursor: homeSearch.trim() ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, transition: 'background 0.2s',
                 }}
-              >
-                <span style={{ fontSize: 15 }}>⌕</span>
-                {aiLoading ? 'Thinking…' : 'Search'}
-              </button>
+              >{aiLoading ? '…' : '↑'}</button>
             </div>
           </form>
 
-          {/* Suggested tags row + briefing pill — pill anchored outside scroll area */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            {/* Scrollable suggested prompts */}
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', overflowX: 'auto', flex: 1, minWidth: 0, scrollbarWidth: 'none' as React.CSSProperties['scrollbarWidth'] }}>
-              <span style={{ fontSize: 11, color: 'var(--th-muted)', flexShrink: 0 }}>Suggested:</span>
+          {/* Suggestion pills row + Country Briefing Note pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 12 }}>
+            {/* Scrollable data pills — fade mask hides clip edge */}
+            <div style={{
+              display: 'flex', gap: 6, alignItems: 'center',
+              overflowX: 'auto', flex: 1, minWidth: 0,
+              scrollbarWidth: 'none' as React.CSSProperties['scrollbarWidth'],
+              WebkitMaskImage: 'linear-gradient(to right, black 75%, transparent 100%)',
+              maskImage: 'linear-gradient(to right, black 75%, transparent 100%)',
+              paddingRight: 32,
+            } as React.CSSProperties}>
               {([
-                { label: 'GDP growth · Pacific SIDS',     query: 'GDP growth for Pacific SIDS' },
-                { label: 'Fiji inflation',                 query: 'Fiji inflation trends' },
-                { label: 'Remittances · Tonga & Samoa',   query: 'Remittance flows for Tonga and Samoa' },
-                { label: 'Pacific debt levels',            query: 'Debt levels across Pacific islands' },
+                { label: 'GDP growth · Pacific SIDS',   query: 'GDP growth for Pacific SIDS' },
+                { label: 'Fiji inflation',               query: 'Fiji inflation trends' },
+                { label: 'Remittances · Tonga & Samoa', query: 'Remittance flows for Tonga and Samoa' },
+                { label: 'Pacific debt levels',          query: 'Debt levels across Pacific islands' },
               ]).map(({ label, query }) => (
                 <button key={label} onClick={() => { setPendingQuery(query); setActiveNav('Data Explorer') }} style={{
-                  fontSize: 11, color: 'var(--th-muted)', padding: '3px 10px', borderRadius: 12, flexShrink: 0,
-                  border: '1px solid var(--th-border)', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-                  transition: 'border-color 0.15s, color 0.15s',
+                  fontSize: 12, color: isDark ? 'var(--th-muted)' : '#3A5A78', padding: '6px 14px', borderRadius: 20, flexShrink: 0,
+                  border: `1px solid ${isDark ? '#1b3860' : '#C0D6E8'}`, background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
                 }}>{label}</button>
               ))}
             </div>
-            {/* Country Briefing Note — outside scroll, always fully visible */}
+            {/* Thin vertical separator */}
+            <div style={{ width: 1, height: 24, background: isDark ? '#1b3860' : '#C0D6E8', flexShrink: 0, margin: '0 10px' }} />
+            {/* Country Briefing Note pill — fixed, never scrolls away */}
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <button
                 onClick={() => setBriefPickerOpen(o => !o)}
                 style={{
-                  fontSize: 11, color: adb.green, padding: '4px 12px', borderRadius: 12, whiteSpace: 'nowrap',
-                  border: `1px solid ${adb.green}55`, background: briefPickerOpen ? `${adb.green}1a` : `${adb.green}0f`,
-                  cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5,
+                  fontSize: 12, color: adb.green, padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap',
+                  border: `1px solid ${adb.green}66`, background: briefPickerOpen ? `${adb.green}12` : 'none',
+                  cursor: 'pointer', fontWeight: 500,
                 }}
-              >✦ Country Briefing Note ▾</button>
-
+              >Create Country Briefing Note</button>
               {briefPickerOpen && (
                 <div style={{
                   position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 300,
                   background: 'var(--th-card)', border: '1px solid var(--th-border)',
-                  borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+                  borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
                   padding: '8px', minWidth: 210,
                 }}>
                   <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--th-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6, padding: '0 4px' }}>
@@ -2767,7 +2881,7 @@ This report is for internal ADB use only and does not constitute official ADB fo
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--th-chart)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                     >
-                      <img src={flagUrl(code, 40)} alt="" style={{ width: 22, height: 15, objectFit: 'cover', borderRadius: 2, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }} />
+                      <img src={flagUrl(code)} alt="" style={{ width: 22, height: 15, objectFit: 'cover', borderRadius: 2, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }} />
                       <span style={{ fontSize: 12, color: 'var(--th-text)' }}>{ECONOMIES[code] ?? code}</span>
                     </button>
                   ))}
@@ -2849,81 +2963,83 @@ This report is for internal ADB use only and does not constitute official ADB fo
 
         {/* ── Pacific Portfolio Map + Tracked Indicators ── */}
         <section style={{ marginBottom: 28 }}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: 14, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ display: 'inline-block', width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #007DB7 0%, #00A5D2 100%)' }} />
-                  {/* Region dropdown */}
-                  <div style={{ position: 'relative' }}>
+          {/* Header row 1: title + region dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--th-text)', whiteSpace: 'nowrap' }}>
+              {activeRegion === 'The Pacific' ? 'Pacific Portfolio Map' : `${activeRegion} Portfolio Map`}
+            </h2>
+            {/* Region dropdown */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setRegionDropOpen(o => !o)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 14, height: 14, borderRadius: 3,
+                  background: regionDropOpen ? `${adb.green}20` : 'none',
+                  border: `1.5px solid ${regionDropOpen ? adb.green : (isDark ? '#1b3860' : '#C0D6E8')}`,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  color: adb.green, fontSize: 7, lineHeight: 1,
+                }}
+                title={`Region: ${activeRegion}`}
+              >▼</button>
+              {regionDropOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 200,
+                  background: 'var(--th-card)', border: '1px solid var(--th-border)',
+                  borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  minWidth: 200, padding: '4px',
+                }}>
+                  {Object.keys(REGION_GROUPS).map(region => (
                     <button
-                      onClick={() => setRegionDropOpen(o => !o)}
+                      key={region}
+                      onClick={() => { setActiveRegion(region); setRegionDropOpen(false) }}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        fontSize: 16, fontWeight: 600, fontFamily: adb.font,
-                        color: 'var(--th-text)', background: 'none', border: 'none',
-                        cursor: 'pointer', padding: 0,
+                        display: 'block', width: '100%', textAlign: 'left',
+                        padding: '8px 12px', borderRadius: 5, border: 'none', cursor: 'pointer',
+                        fontSize: 12, fontWeight: activeRegion === region ? 600 : 400,
+                        background: activeRegion === region ? `${adb.blue}18` : 'none',
+                        color: activeRegion === region ? adb.blue : 'var(--th-text)',
                       }}
+                      onMouseEnter={e => { if (activeRegion !== region) (e.currentTarget as HTMLElement).style.background = 'var(--th-chart)' }}
+                      onMouseLeave={e => { if (activeRegion !== region) (e.currentTarget as HTMLElement).style.background = 'none' }}
                     >
-                      {activeRegion} Portfolio Map
-                      <span style={{
-                        fontSize: 11, color: adb.blue, border: `1px solid ${adb.blue}55`,
-                        borderRadius: 3, padding: '1px 5px', fontWeight: 400,
-                        display: 'flex', alignItems: 'center', gap: 3, letterSpacing: 0,
-                      }}>▾</span>
+                      {region}
                     </button>
-                    {regionDropOpen && (
-                      <div style={{
-                        position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 300,
-                        background: 'var(--th-card)', border: '1px solid var(--th-border)',
-                        borderRadius: 6, boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
-                        minWidth: 220, overflow: 'hidden',
-                      }}>
-                        {Object.keys(REGION_GROUPS).map(region => (
-                          <button
-                            key={region}
-                            onClick={() => {
-                              setActiveRegion(region)
-                              setRegionDropOpen(false)
-                              setSelectedCountry(REGION_GROUPS[region][0])
-                              setExpandedReasons(new Set())
-                              setMapFlyTarget(undefined)
-                            }}
-                            style={{
-                              display: 'block', width: '100%', textAlign: 'left',
-                              padding: '9px 14px', fontSize: 12, background: 'none', border: 'none',
-                              color: region === activeRegion ? adb.blue : 'var(--th-text)',
-                              fontWeight: region === activeRegion ? 600 : 400,
-                              cursor: 'pointer', fontFamily: adb.font,
-                              borderLeft: `2px solid ${region === activeRegion ? adb.blue : 'transparent'}`,
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--th-chart)')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                          >{region}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </h2>
-                {allIndData[activeInd]?.source && <SourceBadge source={allIndData[activeInd].source} />}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--th-muted)', marginTop: 2 }}>
-                ADB Data · ADO indicators · {activeRegion === 'The Pacific' ? 'Click a country to explore · Hover for details' : `${activeEconomies.length} economies`}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* + Track Indicator button */}
+          </div>
+          {/* Header row 2: My Watchlist tabs + Add button */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--th-text)', whiteSpace: 'nowrap' }}>My Watchlist</span>
+              {(Object.keys(INDICATORS) as IndKey[]).slice(0, 3).map(ind => {
+                const isActive = activeInd === ind
+                return (
+                  <button key={ind} onClick={() => setActiveInd(ind)} style={{
+                    fontSize: 11, fontWeight: isActive ? 700 : 500,
+                    padding: '5px 14px', borderRadius: 20, cursor: 'pointer', whiteSpace: 'nowrap',
+                    background: isActive ? adb.blue : 'none',
+                    border: `1.5px solid ${isActive ? adb.blue : (isDark ? '#1b3860' : '#C0D6E8')}`,
+                    color: isActive ? '#FFFFFF' : (isDark ? 'var(--th-muted)' : '#3A5A78'),
+                    transition: 'all 0.15s',
+                  }}>{INDICATORS[ind].label}</button>
+                )
+              })}
+            </div>
+            {/* + Add More to Watchlist button */}
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setPickerOpen(p => !p)}
                 style={{
-                  fontSize: 11, fontWeight: 500, padding: '6px 12px',
-                  background: adb.blue + '22', color: adb.blue,
-                  border: `1px solid ${adb.blue}55`, borderRadius: 4, cursor: 'pointer',
+                  fontSize: 11, fontWeight: 500, padding: '6px 14px',
+                  background: 'none', color: isDark ? adb.blue : '#3A5A78',
+                  border: `1.5px solid ${isDark ? adb.blue : '#C0D6E8'}`, borderRadius: 20, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 5,
                 }}
               >
-                <span style={{ fontSize: 14 }}>+</span> Track Indicator
+                + Add More to Watchlist
               </button>
 
               {/* Indicator picker dropdown */}
@@ -2981,254 +3097,113 @@ This report is for internal ADB use only and does not constitute official ADB fo
             </div>
           </div>
 
-          {/* Tracked indicator filter tabs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-            {trackedInds.map(key => {
-              const active = activeInd === key
-              return (
-                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                  <button
-                    onClick={() => setActiveInd(key)}
-                    style={{
-                      fontSize: 11, fontWeight: active ? 600 : 400, padding: '5px 10px',
-                      background: active ? 'linear-gradient(135deg, #007DB7 0%, #00A5D2 100%)' : 'var(--th-card)',
-                      color: active ? '#fff' : 'var(--th-muted)',
-                      border: `1px solid ${active ? '#007DB7' : 'var(--th-border)'}`,
-                      boxShadow: active ? '0 2px 10px rgba(0,125,183,0.4)' : 'none',
-                      borderRadius: trackedInds.length > 1 ? '4px 0 0 4px' : 4,
-                      cursor: 'pointer', transition: 'all 0.15s',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {IND_SHORT[key]}
-                  </button>
-                  {trackedInds.length > 1 && (
-                    <button
-                      onClick={() => {
-                        setTrackedInds(prev => prev.filter(k => k !== key))
-                        if (activeInd === key) setActiveInd(trackedInds.find(k => k !== key) ?? trackedInds[0])
-                      }}
-                      title={`Remove ${IND_SHORT[key]}`}
-                      style={{
-                        fontSize: 10, padding: '5px 6px',
-                        background: active ? '#0071a8' : 'var(--th-border)',
-                        color: active ? '#fff' : 'var(--th-muted)',
-                        borderTop: `1px solid ${active ? adb.blue : 'var(--th-border)'}`,
-                        borderRight: `1px solid ${active ? adb.blue : 'var(--th-border)'}`,
-                        borderBottom: `1px solid ${active ? adb.blue : 'var(--th-border)'}`,
-                        borderLeft: 'none',
-                        borderRadius: '0 4px 4px 0',
-                        cursor: 'pointer', lineHeight: 1,
-                      }}
-                    >×</button>
-                  )}
-                </div>
-              )
-            })}
-            <button
-              onClick={() => setPickerOpen(p => !p)}
-              style={{
-                fontSize: 11, padding: '5px 10px',
-                background: 'none', color: 'var(--th-muted)',
-                border: '1px dashed var(--th-border)',
-                borderRadius: 4, cursor: 'pointer',
-              }}
-            >+ Add</button>
-          </div>
 
-          {/* Map card */}
+          {/* Map card — 2-column: vertical country list LEFT + map RIGHT */}
           <div style={{
             background: 'var(--th-card)',
             border: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
             borderRadius: 8,
             boxShadow: isDark ? '0 4px 32px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,60,120,0.06)',
+            display: isMobile ? 'block' : 'flex',
+            overflow: 'hidden',
           }}>
-            {/* Horizontal country carousel — above map */}
+            {/* LEFT — vertical country list */}
             <div style={{
-              borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
-              padding: '12px 14px 14px', position: 'relative',
-              background: isDark
-                ? 'linear-gradient(180deg, #0c2242 0%, #0c1b36 100%)'
-                : '#F7FAFD',
+              width: isMobile ? '100%' : 200, flexShrink: 0,
+              borderRight: isMobile ? 'none' : `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
+              borderBottom: isMobile ? `1px solid ${isDark ? '#1b3860' : '#dce8f0'}` : 'none',
+              overflowY: 'auto', maxHeight: isMobile ? 260 : 460,
             }}>
-              {/* Carousel header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--th-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    {INDICATORS[activeInd].label}
-                  </div>
-                  <div style={{ fontSize: 9, color: 'var(--th-muted)', marginTop: 2 }}>
-                    {INDICATORS[activeInd].unit}
-                  </div>
+              {/* Column header */}
+              <div style={{
+                padding: '10px 14px', borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`,
+                background: isDark ? '#061427' : '#F7FAFD', position: 'sticky', top: 0,
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--th-text)', letterSpacing: '0.04em' }}>
+                  {INDICATORS[activeInd].label}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {!isMobile && activeRegion === 'The Pacific' && (
-                    <span style={{ fontSize: 9, color: 'var(--th-muted)' }}>Click a card to focus on map</span>
-                  )}
-                  <button
-                    onClick={() => countryCarouselRef.current?.scrollBy({ left: -510, behavior: 'smooth' })}
-                    style={{ width: 26, height: 26, borderRadius: 4, border: '1px solid var(--th-border)', background: 'var(--th-card)', color: 'var(--th-text)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >‹</button>
-                  <button
-                    onClick={() => countryCarouselRef.current?.scrollBy({ left: 510, behavior: 'smooth' })}
-                    style={{ width: 26, height: 26, borderRadius: 4, border: '1px solid var(--th-border)', background: 'var(--th-card)', color: 'var(--th-text)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >›</button>
-                </div>
+                <div style={{ fontSize: 9, color: 'var(--th-muted)', marginTop: 1 }}>{INDICATORS[activeInd].unit}</div>
               </div>
-
-              {/* Scrollable card strip — sorted high risk → low risk */}
-              <div
-                ref={countryCarouselRef}
-                style={{ display: 'flex', gap: 10, overflowX: 'auto', alignItems: 'flex-start', scrollBehavior: 'smooth', paddingBottom: 4, scrollbarWidth: 'none' }}
-              >
-                {(() => {
-                  const riskRank: Record<string, number> = { [adb.red]: 0, [adb.amber]: 1, [adb.teal]: 2, [adb.green]: 3, [adb.muted]: 4 }
-                  const obs = allIndData[activeInd]?.obs ?? []
-                  return [...activeEconomies].sort((a, b) => {
-                    const ra = riskRank[indicatorColor(activeInd, latest(obs, a)?.value ?? null).color] ?? 5
-                    const rb = riskRank[indicatorColor(activeInd, latest(obs, b)?.value ?? null).color] ?? 5
-                    return ra - rb
-                  })
-                })().map(code => {
-                  const obs = allIndData[activeInd]?.obs ?? []
-                  const o = latest(obs, code)
-                  const val = o?.value ?? null
-                  const { color, status } = indicatorColor(activeInd, val)
-                  const reasonKey = `${activeInd}:${code}`
-                  const isExpanded = expandedReasons.has(reasonKey)
-                  return (
-                    <div key={code} style={{
-                      minWidth: 140, maxWidth: 140, flexShrink: 0,
-                      borderRadius: 8, overflow: 'hidden',
-                      border: `1px solid ${isExpanded ? color + '66' : 'var(--th-border)'}`,
-                      background: 'var(--th-chart)',
-                      boxShadow: isExpanded ? `0 0 0 1px ${color}33` : 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s',
-                    }}>
-                      {/* Coloured top accent bar */}
-                      <div style={{ height: 3, background: color, opacity: 0.85 }} />
-                      {/* Click area: fly to country */}
-                      <div
-                        style={{ padding: '10px 12px 12px', cursor: 'pointer' }}
-                        onClick={() => {
-                          const dot = BASE_DOTS[code]
-                          if (dot) setMapFlyTarget({ lat: dot.lat, lng: dot.lng, zoom: 7 })
-                          setSelectedCountry(code)
-                          setReportOutput('')
-                          setExpandedReasons(new Set([`${activeInd}:${code}`]))
-                        }}
-                      >
-                        {/* Flag + country name */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                          {FLAG_ISO[code] && (
-                            <img src={flagUrl(code, 20)} alt={ECONOMIES[code]} style={{ width: 20, height: 15, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />
-                          )}
-                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--th-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>
-                            {ECONOMIES[code]}
-                          </span>
-                        </div>
-                        {/* Main value */}
-                        <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1, marginBottom: 8, letterSpacing: '-0.5px' }}>
-                          {formatIndValue(activeInd, val, INDICATORS[activeInd])}
-                        </div>
-                        {/* Status + year */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{
-                            fontSize: 8, fontWeight: 700, padding: '2px 7px', borderRadius: 3,
-                            background: `${color}20`, color,
-                            letterSpacing: '0.06em', textTransform: 'uppercase',
-                          }}>{status}</span>
-                          <span style={{ fontSize: 9, color: 'var(--th-muted)', fontWeight: 300 }}>{o?.period ?? '—'}</span>
-                        </div>
-                      </div>
+              {/* Country rows */}
+              {(() => {
+                const riskRank: Record<string, number> = { [adb.red]: 0, [adb.amber]: 1, [adb.teal]: 2, [adb.green]: 3, [adb.muted]: 4 }
+                const obs = allIndData[activeInd]?.obs ?? []
+                return [...activeEconomies].sort((a, b) => {
+                  const ra = riskRank[indicatorColor(activeInd, latest(obs, a)?.value ?? null).color] ?? 5
+                  const rb = riskRank[indicatorColor(activeInd, latest(obs, b)?.value ?? null).color] ?? 5
+                  return ra - rb
+                })
+              })().map(code => {
+                const obs = allIndData[activeInd]?.obs ?? []
+                const o = latest(obs, code)
+                const val = o?.value ?? null
+                const { color, status } = indicatorColor(activeInd, val)
+                const isSelected = expandedReasons.has(`${activeInd}:${code}`)
+                return (
+                  <div
+                    key={code}
+                    onClick={() => {
+                      const dot = BASE_DOTS[code]
+                      if (dot) setMapFlyTarget({ lat: dot.lat, lng: dot.lng, zoom: 7 })
+                      setSelectedCountry(code)
+                      setReportOutput('')
+                      setExpandedReasons(new Set([`${activeInd}:${code}`]))
+                    }}
+                    style={{
+                      padding: '10px 14px', cursor: 'pointer',
+                      borderBottom: `1px solid ${isDark ? '#1b386028' : '#dce8f066'}`,
+                      borderLeft: `3px solid ${isSelected ? color : 'transparent'}`,
+                      background: isSelected ? (isDark ? `${color}18` : `${color}0d`) : 'none',
+                      transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                    onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = isDark ? '#ffffff08' : '#F0F5FA' }}
+                    onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'none' }}
+                  >
+                    {/* Flag + name */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                      {FLAG_ISO[code] && <img src={flagUrl(code)} alt="" style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />}
+                      <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--th-text)', lineHeight: 1.2 }}>{ECONOMIES[code]}</span>
                     </div>
-                  )
-                })}
-              </div>
-
-              <div style={{ marginTop: 8, fontSize: 9, color: 'var(--th-muted)' }}>
-                Source: ADB Data · adb.org · ADO 2024
-              </div>
+                    {/* Value */}
+                    <div style={{ fontSize: 20, fontWeight: 700, color, lineHeight: 1, marginBottom: 4, letterSpacing: '-0.3px' }}>
+                      {formatIndValue(activeInd, val, INDICATORS[activeInd])}
+                    </div>
+                    {/* Status badge */}
+                    <span style={{
+                      fontSize: 9, fontWeight: 600, padding: '2px 7px', borderRadius: 3,
+                      background: `${color}18`, color, letterSpacing: '0.05em', textTransform: 'capitalize',
+                    }}>{status}</span>
+                  </div>
+                )
+              })}
             </div>
 
-            {/* Expanded Why? panel — in normal flow, pushes map down */}
-            {(() => {
-              const expandedCode = PACIFIC.find(code => expandedReasons.has(`${activeInd}:${code}`))
-              if (!expandedCode) return null
-              const obs = allIndData[activeInd]?.obs ?? []
-              const val = latest(obs, expandedCode)?.value ?? null
-              const { color } = indicatorColor(activeInd, val)
-              const reasons = getPacificReasons(activeInd, expandedCode)
-              const exploreQuery = `${INDICATORS[activeInd].label} for ${ECONOMIES[expandedCode]} since 2019`
-              return (
-                <div style={{
-                  background: 'var(--th-card)', borderTop: `2px solid ${color}`,
-                  borderBottom: `1px solid ${color}33`,
-                  padding: '12px 16px 14px',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--th-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {FLAG_ISO[expandedCode] && <img src={flagUrl(expandedCode, 20)} alt="" style={{ width: 20, height: 15, objectFit: 'cover', borderRadius: 2 }} />}
-                      {ECONOMIES[expandedCode]} — Why has this changed?
-                    </span>
-                    <button
-                      onClick={() => setExpandedReasons(new Set())}
-                      style={{ fontSize: 16, color: 'var(--th-muted)', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}
-                    >×</button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '6px 24px' }}>
-                    {reasons.map((r, ri) => (
-                      <div key={ri} style={{ display: 'flex', gap: 8 }}>
-                        <span style={{ color, fontSize: 11, flexShrink: 0, marginTop: 1 }}>›</span>
-                        <span style={{ fontSize: 10, color: 'var(--th-muted)', lineHeight: 1.6 }}>{r}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--th-border)', fontSize: 9, color: 'var(--th-muted)', opacity: 0.7, lineHeight: 1.5 }}>
-                    <span style={{ fontWeight: 600 }}>Source:</span> ADB Key Indicators Database (KIDB) · {INDICATORS[activeInd].label} (Code: {INDICATORS[activeInd].code}) · Dataflow: {INDICATORS[activeInd].flow} · data.adb.org
-                  </div>
-                  <button
-                    onClick={e => { e.stopPropagation(); setPendingQuery(exploreQuery); setActiveNav('Data Explorer') }}
-                    style={{
-                      marginTop: 10, fontSize: 10, color: adb.blueLight,
-                      background: `${adb.blue}18`, border: `1px solid ${adb.blue}44`,
-                      borderRadius: 4, padding: '5px 14px', cursor: 'pointer', fontWeight: 500,
-                    }}
-                  >Explore in Data Explorer →</button>
+            {/* RIGHT — map + legend */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              {/* Map */}
+              <PacificMapLeaflet
+                dots={buildIndicatorDots(activeInd, allIndData[activeInd]?.obs ?? [], activeEconomies)}
+                isDark={isDark}
+                flyTarget={mapFlyTarget}
+                activeRegion={activeRegion}
+                onExplore={(q) => { setPendingQuery(q); setActiveNav('Data Explorer') }}
+              />
+
+              {/* Legend */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderTop: '1px solid var(--th-border)', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 12, flex: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {(IND_THRESHOLDS[activeInd] ?? [
+                    { color: adb.red,   label: 'Alert',    range: '' },
+                    { color: adb.amber, label: 'Moderate', range: '' },
+                    { color: adb.green, label: 'Stable',   range: '' },
+                  ]).map(l => (
+                    <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: l.color, flexShrink: 0, display: 'inline-block' }} />
+                      <span style={{ fontSize: 10, color: 'var(--th-text)', fontWeight: 500 }}>{l.label}</span>
+                      {l.range && <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>({l.range})</span>}
+                    </div>
+                  ))}
                 </div>
-              )
-            })()}
-
-            {/* Map — all regions */}
-            <PacificMapLeaflet
-              dots={buildIndicatorDots(activeInd, allIndData[activeInd]?.obs ?? [], activeEconomies)}
-              isDark={isDark}
-              flyTarget={mapFlyTarget}
-              activeRegion={activeRegion}
-            />
-
-            {/* Legend — shows threshold explanation for the active indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderTop: '1px solid var(--th-border)', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', gap: 12, flex: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                {(IND_THRESHOLDS[activeInd] ?? [
-                  { color: adb.red,   label: 'Alert',    range: '' },
-                  { color: adb.amber, label: 'Moderate', range: '' },
-                  { color: adb.green, label: 'Stable',   range: '' },
-                ]).map(l => (
-                  <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: l.color, flexShrink: 0, display: 'inline-block' }} />
-                    <span style={{ fontSize: 10, color: 'var(--th-text)', fontWeight: 500 }}>{l.label}</span>
-                    {l.range && <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>({l.range})</span>}
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {['Portfolio brief ↗', 'Compare economies ↗'].map(btn => (
-                  <button key={btn} style={{
-                    fontSize: 11, color: 'var(--th-text)', background: 'var(--th-border)',
-                    border: 'none', borderRadius: 4, padding: '5px 10px', cursor: 'pointer',
-                  }}>{btn}</button>
-                ))}
               </div>
             </div>
 
@@ -3239,126 +3214,117 @@ This report is for internal ADB use only and does not constitute official ADB fo
 
         {/* ── Briefing ── */}
         <section style={{ paddingBottom: 40 }}>
-          {/* Header row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: 12, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0 }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ display: 'inline-block', width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #FDB915 0%, #E9532B 100%)' }} />
-                Economic Intelligence Briefing
-              </h2>
-              <div style={{ fontSize: 11, color: 'var(--th-muted)', marginTop: 2 }}>
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} · Curated economic intelligence
-              </div>
-            </div>
-            {/* Category filter pills */}
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              {['All', 'Policy', 'Analysis', 'Markets'].map(f => {
-                const isActive = briefingFilter === f
-                const filterColor = f === 'Policy' ? adb.teal : f === 'Analysis' ? adb.amber : f === 'Markets' ? adb.green : adb.blue
-                return (
-                  <button key={f} onClick={() => { setBriefingFilter(f); setBriefingPage(0) }} style={{
-                    fontSize: 10, fontWeight: isActive ? 700 : 500, letterSpacing: '0.05em',
-                    padding: '4px 12px', borderRadius: 20, cursor: 'pointer',
-                    background: isActive ? `${filterColor}22` : 'none',
-                    border: `1px solid ${isActive ? filterColor : 'var(--th-border)'}`,
-                    color: isActive ? filterColor : 'var(--th-muted)',
-                    transition: 'all 0.15s',
-                  }}>{f}</button>
-                )
-              })}
-            </div>
+          {/* Title */}
+          <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 700, color: 'var(--th-text)' }}>Economic Intelligence Briefing</h2>
+          {/* Underline tab filter */}
+          <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`, marginBottom: 16, marginTop: 4 }}>
+            {['All', 'Policy', 'Analysis', 'Markets'].map(f => {
+              const isActive = briefingFilter === f
+              return (
+                <button key={f} onClick={() => { setBriefingFilter(f); setBriefingPage(0) }} style={{
+                  fontSize: 13, fontWeight: isActive ? 600 : 400, padding: '8px 16px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: isActive ? (isDark ? '#fff' : '#002569') : 'var(--th-muted)',
+                  borderBottom: `2px solid ${isActive ? adb.blue : 'transparent'}`,
+                  marginBottom: -1, transition: 'color 0.15s, border-color 0.15s',
+                }}>{f}</button>
+              )
+            })}
           </div>
 
-          {/* Carousel */}
+          {/* Grid */}
           {(() => {
             const filtered = briefingFilter === 'All'
               ? ARTICLES
               : ARTICLES.filter(a => a.type.toLowerCase() === briefingFilter.toLowerCase())
-            const perPage = isMobile ? 1 : 3
+            const perPage = isMobile ? 1 : 4
             const totalPages = Math.ceil(filtered.length / perPage)
             const page = Math.min(briefingPage, Math.max(0, totalPages - 1))
             const visible = filtered.slice(page * perPage, page * perPage + perPage)
             return (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10, alignItems: 'stretch' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 12, alignItems: 'stretch' }}>
                   {visible.map(article => (
                     <div
                       key={article.id}
                       onClick={() => setSelectedArticle(article)}
+                      onMouseEnter={e => {
+                        const el = e.currentTarget as HTMLElement
+                        el.style.borderColor = article.typeBg
+                        el.style.boxShadow = isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,125,183,0.12)'
+                      }}
+                      onMouseLeave={e => {
+                        const el = e.currentTarget as HTMLElement
+                        el.style.borderColor = isDark ? '#1a3550' : '#dce8f0'
+                        el.style.boxShadow = isDark ? '0 2px 12px rgba(0,0,0,0.2)' : '0 1px 6px rgba(0,60,120,0.06)'
+                      }}
                       style={{
                         background: 'var(--th-card)',
                         border: `1px solid ${isDark ? '#1a3550' : '#dce8f0'}`,
                         borderRadius: 8, overflow: 'hidden',
                         display: 'flex', flexDirection: 'column',
-                        cursor: 'pointer', transition: 'box-shadow 0.15s, border-color 0.15s', height: '100%', boxSizing: 'border-box',
+                        cursor: 'pointer', transition: 'box-shadow 0.15s, border-color 0.15s',
+                        height: '100%', boxSizing: 'border-box',
                         boxShadow: isDark ? '0 2px 12px rgba(0,0,0,0.2)' : '0 1px 6px rgba(0,60,120,0.06)',
                       }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,125,183,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = article.typeBg }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = isDark ? '0 2px 12px rgba(0,0,0,0.2)' : '0 1px 6px rgba(0,60,120,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = isDark ? '#1a3550' : '#dce8f0' }}
                     >
-                      {/* Top accent bar */}
                       <div style={{ height: 4, background: article.typeBg, flexShrink: 0 }} />
                       <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', color: article.typeBg, textTransform: 'uppercase', background: `${article.typeBg}18`, border: `1px solid ${article.typeBg}44`, borderRadius: 20, padding: '2px 10px' }}>{article.type}</span>
                           <span style={{ fontSize: 10, color: 'var(--th-muted)' }}>{article.date}</span>
                         </div>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--th-text)', lineHeight: 1.4 }}>{article.title}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--th-text)', lineHeight: 1.4 }}>{article.title}</div>
                         <div style={{ fontSize: 11, color: 'var(--th-muted)', lineHeight: 1.6, flex: 1 }}>{article.body}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 8, borderTop: `1px solid ${isDark ? '#1a355020' : '#dce8f060'}` }}>
-                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                            {article.sources.map(s => (
-                              <span key={s} style={{ fontSize: 9, color: isDark ? adb.blueLight : adb.blue, padding: '2px 6px', border: '1px solid var(--th-border)', borderRadius: 3 }}>{s}</span>
-                            ))}
+                        <div style={{ marginTop: 'auto', paddingTop: 8, borderTop: `1px solid ${isDark ? '#1a355020' : '#dce8f060'}` }}>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+                            {article.sources.map(s => {
+                              const label = s.startsWith('KIDB ·') ? 'KIDB' : s
+                              return (
+                                <span key={s} title={s} style={{ fontSize: 9, color: isDark ? adb.blueLight : adb.blue, padding: '2px 6px', border: '1px solid var(--th-border)', borderRadius: 3, whiteSpace: 'nowrap' }}>{label}</span>
+                              )
+                            })}
                           </div>
-                          <span style={{ fontSize: 11, color: adb.blue, flexShrink: 0, fontWeight: 500 }}>Open in Data Explorer →</span>
+                          <span style={{ fontSize: 11, color: adb.blue, fontWeight: 500 }}>Read briefing →</span>
                         </div>
                       </div>
                     </div>
                   ))}
-                  {/* Placeholder cards to keep 3-column grid stable — desktop only */}
-                  {!isMobile && visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
-                    <div key={`ph-${i}`} style={{ background: 'var(--th-card)', border: '1px dashed var(--th-border)', borderRadius: 6, opacity: 0.25, minHeight: 140 }} />
-                  ))}
                 </div>
 
-                {/* Pagination controls */}
+                {/* Pagination — |< < 1 2 3 > >| style */}
                 {totalPages > 1 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 14 }}>
-                    <button
-                      onClick={() => setBriefingPage(p => Math.max(0, p - 1))}
-                      disabled={page === 0}
-                      style={{
-                        width: 28, height: 28, borderRadius: '50%', border: '1px solid var(--th-border)',
-                        background: page === 0 ? 'none' : 'var(--th-card)', cursor: page === 0 ? 'default' : 'pointer',
-                        color: page === 0 ? 'var(--th-muted)' : 'var(--th-text)', fontSize: 14,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}
-                    >‹</button>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 20 }}>
+                    {/* First */}
+                    <button onClick={() => setBriefingPage(0)} disabled={page === 0} style={{ background: 'none', border: 'none', cursor: page === 0 ? 'default' : 'pointer', color: page === 0 ? 'var(--th-muted)' : 'var(--th-text)', fontSize: 13, padding: '4px 6px' }}>|‹</button>
+                    {/* Prev */}
+                    <button onClick={() => setBriefingPage(p => Math.max(0, p - 1))} disabled={page === 0} style={{ background: 'none', border: 'none', cursor: page === 0 ? 'default' : 'pointer', color: page === 0 ? 'var(--th-muted)' : 'var(--th-text)', fontSize: 13, padding: '4px 6px' }}>‹</button>
+                    {/* Page numbers */}
                     {Array.from({ length: totalPages }).map((_, i) => (
                       <button key={i} onClick={() => setBriefingPage(i)} style={{
-                        width: 7, height: 7, borderRadius: '50%', border: 'none',
-                        background: i === page ? adb.blue : 'var(--th-border)',
-                        cursor: 'pointer', padding: 0, transition: 'background 0.15s',
-                      }} />
-                    ))}
-                    <button
-                      onClick={() => setBriefingPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={page === totalPages - 1}
-                      style={{
-                        width: 28, height: 28, borderRadius: '50%', border: '1px solid var(--th-border)',
-                        background: page === totalPages - 1 ? 'none' : 'var(--th-card)',
-                        cursor: page === totalPages - 1 ? 'default' : 'pointer',
-                        color: page === totalPages - 1 ? 'var(--th-muted)' : 'var(--th-text)', fontSize: 14,
+                        width: 30, height: 30, borderRadius: '50%', border: 'none',
+                        background: i === page ? adb.blue : 'none',
+                        color: i === page ? '#FFFFFF' : 'var(--th-muted)',
+                        cursor: 'pointer', fontSize: 13, fontWeight: i === page ? 600 : 400,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}
-                    >›</button>
+                        transition: 'background 0.15s',
+                      }}>{i + 1}</button>
+                    ))}
+                    {/* Next */}
+                    <button onClick={() => setBriefingPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1} style={{ background: 'none', border: 'none', cursor: page === totalPages - 1 ? 'default' : 'pointer', color: page === totalPages - 1 ? 'var(--th-muted)' : 'var(--th-text)', fontSize: 13, padding: '4px 6px' }}>›</button>
+                    {/* Last */}
+                    <button onClick={() => setBriefingPage(totalPages - 1)} disabled={page === totalPages - 1} style={{ background: 'none', border: 'none', cursor: page === totalPages - 1 ? 'default' : 'pointer', color: page === totalPages - 1 ? 'var(--th-muted)' : 'var(--th-text)', fontSize: 13, padding: '4px 6px' }}>›|</button>
                   </div>
                 )}
               </>
             )
           })()}
         </section>
+
+        {/* Footer */}
+        <div style={{ borderTop: `1px solid ${isDark ? '#1b3860' : '#dce8f0'}`, padding: '16px 0', marginTop: 8 }}>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--th-muted)' }}>© 2026 Asian Development Bank. All rights reserved.</p>
+        </div>
         </>)}
 
         {/* ── Article detail modal ── */}

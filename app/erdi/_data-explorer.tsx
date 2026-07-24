@@ -435,6 +435,8 @@ export function DataExplorer({ initialQuery = '', onConversation, onOpenPublicat
   const [explainLoading, setExplainLoading] = useState(false)
   const [explainCitations, setExplainCitations] = useState<string[]>([])
   const [yearOverride, setYearOverride]     = useState<number | null>(null)
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null)
+  const [explainInPlace, setExplainInPlace] = useState(false)
 
   function exportAsPng() {
     const container = chartRef.current
@@ -512,6 +514,7 @@ export function DataExplorer({ initialQuery = '', onConversation, onOpenPublicat
     setExplainAnswer('')
     setExplainCitations([])
     setYearOverride(null)
+    setExplainInPlace(false)
     if (intent === 'explain') {
       setExplainLoading(true)
       try {
@@ -576,6 +579,51 @@ export function DataExplorer({ initialQuery = '', onConversation, onOpenPublicat
       setLoading(false)
     }
   }, [])
+
+  // Explain-in-place: keeps chart visible, only updates the analysis panel
+  const runExplainOnly = useCallback(async (q: string) => {
+    setIntentType('explain')
+    setExplainInPlace(true)
+    setExplainAnswer('')
+    setExplainCitations([])
+    setAiError(null)
+    setExplainLoading(true)
+    try {
+      const res = await fetch('/api/erdi/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q }),
+      })
+      if (!res.ok) throw new Error('Failed')
+      const contentType = res.headers.get('content-type') ?? ''
+      if (contentType.includes('text/plain') && res.body) {
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let accumulated = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          accumulated += decoder.decode(value, { stream: true })
+          setExplainAnswer(accumulated)
+        }
+        onConversation?.(q, accumulated)
+      } else {
+        const data = await res.json()
+        const ans = data.answer ?? ''
+        setExplainAnswer(ans)
+        onConversation?.(q, ans)
+      }
+      setExplainCitations([
+        'ADB Data · adb.org',
+        'ADB Asian Development Outlook · adb.org/publications/series/asian-development-outlook',
+        'ADB Pacific Economic Monitor · adb.org/publications/pacific-economic-monitor',
+      ])
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setExplainLoading(false)
+    }
+  }, [onConversation])
 
   // Auto-run when initialQuery is pushed in from the home search
   useEffect(() => {
@@ -691,8 +739,8 @@ export function DataExplorer({ initialQuery = '', onConversation, onOpenPublicat
         </div>
       )}
 
-      {/* Explanation panel */}
-      {intentType === 'explain' && (explainLoading || explainAnswer) && (
+      {/* Explanation panel — only when NOT in explainInPlace mode (chart right-click) */}
+      {intentType === 'explain' && !explainInPlace && (explainLoading || explainAnswer) && (
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{
             background: 'var(--th-card)', border: `1px solid ${adb.blue}44`,
@@ -818,7 +866,12 @@ export function DataExplorer({ initialQuery = '', onConversation, onOpenPublicat
           </div>
 
           {/* D3 Chart */}
-          <div ref={chartRef} style={{ background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 6, overflow: 'hidden' }}>
+          <div
+            ref={chartRef}
+            style={{ background: 'var(--th-card)', border: '1px solid var(--th-border)', borderRadius: 6, overflow: 'hidden', position: 'relative' }}
+            onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }) }}
+            onClick={() => ctxMenu && setCtxMenu(null)}
+          >
             <div style={{ padding: '16px 12px 12px' }}>
               {config.chartType === 'line'
                 ? <D3LineChart data={chartData} unit={config.unit} />
@@ -826,10 +879,99 @@ export function DataExplorer({ initialQuery = '', onConversation, onOpenPublicat
               }
               <ChartLegend economies={chartData.economies} />
             </div>
+
+            {/* Right-click context menu */}
+            {ctxMenu && (
+              <div
+                style={{
+                  position: 'absolute', left: ctxMenu.x, top: ctxMenu.y, zIndex: 50,
+                  background: 'var(--th-card)', border: '1px solid var(--th-border)',
+                  borderRadius: 6, boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+                  overflow: 'hidden', minWidth: 180,
+                  animation: 'fadeIn 0.12s ease',
+                }}
+              >
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    setCtxMenu(null)
+                    const explainQ = `Explain the trends shown in: ${config.title}`
+                    setQuery(explainQ)
+                    runExplainOnly(explainQ)
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    width: '100%', padding: '10px 14px', border: 'none',
+                    background: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontSize: 12, color: 'var(--th-text)',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--th-border)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none' }}
+                >
+                  <span style={{ fontSize: 14 }}>💬</span>
+                  <span>Explain</span>
+                </button>
+              </div>
+            )}
           </div>
 
+          {/* Inline explain panel — shown when right-click Explain is triggered */}
+          {explainInPlace && (explainLoading || explainAnswer) && (
+            <div style={{
+              border: `1px solid ${adb.blue}44`,
+              borderLeft: `3px solid ${adb.blue}`,
+              borderRadius: 6, overflow: 'hidden',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 14px', borderBottom: `1px solid var(--th-border)`,
+                background: `${adb.blue}0d`,
+              }}>
+                <span style={{ fontSize: 13, color: adb.blue }}>✦</span>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: adb.blue, background: `${adb.blue}18`, padding: '2px 8px', borderRadius: 2,
+                }}>ERDI AI · Analysis</span>
+                <span style={{ fontSize: 11, color: adb.muted, marginLeft: 4 }}>
+                  {config.title}
+                </span>
+                <button
+                  onClick={() => { setExplainInPlace(false); setExplainHighlightX(null); setExplainAnswer('') }}
+                  style={{ marginLeft: 'auto', fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: adb.muted, lineHeight: 1 }}
+                >×</button>
+              </div>
+              <div style={{ padding: '14px 16px' }}>
+                {explainLoading && !explainAnswer
+                  ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: adb.muted }}>Analysing chart</span>
+                      {[0,1,2].map(i => (
+                        <span key={i} style={{
+                          width: 4, height: 4, borderRadius: '50%', background: adb.blue, display: 'inline-block',
+                          animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                        }} />
+                      ))}
+                    </div>
+                  : <div style={{ fontSize: 13, color: 'var(--th-subtle)', lineHeight: 1.8 }}>
+                      {explainAnswer.split('\n').map((line, i, arr) => (
+                        <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+                      ))}
+                    </div>
+                }
+              </div>
+              {explainCitations.length > 0 && explainAnswer && (
+                <div style={{ borderTop: `1px solid var(--th-border)`, padding: '8px 16px', background: 'var(--th-chart)' }}>
+                  {explainCitations.map((c, i) => (
+                    <div key={i} style={{ fontSize: 10, color: '#3a5a78', fontFamily: 'monospace', lineHeight: 1.6 }}>
+                      [{i + 1}] {c}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Natural language insight + citations */}
-          <InsightPanel config={config} chartData={chartData} onOpenPublication={onOpenPublication} />
+          {!explainInPlace && <InsightPanel config={config} chartData={chartData} onOpenPublication={onOpenPublication} />}
 
           {/* Technical meta */}
           <QueryMeta config={config} />
